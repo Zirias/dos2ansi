@@ -142,6 +142,16 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
     else self->x += n;
 }
 
+int VgaCanvas_fg(const VgaCanvas *self)
+{
+    return self->att & 0x0fU;
+}
+
+int VgaCanvas_bg(const VgaCanvas *self)
+{
+    return self->att >> 4;
+}
+
 void VgaCanvas_destroy(VgaCanvas *self)
 {
     if (!self) return;

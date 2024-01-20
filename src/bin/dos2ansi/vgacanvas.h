@@ -15,8 +15,6 @@ void VgaCanvas_down(VgaCanvas *self, unsigned n);
 void VgaCanvas_left(VgaCanvas *self, unsigned n);
 void VgaCanvas_right(VgaCanvas *self, unsigned n);
 
-int VgaCanvas_x(const VgaCanvas *self);
-int VgaCanvas_y(const VgaCanvas *self);
 int VgaCanvas_fg(const VgaCanvas *self);
 int VgaCanvas_bg(const VgaCanvas *self);
 
