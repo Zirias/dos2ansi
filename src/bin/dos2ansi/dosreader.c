@@ -85,27 +85,31 @@ int DosReader_read(VgaCanvas *canvas, FILE *file)
 			VgaCanvas_setBg(canvas, bg);
 			esc = 0;
 		    }
-		    else if (c == 'A')
+		    else
 		    {
-			VgaCanvas_up(canvas, escargs[0]);
-			esc = 0;
+			if (!escargs[0]) escargs[0] = 1;
+			if (c == 'A')
+			{
+			    VgaCanvas_up(canvas, escargs[0]);
+			    esc = 0;
+			}
+			else if (c == 'B')
+			{
+			    VgaCanvas_down(canvas, escargs[0]);
+			    esc = 0;
+			}
+			else if (c == 'C')
+			{
+			    VgaCanvas_right(canvas, escargs[0]);
+			    esc = 0;
+			}
+			else if (c == 'D')
+			{
+			    VgaCanvas_left(canvas, escargs[0]);
+			    esc = 0;
+			}
+			else esc = 0;
 		    }
-		    else if (c == 'B')
-		    {
-			VgaCanvas_down(canvas, escargs[0]);
-			esc = 0;
-		    }
-		    else if (c == 'C')
-		    {
-			VgaCanvas_right(canvas, escargs[0]);
-			esc = 0;
-		    }
-		    else if (c == 'D')
-		    {
-			VgaCanvas_left(canvas, escargs[0]);
-			esc = 0;
-		    }
-		    else esc = 0;
 		}
 	    }
 	    else

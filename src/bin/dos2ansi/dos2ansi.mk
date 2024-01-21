@@ -1,4 +1,5 @@
-dos2ansi_MODULES:=	dosreader \
+dos2ansi_MODULES:=	ansitermwriter \
+			dosreader \
 			main \
 			util \
 			vgacanvas

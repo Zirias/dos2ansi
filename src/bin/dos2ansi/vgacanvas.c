@@ -75,8 +75,8 @@ VgaCanvas *VgaCanvas_create(int width)
 
 void VgaCanvas_put(VgaCanvas *self, char c)
 {
-    if (c == 0x0a) self->x = 0;
-    else if (c == 0x0d) VgaCanvas_down(self, 1);
+    if (c == 0x0a) VgaCanvas_down(self, 1);
+    else if (c == 0x0d) self->x = 0;
     else if ((unsigned char)c >= 0x20U)
     {
 	if (self->x == self->width)
@@ -201,6 +201,11 @@ int VgaLine_bg(const VgaLine *self, int pos)
 {
     if (pos >= self->len || pos < 0) return -1;
     return self->chars[pos].att >> 4;
+}
+
+char VgaLine_chr(const VgaLine *self, int pos)
+{
+    return self->chars[pos].chr;
 }
 
 void VgaCanvas_destroy(VgaCanvas *self)

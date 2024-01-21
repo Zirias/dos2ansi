@@ -27,6 +27,7 @@ const VgaLine *VgaCanvas_line(const VgaCanvas *self, size_t lineno);
 int VgaLine_len(const VgaLine *self);
 int VgaLine_fg(const VgaLine *self, int pos);
 int VgaLine_bg(const VgaLine *self, int pos);
+char VgaLine_chr(const VgaLine *self, int pos);
 
 void VgaCanvas_destroy(VgaCanvas *self);
 
