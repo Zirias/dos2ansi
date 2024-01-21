@@ -7,12 +7,6 @@
 
 #define LINESCHUNK 32
 
-typedef struct VgaChar
-{
-    uint8_t att;
-    uint8_t chr;
-} VgaChar;
-
 struct VgaCanvas
 {
     size_t width;
@@ -20,17 +14,30 @@ struct VgaCanvas
     size_t linecapa;
     size_t x;
     size_t y;
-    VgaChar **lines;
+    VgaLine **lines;
     uint8_t att;
 };
 
-static VgaChar *createline(int width)
+typedef struct VgaChar
 {
-    VgaChar *line = xmalloc(sizeof *line * width);
+    uint8_t att;
+    uint8_t chr;
+} VgaChar;
+
+struct VgaLine
+{
+    int len;
+    VgaChar chars[];
+};
+
+static VgaLine *createline(int width)
+{
+    VgaLine *line = xmalloc(sizeof *line + width * sizeof *line->chars);
+    line->len = width;
     for (int i = 0; i < width; ++i)
     {
-	line[i].att = 0x07;
-	line[i].chr = 0x20;
+	line->chars[i].att = 0x07;
+	line->chars[i].chr = 0x20;
     }
     return line;
 }
@@ -77,8 +84,8 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
-	self->lines[self->y][self->x].att = self->att;
-	self->lines[self->y][self->x].chr = c;
+	self->lines[self->y]->chars[self->x].att = self->att;
+	self->lines[self->y]->chars[self->x].chr = c;
 	++self->x;
 	if (self->y >= self->height) self->height = self->y+1;
     }
@@ -142,6 +149,22 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
     else self->x += n;
 }
 
+void VgaCanvas_finalize(VgaCanvas *self)
+{
+    for (size_t i = 0; i < self->height; ++i)
+    {
+	VgaLine *l = self->lines[i];
+	l->len = self->width;
+	uint8_t att = l->chars[l->len-1].att;
+	while (l->len > 0)
+	{
+	    if (l->chars[l->len-1].chr == 0x20 &&
+		    l->chars[l->len-2].att == att) --l->len;
+	    else break;
+	}
+    }
+}
+
 int VgaCanvas_fg(const VgaCanvas *self)
 {
     return self->att & 0x0fU;
@@ -150,6 +173,34 @@ int VgaCanvas_fg(const VgaCanvas *self)
 int VgaCanvas_bg(const VgaCanvas *self)
 {
     return self->att >> 4;
+}
+
+size_t VgaCanvas_height(const VgaCanvas *self)
+{
+    return self->height;
+}
+
+const VgaLine *VgaCanvas_line(const VgaCanvas *self, size_t lineno)
+{
+    if (lineno >= self->height) return 0;
+    return self->lines[lineno];
+}
+
+int VgaLine_len(const VgaLine *self)
+{
+    return self->len;
+}
+
+int VgaLine_fg(const VgaLine *self, int pos)
+{
+    if (pos >= self->len || pos < 0) return -1;
+    return self->chars[pos].att & 0x0fU;
+}
+
+int VgaLine_bg(const VgaLine *self, int pos)
+{
+    if (pos >= self->len || pos < 0) return -1;
+    return self->chars[pos].att >> 4;
 }
 
 void VgaCanvas_destroy(VgaCanvas *self)
