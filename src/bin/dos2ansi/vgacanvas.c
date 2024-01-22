@@ -75,9 +75,42 @@ VgaCanvas *VgaCanvas_create(int width)
 
 void VgaCanvas_put(VgaCanvas *self, char c)
 {
-    if (c == 0x0a) VgaCanvas_down(self, 1);
+    /* ignore NUL, BEL and ESC */
+    if (c == 0x00 || c == 0x07 || c == 0x1b) return;
+    /* execute BS */
+    else if (c == 0x08)
+    {
+	VgaCanvas_left(self, 1);
+	self->lines[self->y]->chars[self->x].att = self->att;
+	self->lines[self->y]->chars[self->x].chr = 0x20;
+    }
+    /* execute TAB */
+    else if (c == 0x09)
+    {
+	if (self->x == self->width)
+	{
+	    self->x = 0;
+	    VgaCanvas_down(self, 1);
+	}
+	else do
+	{
+	    self->lines[self->y]->chars[self->x].att = self->att;
+	    self->lines[self->y]->chars[self->x].chr = 0x20;
+	    ++self->x;
+	    if (self->x == self->width)
+	    {
+		self->x = 0;
+		VgaCanvas_down(self, 1);
+	    }
+	    if (self->y >= self->height) self->height = self->y+1;
+	} while (self->x % 8);
+    }
+    /* execute LF */
+    else if (c == 0x0a) VgaCanvas_down(self, 1);
+    /* execute CR */
     else if (c == 0x0d) self->x = 0;
-    else if ((unsigned char)c >= 0x20U)
+    /* put any other character to canvas */
+    else
     {
 	if (self->x == self->width)
 	{

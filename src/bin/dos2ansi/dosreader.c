@@ -112,14 +112,8 @@ int DosReader_read(VgaCanvas *canvas, FILE *file)
 		    }
 		}
 	    }
-	    else
-	    {
-		if (c == 0x0a || c == 0x0d || (unsigned char)c >= 0x20U)
-		{
-		    VgaCanvas_put(canvas, c);
-		}
-		else if (c == 0x1b) esc = -1;
-	    }
+	    else if (c == 0x1b) esc = -1;
+	    else VgaCanvas_put(canvas, c);
 	}
     }
 

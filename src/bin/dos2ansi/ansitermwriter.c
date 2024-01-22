@@ -5,6 +5,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+static const uint16_t lowascii[] = {
+    0x0020,0x263A,0x263B,0x2665,0x2666,0x2663,0x2660,0x2022,
+    0x25D8,0x25CB,0x25D9,0x2642,0x2640,0x266A,0x266B,0x263C,
+    0x25BA,0x25C4,0x2195,0x203C,0x00B6,0x00A7,0x25AC,0x21AB,
+    0x2191,0x2193,0x2192,0x2190,0x221F,0x2194,0x25B2,0x25BC
+};
+
 static const uint16_t cp437high[] = {
     0x2302,
     0x00C7,0x00FC,0x00E9,0x00E2,0x00E4,0x00E0,0x00E5,0x00E7,
@@ -143,8 +150,10 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 		fg = newfg;
 	    }
 	    unsigned char vgachr = VgaLine_chr(line, j);
-	    uint16_t unichr = vgachr >= 0x7fU ?
-		cp437high[vgachr-0x7fU] : vgachr;
+	    uint16_t unichr;
+	    if (vgachr < 0x20U) unichr = lowascii[vgachr];
+	    else if (vgachr >= 0x7fU) unichr = cp437high[vgachr-0x7fU];
+	    else unichr = vgachr;
 	    if (toutf8(file, unichr) != 0) return -1;
 	}
 	if (i == height-1)
