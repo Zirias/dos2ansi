@@ -15,6 +15,7 @@ struct VgaCanvas
     size_t x;
     size_t y;
     VgaLine **lines;
+    uint8_t tab;
     uint8_t att;
 };
 
@@ -59,8 +60,10 @@ static void expand(VgaCanvas *self)
     }
 }
 
-VgaCanvas *VgaCanvas_create(int width)
+VgaCanvas *VgaCanvas_create(int width, int tabwidth)
 {
+    if (width < 0 || tabwidth < 0
+	    || tabwidth > 0xff || tabwidth > width) return 0;
     VgaCanvas *self = xmalloc(sizeof *self);
     self->width = width;
     self->height = 0;
@@ -68,6 +71,7 @@ VgaCanvas *VgaCanvas_create(int width)
     self->x = 0;
     self->y = 0;
     self->lines = 0;
+    self->tab = tabwidth;
     self->att = 0x07;
     expand(self);
     return self;
@@ -83,26 +87,18 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	VgaCanvas_left(self, 1);
     }
     /* execute TAB */
-    else if (c == 0x09)
+    else if (c == 0x09) do
     {
 	if (self->x == self->width)
 	{
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
-	do
-	{
-	    self->lines[self->y]->chars[self->x].att = self->att;
-	    self->lines[self->y]->chars[self->x].chr = 0x20;
-	    ++self->x;
-	    if (self->x == self->width)
-	    {
-		self->x = 0;
-		VgaCanvas_down(self, 1);
-	    }
-	    if (self->y >= self->height) self->height = self->y+1;
-	} while (self->x % 8);
-    }
+	self->lines[self->y]->chars[self->x].att = self->att;
+	self->lines[self->y]->chars[self->x].chr = 0x20;
+	++self->x;
+	if (self->y >= self->height) self->height = self->y+1;
+    } while (self->x % self->tab);
     /* execute LF */
     else if (c == 0x0a) VgaCanvas_down(self, 1);
     /* execute CR */

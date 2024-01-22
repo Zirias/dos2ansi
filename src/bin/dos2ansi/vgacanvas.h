@@ -8,7 +8,7 @@
 C_CLASS_DECL(VgaCanvas);
 C_CLASS_DECL(VgaLine);
 
-VgaCanvas *VgaCanvas_create(int width);
+VgaCanvas *VgaCanvas_create(int width, int tabwidth);
 
 void VgaCanvas_put(VgaCanvas *self, char c);
 void VgaCanvas_setFg(VgaCanvas *self, char fg);

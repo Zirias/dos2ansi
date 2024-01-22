@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     dosfile = fopen(argv[1], "r");
     if (!dosfile) goto done;
 
-    canvas = VgaCanvas_create(80);
+    canvas = VgaCanvas_create(80, 8);
     if (DosReader_read(canvas, dosfile) != 0) goto done;
     fclose(dosfile);
     dosfile = 0;
