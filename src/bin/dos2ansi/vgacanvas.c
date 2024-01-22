@@ -17,6 +17,7 @@ struct VgaCanvas
     VgaLine **lines;
     uint8_t tab;
     uint8_t att;
+    uint8_t hascolor;
 };
 
 typedef struct VgaChar
@@ -73,6 +74,7 @@ VgaCanvas *VgaCanvas_create(int width, int tabwidth)
     self->lines = 0;
     self->tab = tabwidth;
     self->att = 0x07;
+    self->hascolor = 0;
     expand(self);
     return self;
 }
@@ -178,6 +180,7 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
 
 void VgaCanvas_finalize(VgaCanvas *self)
 {
+    self->hascolor = 0;
     for (size_t i = 0; i < self->height; ++i)
     {
 	VgaLine *l = self->lines[i];
@@ -187,6 +190,14 @@ void VgaCanvas_finalize(VgaCanvas *self)
 	    if (l->chars[l->len-1].chr == 0x20 &&
 		    !(l->chars[l->len-1].att & 0x70U)) --l->len;
 	    else break;
+	}
+	if (!self->hascolor) for (int i = 0; i < l->len; ++i)
+	{
+	    if (l->chars[i].att != 0x07U)
+	    {
+		self->hascolor = 1;
+		break;
+	    }
 	}
     }
 }
@@ -199,6 +210,11 @@ int VgaCanvas_fg(const VgaCanvas *self)
 int VgaCanvas_bg(const VgaCanvas *self)
 {
     return self->att >> 4;
+}
+
+int VgaCanvas_hascolor(const VgaCanvas *self)
+{
+    return self->hascolor;
 }
 
 size_t VgaCanvas_height(const VgaCanvas *self)

@@ -166,13 +166,16 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	int len = VgaLine_len(line);
 	for (int j = 0; j < len; ++j)
 	{
-	    int newbg = VgaLine_bg(line, j);
-	    int newfg = VgaLine_fg(line, j);
-	    if (newbg != bg || newfg != fg)
+	    if (VgaCanvas_hascolor(canvas))
 	    {
-		if (writeansi(file, newbg, bg, newfg, fg) != 0) return -1;
-		bg = newbg;
-		fg = newfg;
+		int newbg = VgaLine_bg(line, j);
+		int newfg = VgaLine_fg(line, j);
+		if (newbg != bg || newfg != fg)
+		{
+		    if (writeansi(file, newbg, bg, newfg, fg) != 0) return -1;
+		    bg = newbg;
+		    fg = newfg;
+		}
 	    }
 	    unsigned char vgachr = VgaLine_chr(line, j);
 	    uint16_t unichr;
@@ -181,16 +184,19 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	    else unichr = vgachr;
 	    if (toutf8(file, unichr) != 0) return -1;
 	}
-	if (i == height-1)
+	if (VgaCanvas_hascolor(canvas))
 	{
-	    if (putbuf(file, 0x1b) != 0) return -1;
-	    if (putbuf(file, '[') != 0) return -1;
-	    if (putbuf(file, 'm') != 0) return -1;
-	}
-	else
-	{
-	    if (writeansi(file, bg & 0x08U, bg, fg, fg) != 0) return -1;
-	    bg &= 0x08U;
+	    if (i == height-1)
+	    {
+		if (putbuf(file, 0x1b) != 0) return -1;
+		if (putbuf(file, '[') != 0) return -1;
+		if (putbuf(file, 'm') != 0) return -1;
+	    }
+	    else
+	    {
+		if (writeansi(file, bg & 0x08U, bg, fg, fg) != 0) return -1;
+		bg &= 0x08U;
+	    }
 	}
 	if (putbuf(file, '\n') != 0) return -1;
     }

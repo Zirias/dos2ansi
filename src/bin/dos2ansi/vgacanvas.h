@@ -21,6 +21,7 @@ void VgaCanvas_finalize(VgaCanvas *self);
 
 int VgaCanvas_fg(const VgaCanvas *self);
 int VgaCanvas_bg(const VgaCanvas *self);
+int VgaCanvas_hascolor(const VgaCanvas *self);
 
 size_t VgaCanvas_height(const VgaCanvas *self);
 const VgaLine *VgaCanvas_line(const VgaCanvas *self, size_t lineno);
