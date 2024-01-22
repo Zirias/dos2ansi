@@ -187,6 +187,11 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	    if (putbuf(file, '[') != 0) return -1;
 	    if (putbuf(file, 'm') != 0) return -1;
 	}
+	else
+	{
+	    if (writeansi(file, bg & 0x08U, bg, fg, fg) != 0) return -1;
+	    bg &= 0x08U;
+	}
 	if (putbuf(file, '\n') != 0) return -1;
     }
     return writebuf(file);

@@ -182,11 +182,10 @@ void VgaCanvas_finalize(VgaCanvas *self)
     {
 	VgaLine *l = self->lines[i];
 	l->len = self->width;
-	uint8_t att = l->chars[l->len-1].att;
 	while (l->len > 0)
 	{
 	    if (l->chars[l->len-1].chr == 0x20 &&
-		    l->chars[l->len-2].att == att) --l->len;
+		    !(l->chars[l->len-1].att & 0x70U)) --l->len;
 	    else break;
 	}
     }
