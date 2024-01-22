@@ -18,18 +18,22 @@ struct Config
     const char *outfile;
     int tabwidth;
     int width;
+    int defcolors;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-o outfile] [-t tabwidth] [-w width]\n"
+    fprintf(stderr, "Usage: %s [-d] [-o outfile] [-t tabwidth] [-w width]\n"
 	    "\t\t[infile]\n",
 	    prgname);
-    fputs("\n\t-o outfile     Write output to this file. If not given,\n"
+    fputs("\n\t-d             Use default terminal colors for VGA's gray\n"
+	    "\t               on black. When not given, these colors are set\n"
+	    "\t               explicitly.\n"
+	    "\t-o outfile     Write output to this file. If not given,\n"
 	    "\t               output goes to the standard output.\n"
-	    "\t-t tabwidth    distance of tabstop positions.\n"
+	    "\t-t tabwidth    Distance of tabstop positions.\n"
 	    "\t               min: 2, default: 8, max: width or 255\n"
-	    "\t-w width       width of the (virtual) screen\n"
+	    "\t-w width       Width of the (virtual) screen.\n"
 	    "\t               min: 16, default: 80, max: 1024\n"
 	    "\n"
 	    "\tinfile         Read input from this file. If not given,\n"
@@ -83,7 +87,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "otw";
+    const char onceflags[] = "dotw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -131,6 +135,10 @@ Config *Config_fromOpts(int argc, char **argv)
 		    case 't':
 		    case 'w':
 			if (addArg(needargs, &naidx, *o) < 0) goto error;
+			break;
+
+		    case 'd':
+			config->defcolors = 1;
 			break;
 
 		    default:
@@ -189,6 +197,11 @@ int Config_tabwidth(const Config *self)
 int Config_width(const Config *self)
 {
     return self->width;
+}
+
+int Config_defcolors(const Config *self)
+{
+    return self->defcolors;
 }
 
 void Config_destroy(Config *self)

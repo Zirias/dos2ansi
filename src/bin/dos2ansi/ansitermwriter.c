@@ -34,6 +34,7 @@ static const uint16_t cp437high[] = {
 
 static char buf[1024];
 static size_t bufsz = 0;
+static int usedefcols = 0;
 
 static int writebuf(FILE *file)
 {
@@ -82,6 +83,11 @@ static int writeansi(FILE *file, int newbg, int bg, int newfg, int fg)
 {
     char nextarg = '[';
     if (putbuf(file, 0x1b) != 0) return -1;
+    if (usedefcols && newbg == 0x00 && newfg == 0x07)
+    {
+	if (putbuf(file, nextarg) != 0) return -1;
+	goto done;
+    }
     if ((newbg & 0x08U) != (bg & 0x08U))
     {
 	if (putbuf(file, nextarg) != 0) return -1;
@@ -115,22 +121,41 @@ static int writeansi(FILE *file, int newbg, int bg, int newfg, int fg)
 	if (putbuf(file, nextarg) != 0) return -1;
 	nextarg = ';';
 	if (putbuf(file, '4') != 0) return -1;
-	if (putbuf(file, (newbg & 0x07U) + '0') != 0) return -1;
+	if (usedefcols && newbg == 0x00)
+	{
+	    if (putbuf(file, '9') != 0) return -1;
+	}
+	else if (putbuf(file, (newbg & 0x07U) + '0') != 0) return -1;
     }
     if ((newfg & 0x07U) != (fg & 0x07U))
     {
 	if (putbuf(file, nextarg) != 0) return -1;
 	nextarg = ';';
 	if (putbuf(file, '3') != 0) return -1;
-	if (putbuf(file, (newfg & 0x07U) + '0') != 0) return -1;
+	if (usedefcols && newfg == 0x07)
+	{
+	    if (putbuf(file, '9') != 0) return -1;
+	}
+	else if (putbuf(file, (newfg & 0x07U) + '0') != 0) return -1;
     }
+done:
     return putbuf(file, 'm');
+}
+
+void AnsiTermWriter_usedefcols(int arg)
+{
+    usedefcols = !!arg;
 }
 
 int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 {
     int bg = -1;
     int fg = -1;
+    if (usedefcols)
+    {
+	bg = 0x00;
+	fg = 0x07;
+    }
 
     size_t height = VgaCanvas_height(canvas);
     if (!height) return 0;

@@ -67,6 +67,7 @@ int main(int argc, char **argv)
 #endif
 	ansifile = stdout;
     }
+    if (Config_defcolors(config)) AnsiTermWriter_usedefcols(1);
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 

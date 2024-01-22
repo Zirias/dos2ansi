@@ -7,6 +7,7 @@
 
 C_CLASS_DECL(VgaCanvas);
 
+void AnsiTermWriter_usedefcols(int arg);
 int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas);
 
 #endif
