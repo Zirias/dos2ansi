@@ -81,8 +81,6 @@ void VgaCanvas_put(VgaCanvas *self, char c)
     else if (c == 0x08)
     {
 	VgaCanvas_left(self, 1);
-	self->lines[self->y]->chars[self->x].att = self->att;
-	self->lines[self->y]->chars[self->x].chr = 0x20;
     }
     /* execute TAB */
     else if (c == 0x09)
@@ -92,7 +90,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
-	else do
+	do
 	{
 	    self->lines[self->y]->chars[self->x].att = self->att;
 	    self->lines[self->y]->chars[self->x].chr = 0x20;
