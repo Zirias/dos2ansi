@@ -19,14 +19,17 @@ struct Config
     int tabwidth;
     int width;
     int defcolors;
+    int ignoreeof;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-d] [-o outfile] [-t tabwidth] [-w width]\n"
+    fprintf(stderr, "Usage: %s [-Ed] [-o outfile] [-t tabwidth] [-w width]\n"
 	    "\t\t[infile]\n",
 	    prgname);
-    fputs("\n\t-d             Use default terminal colors for VGA's gray\n"
+    fputs("\n\t-E             Ignore the DOS EOF character (0x1a) and\n"
+	    "\t               just continue reading when found.\n"
+	    "\t-d             Use default terminal colors for VGA's gray\n"
 	    "\t               on black. When not given, these colors are set\n"
 	    "\t               explicitly.\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
@@ -87,7 +90,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "dotw";
+    const char onceflags[] = "Edotw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -95,6 +98,8 @@ Config *Config_fromOpts(int argc, char **argv)
     config->outfile = 0;
     config->tabwidth = 8;
     config->width = 80;
+    config->defcolors = 0;
+    config->ignoreeof = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -135,6 +140,10 @@ Config *Config_fromOpts(int argc, char **argv)
 		    case 't':
 		    case 'w':
 			if (addArg(needargs, &naidx, *o) < 0) goto error;
+			break;
+
+		    case 'E':
+			config->ignoreeof = 1;
 			break;
 
 		    case 'd':
@@ -202,6 +211,11 @@ int Config_width(const Config *self)
 int Config_defcolors(const Config *self)
 {
     return self->defcolors;
+}
+
+int Config_ignoreeof(const Config *self)
+{
+    return self->ignoreeof;
 }
 
 void Config_destroy(Config *self)

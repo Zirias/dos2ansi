@@ -7,6 +7,7 @@
 
 C_CLASS_DECL(VgaCanvas);
 
+void DosReader_ignoreeof(int arg);
 int DosReader_read(VgaCanvas *canvas, FILE *file);
 
 #endif

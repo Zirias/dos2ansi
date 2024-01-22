@@ -42,6 +42,7 @@ int main(int argc, char **argv)
 
     canvas = VgaCanvas_create(Config_width(config), Config_tabwidth(config));
     if (!canvas) goto done;
+    if (Config_ignoreeof(config)) DosReader_ignoreeof(1);
     if (DosReader_read(canvas, dosfile) != 0) goto done;
     if (dosfile != stdin)
     {

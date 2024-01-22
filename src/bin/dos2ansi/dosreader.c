@@ -6,6 +6,12 @@
 #include <string.h>
 
 static char buf[1024];
+static int ignoreeof = 0;
+
+void DosReader_ignoreeof(int arg)
+{
+    ignoreeof = !!arg;
+}
 
 int DosReader_read(VgaCanvas *canvas, FILE *file)
 {
@@ -112,10 +118,12 @@ int DosReader_read(VgaCanvas *canvas, FILE *file)
 		    }
 		}
 	    }
+	    else if (c == 0x1a && !ignoreeof) goto eof;
 	    else if (c == 0x1b) esc = -1;
 	    else VgaCanvas_put(canvas, c);
 	}
     }
 
+eof:
     return ferror(file);
 }
