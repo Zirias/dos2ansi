@@ -1,33 +1,80 @@
 #include "ansitermwriter.h"
+#include "config.h"
 #include "dosreader.h"
 #include "vgacanvas.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#  include <io.h>
+#  include <fcntl.h>
+#endif
+
 int main(int argc, char **argv)
 {
     int rc = EXIT_FAILURE;
+    Config *config = 0;
     FILE *dosfile = 0;
+    FILE *ansifile = 0;
     VgaCanvas *canvas = 0;
 
-    if (argc <= 1) goto done;
+    config = Config_fromOpts(argc, argv);
+    if (!config) goto done;
 
-    dosfile = fopen(argv[1], "r");
-    if (!dosfile) goto done;
+    const char *infile = Config_infile(config);
+    if (infile)
+    {
+	dosfile = fopen(infile, "rb");
+	if (!dosfile)
+	{
+	    fprintf(stderr, "Error opening `%s' for reading.", infile);
+	    goto done;
+	}
+    }
+    else
+    {
+#ifdef _WIN32
+	_setmode(_fileno(stdin), _O_BINARY);
+#endif
+	dosfile = stdin;
+    }
 
-    canvas = VgaCanvas_create(80, 8);
+    canvas = VgaCanvas_create(Config_width(config), Config_tabwidth(config));
+    if (!canvas) goto done;
     if (DosReader_read(canvas, dosfile) != 0) goto done;
-    fclose(dosfile);
-    dosfile = 0;
-
+    if (dosfile != stdin)
+    {
+	fclose(dosfile);
+	dosfile = 0;
+    }
     VgaCanvas_finalize(canvas);
-    if (AnsiTermWriter_write(stdout, canvas) != 0) goto done;
+
+    const char *outfile = Config_outfile(config);
+    if (outfile)
+    {
+	ansifile = fopen(outfile, "wb");
+	if (!ansifile)
+	{
+	    fprintf(stderr, "Error opening `%s' for writing.", outfile);
+	    goto done;
+	}
+    }
+    else
+    {
+#ifdef _WIN32
+	_setmode(_fileno(stdout), _O_BINARY);
+#endif
+	ansifile = stdout;
+    }
+    if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 
 done:
-    if (dosfile) fclose(dosfile);
+    if (dosfile && dosfile != stdin) fclose(dosfile);
+    if (ansifile && ansifile != stdout) fclose(ansifile);
     VgaCanvas_destroy(canvas);
+    Config_destroy(config);
 
     return rc;
 }
