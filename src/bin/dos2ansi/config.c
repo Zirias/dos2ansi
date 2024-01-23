@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "ansitermwriter.h"
 #include "util.h"
 
 #include <errno.h>
@@ -20,15 +21,20 @@ struct Config
     int width;
     int defcolors;
     int ignoreeof;
+    int codepage;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-Ed] [-o outfile] [-t tabwidth] [-w width]\n"
-	    "\t\t[infile]\n",
+    fprintf(stderr, "Usage: %s [-Ed] [-c codepage] [-o outfile]\n"
+	    "\t\t[-t tabwidth] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-c codepage    The DOS codepage used by the input file.\n"
+	    "\t               May be prefixed with CP (any casing) and an\n"
+	    "\t               optional space or dash.\n"
+	    "\t               supported: 437, 850, 858 - default: 437\n"
 	    "\t-d             Use default terminal colors for VGA's gray\n"
 	    "\t               on black. When not given, these colors are set\n"
 	    "\t               explicitly.\n"
@@ -67,6 +73,13 @@ static int optArg(Config *config, char *args, int *idx, char *op)
     if (!*idx) return -1;
     switch (args[--*idx])
     {
+	Codepage cp;
+
+	case 'c':
+	    cp = AnsiTermWriter_cpbyname(op);
+	    if ((int)cp < 0) return -1;
+	    config->codepage = cp;
+	    break;
 	case 'o':
 	    config->outfile = op;
 	    break;
@@ -90,7 +103,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "Edotw";
+    const char onceflags[] = "Ecdotw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -100,6 +113,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->width = 80;
     config->defcolors = 0;
     config->ignoreeof = 0;
+    config->codepage = -1;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -136,6 +150,7 @@ Config *Config_fromOpts(int argc, char **argv)
 		}
 		switch (*o)
 		{
+		    case 'c':
 		    case 'o':
 		    case 't':
 		    case 'w':
@@ -160,7 +175,15 @@ Config *Config_fromOpts(int argc, char **argv)
 		}
 	    }
 	}
-	else if (optArg(config, needargs, &naidx, o) < 0)
+	else if (naidx)
+	{
+	    if (optArg(config, needargs, &naidx, o) < 0)
+	    {
+		usage(prgname);
+		goto error;
+	    }
+	}
+	else
 	{
 	    if (!haveinfile)
 	    {
@@ -216,6 +239,11 @@ int Config_defcolors(const Config *self)
 int Config_ignoreeof(const Config *self)
 {
     return self->ignoreeof;
+}
+
+int Config_codepage(const Config *self)
+{
+    return self->codepage;
 }
 
 void Config_destroy(Config *self)

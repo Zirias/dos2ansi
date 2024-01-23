@@ -69,6 +69,8 @@ int main(int argc, char **argv)
 	ansifile = stdout;
     }
     if (Config_defcolors(config)) AnsiTermWriter_usedefcols(1);
+    Codepage cp = Config_codepage(config);
+    if ((int)cp >= 0) AnsiTermWriter_usecp(cp);
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 
