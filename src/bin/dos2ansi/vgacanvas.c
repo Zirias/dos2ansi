@@ -191,9 +191,9 @@ void VgaCanvas_finalize(VgaCanvas *self)
 		    !(l->chars[l->len-1].att & 0x70U)) --l->len;
 	    else break;
 	}
-	if (!self->hascolor) for (int i = 0; i < l->len; ++i)
+	if (!self->hascolor) for (int j = 0; j < l->len; ++j)
 	{
-	    if (l->chars[i].att != 0x07U)
+	    if (l->chars[j].att != 0x07U)
 	    {
 		self->hascolor = 1;
 		break;
