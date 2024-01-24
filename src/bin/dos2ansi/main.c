@@ -9,6 +9,7 @@
 #ifdef _WIN32
 #  include <io.h>
 #  include <fcntl.h>
+#  include <windows.h>
 #endif
 
 int main(int argc, char **argv)
@@ -64,7 +65,17 @@ int main(int argc, char **argv)
     else
     {
 #ifdef _WIN32
-	_setmode(_fileno(stdout), _O_BINARY);
+	int outfd = _fileno(stdout);
+	_setmode(outfd, _O_BINARY);
+	if (_isatty(outfd))
+	{
+	    HANDLE outhdl = (HANDLE)_get_osfhandle(outfd);
+	    DWORD mode;
+	    GetConsoleMode(outhdl, &mode);
+	    mode |= 4; /* ENABLE_VIRTUAL_TERMINAL_PROCESSING */
+	    SetConsoleMode(outhdl, mode);
+	    SetConsoleOutputCP(CP_UTF8);
+	}
 #endif
 	ansifile = stdout;
     }
