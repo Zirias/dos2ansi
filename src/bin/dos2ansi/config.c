@@ -13,6 +13,14 @@
 #define STR(m) XSTR(m)
 #define XSTR(m) #m
 
+#ifdef _WIN32
+#  define strcmplc _stricmp
+#else
+#  define _POSIX_C_SOURCE 200112L
+#  include <strings.h>
+#  define strcmplc strcasecmp
+#endif
+
 struct Config
 {
     const char *infile;
@@ -22,15 +30,20 @@ struct Config
     int defcolors;
     int ignoreeof;
     int codepage;
+    int format;
+    int bom;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-Ed] [-c codepage] [-o outfile]\n"
-	    "\t\t[-t tabwidth] [-w width] [infile]\n",
+    fprintf(stderr, "Usage: %s [-BEbd] [-c codepage] [-o outfile]\n"
+	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
-    fputs("\n\t-E             Ignore the DOS EOF character (0x1a) and\n"
+    fputs("\n\t-B             Disable writing a BOM\n"
+	    "\t               (default: enabled for UTF16/UTF16LE)\n"
+	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-b             Enable writing a BOM (default see above)\n"
 	    "\t-c codepage    The DOS codepage used by the input file.\n"
 	    "\t               May be prefixed with CP (any casing) and an\n"
 	    "\t               optional space or dash.\n"
@@ -42,6 +55,13 @@ static void usage(const char *prgname)
 	    "\t               output goes to the standard output.\n"
 	    "\t-t tabwidth    Distance of tabstop positions.\n"
 	    "\t               min: 2, default: 8, max: width or 255\n"
+	    "\t-u format      Unicode output format, one of\n"
+#ifdef _WIN32
+	    "\t               UTF8 (default on terminal output),\n"
+	    "\t               UTF16 (default on pipe/file), UTF16LE\n"
+#else
+	    "\t               UTF8 (default), UTF16, UTF16LE\n"
+#endif
 	    "\t-w width       Width of the (virtual) screen.\n"
 	    "\t               min: 16, default: 80, max: 1024\n"
 	    "\n"
@@ -86,6 +106,18 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 	case 't':
 	    if (intArg(&config->tabwidth, op, 2, 255, 10) < 0) return -1;
 	    break;
+	case 'u':
+	    if (!strcmplc(op, "utf8") || !strcmplc(op, "utf-8"))
+		config->format = 0;
+	    else if (!strcmplc(op, "utf16") || !strcmplc(op, "utf-16")
+		    || !strcmplc(op, "utf16be") || !strcmplc(op, "utf-16be")
+		    || !strcmplc(op, "utf16-be") || !strcmplc(op, "utf-16-be"))
+		config->format = 1;
+	    else if (!strcmplc(op, "utf16le") || !strcmplc(op, "utf-16le")
+		    || !strcmplc(op, "utf16-le") || !strcmplc(op, "utf-16-le"))
+		config->format = 2;
+	    else return -1;
+	    break;
 	case 'w':
 	    if (intArg(&config->width, op, 16, 1024, 10) < 0) return -1;
 	    break;
@@ -103,7 +135,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "Ecdotw";
+    const char onceflags[] = "BEbcdotuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -114,6 +146,8 @@ Config *Config_fromOpts(int argc, char **argv)
     config->defcolors = 0;
     config->ignoreeof = 0;
     config->codepage = -1;
+    config->format = -1;
+    config->bom = -1;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -143,8 +177,12 @@ Config *Config_fromOpts(int argc, char **argv)
 		    int si = (int)(sip - onceflags);
 		    if (seen[si])
 		    {
-			usage(prgname);
-			goto error;
+			if (optArg(config, needargs, &naidx, o) < 0)
+			{
+			    usage(prgname);
+			    goto error;
+			}
+			else goto next;
 		    }
 		    seen[si] = 1;
 		}
@@ -153,12 +191,21 @@ Config *Config_fromOpts(int argc, char **argv)
 		    case 'c':
 		    case 'o':
 		    case 't':
+		    case 'u':
 		    case 'w':
 			if (addArg(needargs, &naidx, *o) < 0) goto error;
 			break;
 
+		    case 'B':
+			config->bom = 0;
+			break;
+
 		    case 'E':
 			config->ignoreeof = 1;
+			break;
+
+		    case 'b':
+			config->bom = 1;
 			break;
 
 		    case 'd':
@@ -244,6 +291,16 @@ int Config_ignoreeof(const Config *self)
 int Config_codepage(const Config *self)
 {
     return self->codepage;
+}
+
+int Config_format(const Config *self)
+{
+    return self->format;
+}
+
+int Config_bom(const Config *self)
+{
+    return self->bom;
 }
 
 void Config_destroy(Config *self)

@@ -53,6 +53,7 @@ int main(int argc, char **argv)
     VgaCanvas_finalize(canvas);
 
     const char *outfile = Config_outfile(config);
+    int defformat = UF_UTF8;
     if (outfile)
     {
 	ansifile = fopen(outfile, "wb");
@@ -76,12 +77,19 @@ int main(int argc, char **argv)
 	    SetConsoleMode(outhdl, mode);
 	    SetConsoleOutputCP(CP_UTF8);
 	}
+	else defformat = UF_UTF16;
 #endif
 	ansifile = stdout;
     }
     if (Config_defcolors(config)) AnsiTermWriter_usedefcols(1);
     Codepage cp = Config_codepage(config);
     if ((int)cp >= 0) AnsiTermWriter_usecp(cp);
+    int format = Config_format(config);
+    if (format < 0) format = defformat;
+    AnsiTermWriter_useformat(format);
+    int wantbom = Config_bom(config);
+    if (wantbom < 0) wantbom = format != UF_UTF8;
+    AnsiTermWriter_usebom(wantbom);
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 

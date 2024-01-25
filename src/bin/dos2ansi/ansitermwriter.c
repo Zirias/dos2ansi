@@ -85,6 +85,8 @@ static char buf[1024];
 static size_t bufsz = 0;
 static int usedefcols = 0;
 static const uint16_t *doscp = codepages[0];
+static UnicodeFormat outformat = UF_UTF8;
+static int usebom = 1;
 
 static int writebuf(FILE *file)
 {
@@ -130,72 +132,118 @@ static int toutf8(FILE *file, uint16_t c)
     return 0;
 }
 
-static int writeansi(FILE *file, int newbg, int bg, int newfg, int fg)
+static int toutf16(FILE *file, uint16_t c)
+{
+    if (putbuf(file, c >> 8) != 0) return -1;
+    if (putbuf(file, c & 0xffU) != 0) return -1;
+    return 0;
+}
+
+static int toutf16le(FILE *file, uint16_t c)
+{
+    if (putbuf(file, c & 0xffU) != 0) return -1;
+    if (putbuf(file, c >> 8) != 0) return -1;
+    return 0;
+}
+
+static int (*const outfuncs[])(FILE *, uint16_t) = {
+    toutf8,
+    toutf16,
+    toutf16le
+};
+
+static int out(FILE *file, uint16_t c)
+{
+    return outfuncs[outformat](file, c);
+}
+
+static int writeansidc(FILE *file, int newbg, int bg, int newfg, int fg,
+	int defcols)
 {
     char nextarg = '[';
-    if (putbuf(file, 0x1b) != 0) return -1;
-    if (usedefcols && newbg == 0x00 && newfg == 0x07)
+    if (out(file, 0x1b) != 0) return -1;
+    if (defcols && newbg == 0x00 && newfg == 0x07)
     {
-	if (putbuf(file, nextarg) != 0) return -1;
+	if (out(file, nextarg) != 0) return -1;
 	goto done;
     }
     if ((newbg & 0x08U) != (bg & 0x08U))
     {
-	if (putbuf(file, nextarg) != 0) return -1;
+	if (out(file, nextarg) != 0) return -1;
 	nextarg = ';';
 	if (newbg & 0x08U)
 	{
-	    if (putbuf(file, '5') != 0) return -1;
+	    if (out(file, '5') != 0) return -1;
 	}
 	else
 	{
-	    if (putbuf(file, '2') != 0) return -1;
-	    if (putbuf(file, '5') != 0) return -1;
+	    if (out(file, '2') != 0) return -1;
+	    if (out(file, '5') != 0) return -1;
 	}
     }
     if ((newfg & 0x08U) != (fg & 0x08U))
     {
-	if (putbuf(file, nextarg) != 0) return -1;
+	if (out(file, nextarg) != 0) return -1;
 	nextarg = ';';
 	if (newfg & 0x08U)
 	{
-	    if (putbuf(file, '1') != 0) return -1;
+	    if (out(file, '1') != 0) return -1;
 	}
 	else
 	{
-	    if (putbuf(file, '2') != 0) return -1;
-	    if (putbuf(file, '2') != 0) return -1;
+	    if (out(file, '2') != 0) return -1;
+	    if (out(file, '2') != 0) return -1;
 	}
     }
     if ((newbg & 0x07U) != (bg & 0x07U))
     {
-	if (putbuf(file, nextarg) != 0) return -1;
+	if (out(file, nextarg) != 0) return -1;
 	nextarg = ';';
-	if (putbuf(file, '4') != 0) return -1;
-	if (usedefcols && newbg == 0x00)
+	if (out(file, '4') != 0) return -1;
+	if (defcols && newbg == 0x00)
 	{
-	    if (putbuf(file, '9') != 0) return -1;
+	    if (out(file, '9') != 0) return -1;
 	}
-	else if (putbuf(file, (newbg & 0x07U) + '0') != 0) return -1;
+	else if (out(file, (newbg & 0x07U) + '0') != 0) return -1;
     }
     if ((newfg & 0x07U) != (fg & 0x07U))
     {
-	if (putbuf(file, nextarg) != 0) return -1;
+	if (out(file, nextarg) != 0) return -1;
 	nextarg = ';';
-	if (putbuf(file, '3') != 0) return -1;
-	if (usedefcols && newfg == 0x07)
+	if (out(file, '3') != 0) return -1;
+	if (defcols && newfg == 0x07)
 	{
-	    if (putbuf(file, '9') != 0) return -1;
+	    if (out(file, '9') != 0) return -1;
 	}
-	else if (putbuf(file, (newfg & 0x07U) + '0') != 0) return -1;
+	else if (out(file, (newfg & 0x07U) + '0') != 0) return -1;
     }
 done:
-    return putbuf(file, 'm');
+    return out(file, 'm');
+}
+
+static int writeansi(FILE *file, int newbg, int bg, int newfg, int fg)
+{
+    return writeansidc(file, newbg, bg, newfg, fg, usedefcols);
 }
 
 void AnsiTermWriter_usedefcols(int arg)
 {
     usedefcols = !!arg;
+}
+
+void AnsiTermWriter_usecp(Codepage cp)
+{
+    doscp = codepages[cp];
+}
+
+void AnsiTermWriter_useformat(UnicodeFormat format)
+{
+    outformat = format;
+}
+
+void AnsiTermWriter_usebom(int arg)
+{
+    usebom = !!arg;
 }
 
 Codepage AnsiTermWriter_cpbyname(const char *name)
@@ -215,11 +263,6 @@ Codepage AnsiTermWriter_cpbyname(const char *name)
     return -1;
 }
 
-void AnsiTermWriter_usecp(Codepage cp)
-{
-    doscp = codepages[cp];
-}
-
 int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 {
     int bg = -1;
@@ -232,6 +275,8 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 
     size_t height = VgaCanvas_height(canvas);
     if (!height) return 0;
+
+    if (usebom && out(file, 0xfeffU) != 0) return -1;
 
     for (size_t i = 0; i < height; ++i)
     {
@@ -256,23 +301,18 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	    else if (vgachr >= 0x80U) unichr = doscp[vgachr-0x80U];
 	    else if (vgachr == 0x7fU) unichr = 0x2302U;
 	    else unichr = vgachr;
-	    if (toutf8(file, unichr) != 0) return -1;
+	    if (out(file, unichr) != 0) return -1;
 	}
 	if (VgaCanvas_hascolor(canvas))
 	{
-	    if (i == height-1)
-	    {
-		if (putbuf(file, 0x1b) != 0) return -1;
-		if (putbuf(file, '[') != 0) return -1;
-		if (putbuf(file, 'm') != 0) return -1;
-	    }
-	    else
+	    if (i < height-1)
 	    {
 		if (writeansi(file, bg & 0x08U, bg, fg, fg) != 0) return -1;
 		bg &= 0x08U;
 	    }
+	    else if (writeansidc(file, 0, bg, 0x07U, fg, 1) != 0) return -1;
 	}
-	if (putbuf(file, '\n') != 0) return -1;
+	if (out(file, '\n') != 0) return -1;
     }
     return writebuf(file);
 }
