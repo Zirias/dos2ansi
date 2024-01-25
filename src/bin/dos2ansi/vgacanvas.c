@@ -7,6 +7,11 @@
 
 #define LINESCHUNK 32
 
+#define FL_BOLD 1
+#define FL_BLINK 2
+#define FL_REVERSE 4
+#define FL_HIDDEN 8
+
 struct VgaCanvas
 {
     size_t width;
@@ -16,7 +21,9 @@ struct VgaCanvas
     size_t y;
     VgaLine **lines;
     uint8_t tab;
-    uint8_t att;
+    uint8_t fg;
+    uint8_t bg;
+    uint8_t flags;
     uint8_t hascolor;
 };
 
@@ -73,10 +80,37 @@ VgaCanvas *VgaCanvas_create(int width, int tabwidth)
     self->y = 0;
     self->lines = 0;
     self->tab = tabwidth;
-    self->att = 0x07;
+    self->fg = 7U;
+    self->bg = 0;
+    self->flags = 0;
     self->hascolor = 0;
     expand(self);
     return self;
+}
+
+static uint8_t VgaCanvas_att(const VgaCanvas *self)
+{
+    uint8_t fg = self->fg;
+    uint8_t bg = self->bg;
+    if (self->flags & FL_REVERSE)
+    {
+	if (self->flags & FL_HIDDEN)
+	{
+	    bg = fg;
+	}
+	else
+	{
+	    fg = self->bg;
+	    bg = self->fg;
+	}
+    }
+    else if (self->flags & FL_HIDDEN)
+    {
+	fg = bg;
+    }
+    if (self->flags & FL_BOLD) fg |= 8U;
+    if (self->flags & FL_BLINK) bg |= 8U;
+    return (bg << 4) | fg;
 }
 
 void VgaCanvas_put(VgaCanvas *self, char c)
@@ -96,7 +130,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
-	self->lines[self->y]->chars[self->x].att = self->att;
+	self->lines[self->y]->chars[self->x].att = VgaCanvas_att(self);
 	self->lines[self->y]->chars[self->x].chr = 0x20;
 	++self->x;
 	if (self->y >= self->height) self->height = self->y+1;
@@ -113,7 +147,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
-	self->lines[self->y]->chars[self->x].att = self->att;
+	self->lines[self->y]->chars[self->x].att = VgaCanvas_att(self);
 	self->lines[self->y]->chars[self->x].chr = c;
 	++self->x;
 	if (self->y >= self->height) self->height = self->y+1;
@@ -122,14 +156,43 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 
 void VgaCanvas_setFg(VgaCanvas *self, char fg)
 {
-    self->att &= 0xf0U;
-    self->att |= (unsigned char)fg & 0xfU;
+    self->fg = fg & 7;
 }
 
 void VgaCanvas_setBg(VgaCanvas *self, char bg)
 {
-    self->att &= 0xfU;
-    self->att |= ((unsigned char)bg & 0xfU) << 4;
+    self->bg = bg & 7;
+}
+
+void VgaCanvas_setBold(VgaCanvas *self, int bold)
+{
+    if (bold) self->flags |= FL_BOLD;
+    else self->flags &= ~(uint8_t)FL_BOLD;
+}
+
+void VgaCanvas_setBlink(VgaCanvas *self, int bold)
+{
+    if (bold) self->flags |= FL_BLINK;
+    else self->flags &= ~(uint8_t)FL_BLINK;
+}
+
+void VgaCanvas_setReverse(VgaCanvas *self, int bold)
+{
+    if (bold) self->flags |= FL_REVERSE;
+    else self->flags &= ~(uint8_t)FL_REVERSE;
+}
+
+void VgaCanvas_setHidden(VgaCanvas *self, int bold)
+{
+    if (bold) self->flags |= FL_HIDDEN;
+    else self->flags &= ~(uint8_t)FL_HIDDEN;
+}
+
+void VgaCanvas_resetAttr(VgaCanvas *self)
+{
+    self->fg = 7U;
+    self->bg = 0;
+    self->flags = 0;
 }
 
 void VgaCanvas_up(VgaCanvas *self, unsigned n)
@@ -200,16 +263,6 @@ void VgaCanvas_finalize(VgaCanvas *self)
 	    }
 	}
     }
-}
-
-int VgaCanvas_fg(const VgaCanvas *self)
-{
-    return self->att & 0x0fU;
-}
-
-int VgaCanvas_bg(const VgaCanvas *self)
-{
-    return self->att >> 4;
 }
 
 int VgaCanvas_hascolor(const VgaCanvas *self)

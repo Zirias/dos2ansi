@@ -49,46 +49,61 @@ int DosReader_read(VgaCanvas *canvas, FILE *file)
 		    }
 		    else if (c == 'm')
 		    {
-			int fg = VgaCanvas_fg(canvas);
-			int bg = VgaCanvas_bg(canvas);
 			for (int i = 0; i < esc; ++i)
 			{
 			    if (escargs[i] == 0)
 			    {
-				fg = 0x07;
-				bg = 0x00;
+				VgaCanvas_resetAttr(canvas);
 			    }
 			    else if (escargs[i] == 1)
 			    {
-				fg |= 0x08;
+				VgaCanvas_setBold(canvas, 1);
 			    }
 			    else if (escargs[i] == 2 || escargs[i] == 22)
 			    {
-				fg &= 0x07;
+				VgaCanvas_setBold(canvas, 0);
 			    }
 			    else if (escargs[i] == 5 || escargs[i] == 6)
 			    {
-				bg |= 0x08;
+				VgaCanvas_setBlink(canvas, 1);
 			    }
 			    else if (escargs[i] == 25)
 			    {
-				bg &= 0x07;
+				VgaCanvas_setBlink(canvas, 0);
+			    }
+			    else if (escargs[i] == 7)
+			    {
+				VgaCanvas_setReverse(canvas, 1);
+			    }
+			    else if (escargs[i] == 27)
+			    {
+				VgaCanvas_setReverse(canvas, 0);
+			    }
+			    else if (escargs[i] == 8)
+			    {
+				VgaCanvas_setHidden(canvas, 1);
+			    }
+			    else if (escargs[i] == 28)
+			    {
+				VgaCanvas_setHidden(canvas, 0);
 			    }
 			    else if (escargs[i] >= 30 && escargs[i] <= 37)
 			    {
-				fg = (fg & 0x08) | (escargs[i] - 30);
+				VgaCanvas_setFg(canvas, escargs[i] - 30);
 			    }
 			    else if (escargs[i] == 39)
 			    {
-				fg = 0x07;
+				VgaCanvas_setFg(canvas, 7);
 			    }
 			    else if (escargs[i] >= 40 && escargs[i] <= 47)
 			    {
-				bg = (bg & 0x08) | (escargs[i] - 40);
+				VgaCanvas_setBg(canvas, escargs[i] - 40);
+			    }
+			    else if (escargs[i] == 49)
+			    {
+				VgaCanvas_setBg(canvas, 0);
 			    }
 			}
-			VgaCanvas_setFg(canvas, fg);
-			VgaCanvas_setBg(canvas, bg);
 			esc = 0;
 		    }
 		    else
