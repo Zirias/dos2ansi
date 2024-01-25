@@ -1,10 +1,10 @@
 # dos2ansi - a tool to convert MS-DOS/ANSI.SYS text files to modern terminals
 
 This tool converts MS-DOS text files using ANSI.SYS escape sequences to a
-format a modern terminal can display. The output will use UTF-8 encoding of
-characters and only ANSI SGR escape sequences to set basic foreground and
+format a modern terminal can display. The output will use a Unicode encoding
+of characters and only ANSI SGR escape sequences to set basic foreground and
 background colors, intensity and blinking attribute. The input is expected to
-use CP-437 encoding.
+use CP-437 or one of the other supported DOS codepages.
 
 ## Features:
 
@@ -17,9 +17,12 @@ use CP-437 encoding.
   it doesn't start some ANSI.SYS sequence)
 * Interprets control characters not supported by MS-DOS as symbols from CP437
 * Stops reading at the MS-DOS EOL character (0x1a), this can also be disabled
+* Input codepage can be selected, currently supported: 437, 850 and 858
+* Output format can be UTF-8, UTF-16 or UTF-16LE, with or without a BOM
 
 ## Maybe planned:
 
-* Support alternative MS-DOS codepages for input
-* Support UTF-16 for output
+* Output to terminal using native APIs (Windows) or termcap/terminfo
+  (non-Windows) instead of fixed ANSI sequences
+* Support more MS-DOS codepages
 
