@@ -81,7 +81,6 @@ int main(int argc, char **argv)
 #endif
 	ansifile = stdout;
     }
-    if (Config_defcolors(config)) AnsiTermWriter_usedefcols(1);
     Codepage cp = Config_codepage(config);
     if ((int)cp >= 0) AnsiTermWriter_usecp(cp);
     int format = Config_format(config);
@@ -90,6 +89,8 @@ int main(int argc, char **argv)
     int wantbom = Config_bom(config);
     if (wantbom < 0) wantbom = format != UF_UTF8;
     AnsiTermWriter_usebom(wantbom);
+    AnsiTermWriter_usecolors(Config_colors(config));
+    AnsiTermWriter_usedefcols(Config_defcolors(config));
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 

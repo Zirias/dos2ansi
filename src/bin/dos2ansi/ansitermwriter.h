@@ -19,6 +19,7 @@ typedef enum UnicodeFormat {
     UF_UTF16BE
 } UnicodeFormat;
 
+void AnsiTermWriter_usecolors(int arg);
 void AnsiTermWriter_usedefcols(int arg);
 void AnsiTermWriter_usecp(Codepage cp);
 void AnsiTermWriter_useformat(UnicodeFormat format);

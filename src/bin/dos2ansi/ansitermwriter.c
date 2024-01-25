@@ -83,6 +83,7 @@ static const char cpnames[][4] = {
 
 static char buf[1024];
 static size_t bufsz = 0;
+static int usecolors = 1;
 static int usedefcols = 0;
 static const uint16_t *doscp = codepages[0];
 static UnicodeFormat outformat = UF_UTF8;
@@ -226,6 +227,11 @@ static int writeansi(FILE *file, int newbg, int bg, int newfg, int fg)
     return writeansidc(file, newbg, bg, newfg, fg, usedefcols);
 }
 
+void AnsiTermWriter_usecolors(int arg)
+{
+    usecolors = !!arg;
+}
+
 void AnsiTermWriter_usedefcols(int arg)
 {
     usedefcols = !!arg;
@@ -284,7 +290,7 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	int len = VgaLine_len(line);
 	for (int j = 0; j < len; ++j)
 	{
-	    if (VgaCanvas_hascolor(canvas))
+	    if (usecolors && VgaCanvas_hascolor(canvas))
 	    {
 		int newbg = VgaLine_bg(line, j);
 		int newfg = VgaLine_fg(line, j);
@@ -303,7 +309,7 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	    else unichr = vgachr;
 	    if (out(file, unichr) != 0) return -1;
 	}
-	if (VgaCanvas_hascolor(canvas))
+	if (usecolors && VgaCanvas_hascolor(canvas))
 	{
 	    if (i < height-1)
 	    {

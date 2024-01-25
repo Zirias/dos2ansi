@@ -32,15 +32,17 @@ struct Config
     int codepage;
     int format;
     int bom;
+    int colors;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BEbd] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCEbd] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
 	    "\t               (default: enabled for UTF16/UTF16LE)\n"
+	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
 	    "\t-b             Enable writing a BOM (default see above)\n"
@@ -135,7 +137,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BEbcdotuw";
+    const char onceflags[] = "BCEbcdotuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -148,6 +150,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->codepage = -1;
     config->format = -1;
     config->bom = -1;
+    config->colors = 1;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -198,6 +201,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'B':
 			config->bom = 0;
+			break;
+
+		    case 'C':
+			config->colors = 0;
 			break;
 
 		    case 'E':
@@ -301,6 +308,11 @@ int Config_format(const Config *self)
 int Config_bom(const Config *self)
 {
     return self->bom;
+}
+
+int Config_colors(const Config *self)
+{
+    return self->colors;
 }
 
 void Config_destroy(Config *self)

@@ -15,6 +15,7 @@ int Config_ignoreeof(const Config *self);
 int Config_codepage(const Config *self);
 int Config_format(const Config *self);
 int Config_bom(const Config *self);
+int Config_colors(const Config *self);
 void Config_destroy(Config *self);
 
 #endif
