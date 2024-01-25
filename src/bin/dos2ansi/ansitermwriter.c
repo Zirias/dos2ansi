@@ -123,7 +123,8 @@ static int toutf8(FILE *file, uint16_t c)
     else
     {
 	if (putbuf(file, 0xe0U | (hb >> 4)) != 0) return -1;
-	if (putbuf(file, 0x80U | (hb << 2) | (lb >> 6)) != 0) return -1;
+	if (putbuf(file,  0x80U | ((hb << 2) & 0x3fU)
+		    | (lb >> 6)) != 0) return -1;
 	if (putbuf(file, 0x80U | (lb & 0x3fU)) != 0) return -1;
     }
     return 0;
