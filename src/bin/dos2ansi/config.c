@@ -33,11 +33,12 @@ struct Config
     int format;
     int bom;
     int colors;
+    int test;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEbd] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCETbd] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -45,6 +46,9 @@ static void usage(const char *prgname)
 	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-T             Test mode, do not read any input, instead\n"
+	    "\t               use some fixed 8bit encoding table.\n"
+	    "\t               Implies -E.\n"
 	    "\t-b             Enable writing a BOM (default see above)\n"
 	    "\t-c codepage    The DOS codepage used by the input file.\n"
 	    "\t               May be prefixed with CP (any casing) and an\n"
@@ -137,7 +141,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEbcdotuw";
+    const char onceflags[] = "BCETbcdotuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -151,6 +155,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->format = -1;
     config->bom = -1;
     config->colors = 1;
+    config->test = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -208,6 +213,11 @@ Config *Config_fromOpts(int argc, char **argv)
 			break;
 
 		    case 'E':
+			config->ignoreeof = 1;
+			break;
+
+		    case 'T':
+			config->test = 1;
 			config->ignoreeof = 1;
 			break;
 
@@ -313,6 +323,11 @@ int Config_bom(const Config *self)
 int Config_colors(const Config *self)
 {
     return self->colors;
+}
+
+int Config_test(const Config *self)
+{
+    return self->test;
 }
 
 void Config_destroy(Config *self)

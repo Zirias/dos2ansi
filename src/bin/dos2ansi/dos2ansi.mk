@@ -3,6 +3,7 @@ dos2ansi_MODULES:=	ansitermwriter \
 			dosreader \
 			main \
 			stream \
+			testwriter \
 			util \
 			vgacanvas
 

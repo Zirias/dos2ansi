@@ -2,6 +2,7 @@
 #include "config.h"
 #include "dosreader.h"
 #include "stream.h"
+#include "testwriter.h"
 #include "vgacanvas.h"
 
 #include <stdio.h>
@@ -24,23 +25,31 @@ int main(int argc, char **argv)
     config = Config_fromOpts(argc, argv);
     if (!config) goto done;
 
-    const char *infile = Config_infile(config);
-    if (infile)
+    if (Config_test(config))
     {
-	FILE *f = fopen(infile, "rb");
-	if (!f)
-	{
-	    fprintf(stderr, "Error opening `%s' for reading.", infile);
-	    goto done;
-	}
-	dosfile = Stream_createFile(f);
+	dosfile = Stream_createMemory();
+	TestWriter_write(dosfile);
     }
     else
     {
+	const char *infile = Config_infile(config);
+	if (infile)
+	{
+	    FILE *f = fopen(infile, "rb");
+	    if (!f)
+	    {
+		fprintf(stderr, "Error opening `%s' for reading.", infile);
+		goto done;
+	    }
+	    dosfile = Stream_createFile(f);
+	}
+	else
+	{
 #ifdef _WIN32
-	_setmode(_fileno(stdin), _O_BINARY);
+	    _setmode(_fileno(stdin), _O_BINARY);
 #endif
-	dosfile = Stream_createFile(stdin);
+	    dosfile = Stream_createFile(stdin);
+	}
     }
 
     canvas = VgaCanvas_create(Config_width(config), Config_tabwidth(config));
