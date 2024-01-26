@@ -168,7 +168,7 @@ static int writeansidc(Stream *stream, int newbg, int bg, int newfg, int fg,
 	if (out(stream, nextarg) != 0) return -1;
 	goto done;
     }
-    if ((newbg & 0x08U) != (bg & 0x08U))
+    if (bg < 0 || (newbg & 0x08U) != (bg & 0x08U))
     {
 	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
@@ -182,7 +182,7 @@ static int writeansidc(Stream *stream, int newbg, int bg, int newfg, int fg,
 	    if (out(stream, '5') != 0) return -1;
 	}
     }
-    if ((newfg & 0x08U) != (fg & 0x08U))
+    if (fg < 0 || (newfg & 0x08U) != (fg & 0x08U))
     {
 	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
@@ -196,7 +196,7 @@ static int writeansidc(Stream *stream, int newbg, int bg, int newfg, int fg,
 	    if (out(stream, '2') != 0) return -1;
 	}
     }
-    if ((newbg & 0x07U) != (bg & 0x07U))
+    if (bg < 0 || (newbg & 0x07U) != (bg & 0x07U))
     {
 	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
@@ -207,7 +207,7 @@ static int writeansidc(Stream *stream, int newbg, int bg, int newfg, int fg,
 	}
 	else if (out(stream, (newbg & 0x07U) + '0') != 0) return -1;
     }
-    if ((newfg & 0x07U) != (fg & 0x07U))
+    if (fg < 0 || (newfg & 0x07U) != (fg & 0x07U))
     {
 	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
