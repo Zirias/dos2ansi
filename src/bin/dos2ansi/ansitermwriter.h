@@ -23,6 +23,7 @@ void AnsiTermWriter_usedefcols(int arg);
 void AnsiTermWriter_usecp(Codepage cp);
 void AnsiTermWriter_useformat(UnicodeFormat format);
 void AnsiTermWriter_usebom(int arg);
+void AnsiTermWriter_crlf(int arg);
 
 Codepage AnsiTermWriter_cpbyname(const char *name);
 int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas);

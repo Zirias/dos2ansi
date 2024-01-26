@@ -88,6 +88,7 @@ static int usedefcols = 0;
 static const uint16_t *doscp = codepages[0];
 static UnicodeFormat outformat = UF_UTF8;
 static int usebom = 1;
+static int crlf = 0;
 
 static int writebuf(Stream *stream)
 {
@@ -252,6 +253,11 @@ void AnsiTermWriter_usebom(int arg)
     usebom = !!arg;
 }
 
+void AnsiTermWriter_crlf(int arg)
+{
+    crlf = !!arg;
+}
+
 Codepage AnsiTermWriter_cpbyname(const char *name)
 {
     if ((name[0] == 'c' || name[0] == 'C')
@@ -318,6 +324,7 @@ int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 	    }
 	    else if (writeansidc(stream, 0, bg, 0x07U, fg, 1) != 0) return -1;
 	}
+	if (crlf && out(stream, '\r') != 0) return -1;
 	if (out(stream, '\n') != 0) return -1;
     }
     return writebuf(stream);

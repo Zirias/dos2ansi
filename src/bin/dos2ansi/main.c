@@ -98,6 +98,7 @@ int main(int argc, char **argv)
     int wantbom = Config_bom(config);
     if (wantbom < 0) wantbom = format != UF_UTF8;
     AnsiTermWriter_usebom(wantbom);
+    AnsiTermWriter_crlf(Config_crlf(config));
     AnsiTermWriter_usecolors(Config_colors(config));
     AnsiTermWriter_usedefcols(Config_defcolors(config));
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;

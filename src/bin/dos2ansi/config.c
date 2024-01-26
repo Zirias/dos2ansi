@@ -34,11 +34,12 @@ struct Config
     int bom;
     int colors;
     int test;
+    int crlf;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCETbd] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCERTbdr] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -46,6 +47,8 @@ static void usage(const char *prgname)
 	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-R             Line endings without CR (Unix format,\n"
+	    "\t               default on non-Windows)\n"
 	    "\t-T             Test mode, do not read any input, instead\n"
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
@@ -59,6 +62,8 @@ static void usage(const char *prgname)
 	    "\t               explicitly.\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
 	    "\t               output goes to the standard output.\n"
+	    "\t-r             Line endings with CR (DOS format,\n"
+	    "\t               default on Windows)\n"
 	    "\t-t tabwidth    Distance of tabstop positions.\n"
 	    "\t               min: 2, default: 8, max: width or 255\n"
 	    "\t-u format      Unicode output format, one of\n"
@@ -141,7 +146,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCETbcdotuw";
+    const char onceflags[] = "BCERTbcdortuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -156,6 +161,11 @@ Config *Config_fromOpts(int argc, char **argv)
     config->bom = -1;
     config->colors = 1;
     config->test = 0;
+#ifdef _WIN32
+    config->crlf = 1;
+#else
+    config->crlf = 0;
+#endif
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -216,6 +226,10 @@ Config *Config_fromOpts(int argc, char **argv)
 			config->ignoreeof = 1;
 			break;
 
+		    case 'R':
+			config->crlf = 0;
+			break;
+
 		    case 'T':
 			config->test = 1;
 			config->ignoreeof = 1;
@@ -227,6 +241,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'd':
 			config->defcolors = 1;
+			break;
+
+		    case 'r':
+			config->crlf = 1;
 			break;
 
 		    default:
@@ -328,6 +346,11 @@ int Config_colors(const Config *self)
 int Config_test(const Config *self)
 {
     return self->test;
+}
+
+int Config_crlf(const Config *self)
+{
+    return self->crlf;
 }
 
 void Config_destroy(Config *self)
