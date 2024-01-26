@@ -35,11 +35,12 @@ struct Config
     int colors;
     int test;
     int crlf;
+    int realpipe;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCERTbdr] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCERTbdpr] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -62,6 +63,8 @@ static void usage(const char *prgname)
 	    "\t               explicitly.\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
 	    "\t               output goes to the standard output.\n"
+	    "\t-p             Use a real pipe bar symbol instead of the\n"
+	    "\t               broken bar as in most VGA fonts.\n"
 	    "\t-r             Line endings with CR (DOS format,\n"
 	    "\t               default on Windows)\n"
 	    "\t-t tabwidth    Distance of tabstop positions.\n"
@@ -146,7 +149,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCERTbcdortuw";
+    const char onceflags[] = "BCERTbcdoprtuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -166,6 +169,7 @@ Config *Config_fromOpts(int argc, char **argv)
 #else
     config->crlf = 0;
 #endif
+    config->realpipe = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -241,6 +245,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'd':
 			config->defcolors = 1;
+			break;
+
+		    case 'p':
+			config->realpipe = 1;
 			break;
 
 		    case 'r':
@@ -351,6 +359,11 @@ int Config_test(const Config *self)
 int Config_crlf(const Config *self)
 {
     return self->crlf;
+}
+
+int Config_realpipe(const Config *self)
+{
+    return self->realpipe;
 }
 
 void Config_destroy(Config *self)

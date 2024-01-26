@@ -101,6 +101,7 @@ int main(int argc, char **argv)
     AnsiTermWriter_crlf(Config_crlf(config));
     AnsiTermWriter_usecolors(Config_colors(config));
     AnsiTermWriter_usedefcols(Config_defcolors(config));
+    AnsiTermWriter_realpipe(Config_realpipe(config));
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 
