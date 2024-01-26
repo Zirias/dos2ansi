@@ -3,8 +3,7 @@
 
 #include "decl.h"
 
-#include <stdio.h>
-
+C_CLASS_DECL(Stream);
 C_CLASS_DECL(VgaCanvas);
 
 typedef enum Codepage {
@@ -26,6 +25,6 @@ void AnsiTermWriter_useformat(UnicodeFormat format);
 void AnsiTermWriter_usebom(int arg);
 
 Codepage AnsiTermWriter_cpbyname(const char *name);
-int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas);
+int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas);
 
 #endif

@@ -3,11 +3,10 @@
 
 #include "decl.h"
 
-#include <stdio.h>
-
+C_CLASS_DECL(Stream);
 C_CLASS_DECL(VgaCanvas);
 
 void DosReader_ignoreeof(int arg);
-int DosReader_read(VgaCanvas *canvas, FILE *file);
+int DosReader_read(VgaCanvas *canvas, Stream *stream);
 
 #endif

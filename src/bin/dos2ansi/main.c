@@ -1,6 +1,7 @@
 #include "ansitermwriter.h"
 #include "config.h"
 #include "dosreader.h"
+#include "stream.h"
 #include "vgacanvas.h"
 
 #include <stdio.h>
@@ -16,8 +17,8 @@ int main(int argc, char **argv)
 {
     int rc = EXIT_FAILURE;
     Config *config = 0;
-    FILE *dosfile = 0;
-    FILE *ansifile = 0;
+    Stream *dosfile = 0;
+    Stream *ansifile = 0;
     VgaCanvas *canvas = 0;
 
     config = Config_fromOpts(argc, argv);
@@ -26,42 +27,41 @@ int main(int argc, char **argv)
     const char *infile = Config_infile(config);
     if (infile)
     {
-	dosfile = fopen(infile, "rb");
-	if (!dosfile)
+	FILE *f = fopen(infile, "rb");
+	if (!f)
 	{
 	    fprintf(stderr, "Error opening `%s' for reading.", infile);
 	    goto done;
 	}
+	dosfile = Stream_createFile(f);
     }
     else
     {
 #ifdef _WIN32
 	_setmode(_fileno(stdin), _O_BINARY);
 #endif
-	dosfile = stdin;
+	dosfile = Stream_createFile(stdin);
     }
 
     canvas = VgaCanvas_create(Config_width(config), Config_tabwidth(config));
     if (!canvas) goto done;
     if (Config_ignoreeof(config)) DosReader_ignoreeof(1);
     if (DosReader_read(canvas, dosfile) != 0) goto done;
-    if (dosfile != stdin)
-    {
-	fclose(dosfile);
-	dosfile = 0;
-    }
+    Stream_destroy(dosfile);
+    dosfile = 0;
     VgaCanvas_finalize(canvas);
 
     const char *outfile = Config_outfile(config);
     int defformat = UF_UTF8;
     if (outfile)
     {
-	ansifile = fopen(outfile, "wb");
-	if (!ansifile)
+	FILE *f = fopen(outfile, "wb");
+	if (!f)
 	{
 	    fprintf(stderr, "Error opening `%s' for writing.", outfile);
 	    goto done;
 	}
+	ansifile = Stream_createFile(f);
     }
     else
     {
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 	}
 	else defformat = UF_UTF16;
 #endif
-	ansifile = stdout;
+	ansifile = Stream_createFile(stdout);
     }
     Codepage cp = Config_codepage(config);
     if ((int)cp >= 0) AnsiTermWriter_usecp(cp);
@@ -95,8 +95,8 @@ int main(int argc, char **argv)
     rc = EXIT_SUCCESS;
 
 done:
-    if (dosfile && dosfile != stdin) fclose(dosfile);
-    if (ansifile && ansifile != stdout) fclose(ansifile);
+    Stream_destroy(dosfile);
+    Stream_destroy(ansifile);
     VgaCanvas_destroy(canvas);
     Config_destroy(config);
 

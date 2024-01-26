@@ -1,9 +1,9 @@
 #include "ansitermwriter.h"
 
+#include "stream.h"
 #include "vgacanvas.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 static const uint16_t lowascii[] = {
@@ -89,13 +89,13 @@ static const uint16_t *doscp = codepages[0];
 static UnicodeFormat outformat = UF_UTF8;
 static int usebom = 1;
 
-static int writebuf(FILE *file)
+static int writebuf(Stream *stream)
 {
     if (!bufsz) return 0;
     size_t bufpos = 0;
     while (bufpos < bufsz)
     {
-	size_t written = fwrite(buf+bufpos, 1, bufsz-bufpos, file);
+	size_t written = Stream_write(stream, buf+bufpos, bufsz-bufpos);
 	if (!written) return -1;
 	bufpos += written;
     }
@@ -103,128 +103,128 @@ static int writebuf(FILE *file)
     return 0;
 }
 
-static int putbuf(FILE *file, char c)
+static int putbuf(Stream *stream, char c)
 {
     if (bufsz == sizeof buf)
     {
-	if (writebuf(file) != 0) return -1;
+	if (writebuf(stream) != 0) return -1;
     }
     buf[bufsz++] = c;
     return 0;
 }
 
-static int toutf8(FILE *file, uint16_t c)
+static int toutf8(Stream *stream, uint16_t c)
 {
-    if (c < 0x80) return putbuf(file, c);
+    if (c < 0x80) return putbuf(stream, c);
     unsigned char lb = c & 0xff;
     unsigned char hb = c >> 8;
     if (c < 0x800)
     {
-	if (putbuf(file, 0xc0U | (hb << 2) | (lb >> 6)) != 0) return -1;
-	if (putbuf(file, 0x80U | (lb & 0x3fU)) != 0) return -1;
+	if (putbuf(stream, 0xc0U | (hb << 2) | (lb >> 6)) != 0) return -1;
+	if (putbuf(stream, 0x80U | (lb & 0x3fU)) != 0) return -1;
     }
     else
     {
-	if (putbuf(file, 0xe0U | (hb >> 4)) != 0) return -1;
-	if (putbuf(file,  0x80U | ((hb << 2) & 0x3fU)
+	if (putbuf(stream, 0xe0U | (hb >> 4)) != 0) return -1;
+	if (putbuf(stream,  0x80U | ((hb << 2) & 0x3fU)
 		    | (lb >> 6)) != 0) return -1;
-	if (putbuf(file, 0x80U | (lb & 0x3fU)) != 0) return -1;
+	if (putbuf(stream, 0x80U | (lb & 0x3fU)) != 0) return -1;
     }
     return 0;
 }
 
-static int toutf16(FILE *file, uint16_t c)
+static int toutf16(Stream *stream, uint16_t c)
 {
-    if (putbuf(file, c >> 8) != 0) return -1;
-    if (putbuf(file, c & 0xffU) != 0) return -1;
+    if (putbuf(stream, c >> 8) != 0) return -1;
+    if (putbuf(stream, c & 0xffU) != 0) return -1;
     return 0;
 }
 
-static int toutf16le(FILE *file, uint16_t c)
+static int toutf16le(Stream *stream, uint16_t c)
 {
-    if (putbuf(file, c & 0xffU) != 0) return -1;
-    if (putbuf(file, c >> 8) != 0) return -1;
+    if (putbuf(stream, c & 0xffU) != 0) return -1;
+    if (putbuf(stream, c >> 8) != 0) return -1;
     return 0;
 }
 
-static int (*const outfuncs[])(FILE *, uint16_t) = {
+static int (*const outfuncs[])(Stream *, uint16_t) = {
     toutf8,
     toutf16,
     toutf16le
 };
 
-static int out(FILE *file, uint16_t c)
+static int out(Stream *stream, uint16_t c)
 {
-    return outfuncs[outformat](file, c);
+    return outfuncs[outformat](stream, c);
 }
 
-static int writeansidc(FILE *file, int newbg, int bg, int newfg, int fg,
+static int writeansidc(Stream *stream, int newbg, int bg, int newfg, int fg,
 	int defcols)
 {
     char nextarg = '[';
-    if (out(file, 0x1b) != 0) return -1;
+    if (out(stream, 0x1b) != 0) return -1;
     if (defcols && newbg == 0x00 && newfg == 0x07)
     {
-	if (out(file, nextarg) != 0) return -1;
+	if (out(stream, nextarg) != 0) return -1;
 	goto done;
     }
     if ((newbg & 0x08U) != (bg & 0x08U))
     {
-	if (out(file, nextarg) != 0) return -1;
+	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
 	if (newbg & 0x08U)
 	{
-	    if (out(file, '5') != 0) return -1;
+	    if (out(stream, '5') != 0) return -1;
 	}
 	else
 	{
-	    if (out(file, '2') != 0) return -1;
-	    if (out(file, '5') != 0) return -1;
+	    if (out(stream, '2') != 0) return -1;
+	    if (out(stream, '5') != 0) return -1;
 	}
     }
     if ((newfg & 0x08U) != (fg & 0x08U))
     {
-	if (out(file, nextarg) != 0) return -1;
+	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
 	if (newfg & 0x08U)
 	{
-	    if (out(file, '1') != 0) return -1;
+	    if (out(stream, '1') != 0) return -1;
 	}
 	else
 	{
-	    if (out(file, '2') != 0) return -1;
-	    if (out(file, '2') != 0) return -1;
+	    if (out(stream, '2') != 0) return -1;
+	    if (out(stream, '2') != 0) return -1;
 	}
     }
     if ((newbg & 0x07U) != (bg & 0x07U))
     {
-	if (out(file, nextarg) != 0) return -1;
+	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
-	if (out(file, '4') != 0) return -1;
+	if (out(stream, '4') != 0) return -1;
 	if (defcols && newbg == 0x00)
 	{
-	    if (out(file, '9') != 0) return -1;
+	    if (out(stream, '9') != 0) return -1;
 	}
-	else if (out(file, (newbg & 0x07U) + '0') != 0) return -1;
+	else if (out(stream, (newbg & 0x07U) + '0') != 0) return -1;
     }
     if ((newfg & 0x07U) != (fg & 0x07U))
     {
-	if (out(file, nextarg) != 0) return -1;
+	if (out(stream, nextarg) != 0) return -1;
 	nextarg = ';';
-	if (out(file, '3') != 0) return -1;
+	if (out(stream, '3') != 0) return -1;
 	if (defcols && newfg == 0x07)
 	{
-	    if (out(file, '9') != 0) return -1;
+	    if (out(stream, '9') != 0) return -1;
 	}
-	else if (out(file, (newfg & 0x07U) + '0') != 0) return -1;
+	else if (out(stream, (newfg & 0x07U) + '0') != 0) return -1;
     }
 done:
-    return out(file, 'm');
+    return out(stream, 'm');
 }
 
-static int writeansi(FILE *file, int newbg, int bg, int newfg, int fg)
+static int writeansi(Stream *stream, int newbg, int bg, int newfg, int fg)
 {
-    return writeansidc(file, newbg, bg, newfg, fg, usedefcols);
+    return writeansidc(stream, newbg, bg, newfg, fg, usedefcols);
 }
 
 void AnsiTermWriter_usecolors(int arg)
@@ -269,7 +269,7 @@ Codepage AnsiTermWriter_cpbyname(const char *name)
     return -1;
 }
 
-int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
+int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 {
     int bg = -1;
     int fg = -1;
@@ -282,7 +282,7 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
     size_t height = VgaCanvas_height(canvas);
     if (!height) return 0;
 
-    if (usebom && out(file, 0xfeffU) != 0) return -1;
+    if (usebom && out(stream, 0xfeffU) != 0) return -1;
 
     for (size_t i = 0; i < height; ++i)
     {
@@ -296,7 +296,7 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 		int newfg = VgaLine_fg(line, j);
 		if (newbg != bg || newfg != fg)
 		{
-		    if (writeansi(file, newbg, bg, newfg, fg) != 0) return -1;
+		    if (writeansi(stream, newbg, bg, newfg, fg) != 0) return -1;
 		    bg = newbg;
 		    fg = newfg;
 		}
@@ -307,19 +307,19 @@ int AnsiTermWriter_write(FILE *file, const VgaCanvas *canvas)
 	    else if (vgachr >= 0x80U) unichr = doscp[vgachr-0x80U];
 	    else if (vgachr == 0x7fU) unichr = 0x2302U;
 	    else unichr = vgachr;
-	    if (out(file, unichr) != 0) return -1;
+	    if (out(stream, unichr) != 0) return -1;
 	}
 	if (usecolors && VgaCanvas_hascolor(canvas))
 	{
 	    if (i < height-1)
 	    {
-		if (writeansi(file, bg & 0x08U, bg, fg, fg) != 0) return -1;
+		if (writeansi(stream, bg & 0x08U, bg, fg, fg) != 0) return -1;
 		bg &= 0x08U;
 	    }
-	    else if (writeansidc(file, 0, bg, 0x07U, fg, 1) != 0) return -1;
+	    else if (writeansidc(stream, 0, bg, 0x07U, fg, 1) != 0) return -1;
 	}
-	if (out(file, '\n') != 0) return -1;
+	if (out(stream, '\n') != 0) return -1;
     }
-    return writebuf(file);
+    return writebuf(stream);
 }
 

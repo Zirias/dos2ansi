@@ -1,5 +1,6 @@
 #include "dosreader.h"
 
+#include "stream.h"
 #include "vgacanvas.h"
 #include "util.h"
 
@@ -13,13 +14,13 @@ void DosReader_ignoreeof(int arg)
     ignoreeof = !!arg;
 }
 
-int DosReader_read(VgaCanvas *canvas, FILE *file)
+int DosReader_read(VgaCanvas *canvas, Stream *stream)
 {
     size_t bufsz;
     int escargs[8];
     int esc = 0;
 
-    while ((bufsz = fread(buf, 1, sizeof buf, file)))
+    while ((bufsz = Stream_read(stream, buf, sizeof buf)))
     {
 	for (size_t bufpos = 0; bufpos < bufsz; ++bufpos)
 	{
@@ -140,5 +141,5 @@ int DosReader_read(VgaCanvas *canvas, FILE *file)
     }
 
 eof:
-    return ferror(file);
+    return Stream_status(stream) == SS_ERROR;
 }
