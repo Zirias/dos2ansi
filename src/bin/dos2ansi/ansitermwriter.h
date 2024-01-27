@@ -8,6 +8,8 @@ C_CLASS_DECL(VgaCanvas);
 
 typedef enum Codepage {
     CP_437,
+    CP_708,
+    CP_720,
     CP_850,
     CP_858
 } Codepage;
