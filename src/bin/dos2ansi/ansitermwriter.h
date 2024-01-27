@@ -19,7 +19,8 @@ typedef enum Codepage {
     CP_860,
     CP_861,
     CP_862,
-    CP_863
+    CP_863,
+    CP_864
 } Codepage;
 
 typedef enum UnicodeFormat {
