@@ -6,6 +6,20 @@ of characters and only ANSI SGR escape sequences to set basic foreground and
 background colors, intensity and blinking attribute. The input is expected to
 use CP-437 or one of the other supported DOS codepages.
 
+The builtin translation tables attempt to match the appearance on VGA as close
+as possible. For example, unused codepoints are mapped to U+25AE (Black
+Vertical Rectangle), because scans of old Microsoft documents show a glyph
+resembling this. This is also relevant for e.g. arabic letters that have many
+different forms; they are translated to unicode codepoints denoting the
+"isolated" form, because this was the only way they could be displayed in text
+mode. As a consequence, this tool isn't well-suited for converting arabic
+*text*.
+
+Results depend on both your terminal (there are interesting issues with e.g.
+writing direction) and the font you're using (e.g. on Windows, the "Courier
+New" font sometimes gives better results than "Consolas"). Please check with
+different terminals and fonts before reporting a bug in dos2ansi.
+
 ## Features
 
 * Renders to a virtual canvas with a fixed width, defaulting to 80 columns
