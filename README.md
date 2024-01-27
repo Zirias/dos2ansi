@@ -6,7 +6,7 @@ of characters and only ANSI SGR escape sequences to set basic foreground and
 background colors, intensity and blinking attribute. The input is expected to
 use CP-437 or one of the other supported DOS codepages.
 
-## Features:
+## Features
 
 * Renders to a virtual canvas with a fixed width, defaulting to 80 columns
 * Supports SGR sequences as well as cursor movement sequences in the input
@@ -25,7 +25,11 @@ use CP-437 or one of the other supported DOS codepages.
 * Includes a test mode rendering an encoding table with the selected settings
   to verify appearance on your terminal
 
-## Maybe planned:
+## Test mode
+
+![Test mode on Windows](.github/screenshots/dos2ansi_test_win32.png?raw=true)
+
+## Maybe planned
 
 * Output to terminal using native APIs (Windows) or termcap/terminfo
   (non-Windows) instead of fixed ANSI sequences
