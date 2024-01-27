@@ -18,7 +18,7 @@ use CP-437 or one of the other supported DOS codepages.
 * Interprets control characters not supported by MS-DOS as symbols from CP437
 * Stops reading at the MS-DOS EOL character (0x1a), this can also be disabled
 * Input codepage can be selected, currently supported: 437, 708, 720, 737,
-  775, 850, 852, 855, 857, 860, 861 and 862
+  775, 850, 852, 855, 857, 860, 861, 862 and 863
 * Supports codepage versions with Euro sign
 * Output format can be UTF-8, UTF-16 or UTF-16LE, with or without a BOM, with
   LF (Unix style) or CRLF (DOS/Windows style) line endings
