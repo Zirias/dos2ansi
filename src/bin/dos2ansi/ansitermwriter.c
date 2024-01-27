@@ -186,25 +186,15 @@ static const char cpnames[][4] = {
     "858"
 };
 
-static const int cpbrokenpipe[] = {
-    1,
-    1,
-    1,
-    1,
-    0,
-    0
-};
-
-
 static char buf[1024];
 static size_t bufsz = 0;
 static int usecolors = 1;
 static int usedefcols = 0;
-static const uint16_t *doscp = codepages[0];
+static Codepage doscp = CP_437;
 static UnicodeFormat outformat = UF_UTF8;
 static int usebom = 1;
 static int crlf = 0;
-static int brokenpipe = 1;
+static int brokenpipe = -1;
 static int markltr = 0;
 
 static int writebuf(Stream *stream)
@@ -357,8 +347,7 @@ void AnsiTermWriter_usedefcols(int arg)
 
 void AnsiTermWriter_usecp(Codepage cp)
 {
-    doscp = codepages[cp];
-    brokenpipe = cpbrokenpipe[cp];
+    doscp = cp;
 }
 
 void AnsiTermWriter_useformat(UnicodeFormat format)
@@ -378,7 +367,7 @@ void AnsiTermWriter_crlf(int arg)
 
 void AnsiTermWriter_brokenpipe(int arg)
 {
-    brokenpipe = !!arg;
+    brokenpipe = arg;
 }
 
 void AnsiTermWriter_markltr(int arg)
@@ -403,6 +392,19 @@ Codepage AnsiTermWriter_cpbyname(const char *name)
     return -1;
 }
 
+static int usebrokenpipe(void)
+{
+    if (brokenpipe < 0)
+    {
+	for (int i = 0; i < 0x80; ++i)
+	{
+	    if (codepages[doscp][i] == 0x00a6U) return 0;
+	}
+	return 1;
+    }
+    else return brokenpipe;
+}
+
 int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 {
     int bg = -1;
@@ -412,6 +414,7 @@ int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 	bg = 0x00;
 	fg = 0x07;
     }
+    int dobrokenpipe = usebrokenpipe();
 
     size_t height = VgaCanvas_height(canvas);
     if (!height) return 0;
@@ -439,9 +442,9 @@ int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 	    unsigned char vgachr = VgaLine_chr(line, j);
 	    uint16_t unichr;
 	    if (vgachr < 0x20U) unichr = lowascii[vgachr];
-	    else if (vgachr >= 0x80U) unichr = doscp[vgachr-0x80U];
+	    else if (vgachr >= 0x80U) unichr = codepages[doscp][vgachr-0x80U];
 	    else if (vgachr == 0x7fU) unichr = 0x2302U;
-	    else if (brokenpipe && vgachr == 0x7cU) unichr = 0xa6U;
+	    else if (dobrokenpipe && vgachr == 0x7cU) unichr = 0xa6U;
 	    else unichr = vgachr;
 	    if (out(stream, unichr) != 0) return -1;
 	}

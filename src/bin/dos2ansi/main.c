@@ -92,8 +92,6 @@ int main(int argc, char **argv)
     }
     Codepage cp = Config_codepage(config);
     if ((int)cp >= 0) AnsiTermWriter_usecp(cp);
-    int brokenpipe = Config_brokenpipe(config);
-    if (brokenpipe >= 0) AnsiTermWriter_brokenpipe(brokenpipe);
     int format = Config_format(config);
     if (format < 0) format = defformat;
     AnsiTermWriter_useformat(format);
@@ -104,6 +102,7 @@ int main(int argc, char **argv)
     AnsiTermWriter_usecolors(Config_colors(config));
     AnsiTermWriter_usedefcols(Config_defcolors(config));
     AnsiTermWriter_markltr(Config_markltr(config));
+    AnsiTermWriter_brokenpipe(Config_brokenpipe(config));
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 
