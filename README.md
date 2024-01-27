@@ -17,7 +17,7 @@ use CP-437 or one of the other supported DOS codepages.
   it doesn't start some ANSI.SYS sequence)
 * Interprets control characters not supported by MS-DOS as symbols from CP437
 * Stops reading at the MS-DOS EOL character (0x1a), this can also be disabled
-* Input codepage can be selected, currently supported: 437, 850 and 858
+* Input codepage can be selected, currently supported: 437, 708, 850 and 858
 * Output format can be UTF-8, UTF-16 or UTF-16LE, with or without a BOM, with
   LF (Unix style) or CRLF (DOS/Windows style) line endings
 * Optionally translates the pipe bar symbol to a broken bar, matching the
