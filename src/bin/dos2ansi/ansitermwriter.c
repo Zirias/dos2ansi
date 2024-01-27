@@ -81,6 +81,13 @@ static const char cpnames[][4] = {
     "858"
 };
 
+static const int cpbrokenpipe[] = {
+    1,
+    0,
+    0
+};
+
+
 static char buf[1024];
 static size_t bufsz = 0;
 static int usecolors = 1;
@@ -89,7 +96,7 @@ static const uint16_t *doscp = codepages[0];
 static UnicodeFormat outformat = UF_UTF8;
 static int usebom = 1;
 static int crlf = 0;
-static int realpipe = 0;
+static int brokenpipe = 1;
 
 static int writebuf(Stream *stream)
 {
@@ -242,6 +249,7 @@ void AnsiTermWriter_usedefcols(int arg)
 void AnsiTermWriter_usecp(Codepage cp)
 {
     doscp = codepages[cp];
+    brokenpipe = cpbrokenpipe[cp];
 }
 
 void AnsiTermWriter_useformat(UnicodeFormat format)
@@ -259,9 +267,9 @@ void AnsiTermWriter_crlf(int arg)
     crlf = !!arg;
 }
 
-void AnsiTermWriter_realpipe(int arg)
+void AnsiTermWriter_brokenpipe(int arg)
 {
-    realpipe = !!arg;
+    brokenpipe = !!arg;
 }
 
 Codepage AnsiTermWriter_cpbyname(const char *name)
@@ -318,7 +326,7 @@ int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 	    if (vgachr < 0x20U) unichr = lowascii[vgachr];
 	    else if (vgachr >= 0x80U) unichr = doscp[vgachr-0x80U];
 	    else if (vgachr == 0x7fU) unichr = 0x2302U;
-	    else if (!realpipe && vgachr == 0x7cU) unichr = 0xa6U;
+	    else if (brokenpipe && vgachr == 0x7cU) unichr = 0xa6U;
 	    else unichr = vgachr;
 	    if (out(stream, unichr) != 0) return -1;
 	}

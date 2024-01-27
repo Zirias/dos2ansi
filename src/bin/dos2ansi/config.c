@@ -35,12 +35,12 @@ struct Config
     int colors;
     int test;
     int crlf;
-    int realpipe;
+    int brokenpipe;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCERTbdpr] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCEPRTbdpr] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -48,12 +48,15 @@ static void usage(const char *prgname)
 	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-P             Force using a normal pipe bar symbol\n"
+	    "\t               (default: replace with a broken bar for\n"
+	    "\t               codepages not having an explicit broken bar)\n"
 	    "\t-R             Line endings without CR (Unix format,\n"
 	    "\t               default on non-Windows)\n"
 	    "\t-T             Test mode, do not read any input, instead\n"
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
-	    "\t-b             Enable writing a BOM (default see above)\n"
+	    "\t-b             Enable writing a BOM (default see -B above)\n"
 	    "\t-c codepage    The DOS codepage used by the input file.\n"
 	    "\t               May be prefixed with CP (any casing) and an\n"
 	    "\t               optional space or dash.\n"
@@ -63,8 +66,9 @@ static void usage(const char *prgname)
 	    "\t               explicitly.\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
 	    "\t               output goes to the standard output.\n"
-	    "\t-p             Use a real pipe bar symbol instead of the\n"
-	    "\t               broken bar as in most VGA fonts.\n"
+	    "\t-p             Force replacing the pipe bar with a broken bar\n"
+	    "\t               matching the appearance of most VGA fonts\n"
+	    "\t               (default: see -P above)\n"
 	    "\t-r             Line endings with CR (DOS format,\n"
 	    "\t               default on Windows)\n"
 	    "\t-t tabwidth    Distance of tabstop positions.\n"
@@ -149,7 +153,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCERTbcdoprtuw";
+    const char onceflags[] = "BCEPRTbcdoprtuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -169,7 +173,7 @@ Config *Config_fromOpts(int argc, char **argv)
 #else
     config->crlf = 0;
 #endif
-    config->realpipe = 0;
+    config->brokenpipe = -1;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -230,6 +234,10 @@ Config *Config_fromOpts(int argc, char **argv)
 			config->ignoreeof = 1;
 			break;
 
+		    case 'P':
+			config->brokenpipe = 0;
+			break;
+
 		    case 'R':
 			config->crlf = 0;
 			break;
@@ -248,7 +256,7 @@ Config *Config_fromOpts(int argc, char **argv)
 			break;
 
 		    case 'p':
-			config->realpipe = 1;
+			config->brokenpipe = 1;
 			break;
 
 		    case 'r':
@@ -361,9 +369,9 @@ int Config_crlf(const Config *self)
     return self->crlf;
 }
 
-int Config_realpipe(const Config *self)
+int Config_brokenpipe(const Config *self)
 {
-    return self->realpipe;
+    return self->brokenpipe;
 }
 
 void Config_destroy(Config *self)
