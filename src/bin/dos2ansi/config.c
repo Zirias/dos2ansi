@@ -37,11 +37,12 @@ struct Config
     int crlf;
     int brokenpipe;
     int markltr;
+    int euro;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRTbdlpr] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCEPRTbdelpr] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -61,12 +62,14 @@ static void usage(const char *prgname)
 	    "\t-c codepage    The DOS codepage used by the input file.\n"
 	    "\t               May be prefixed with CP (any casing) and an\n"
 	    "\t               optional space or dash.\n"
-	    "\t               supported: 437, 708, 720, 737, 775, 850, 852,\n"
-	    "\t               858\n"
+	    "\t               supported: 437, 708, 720, 737, 775, 850, 852\n"
 	    "\t               default: 437\n"
 	    "\t-d             Use default terminal colors for VGA's gray\n"
 	    "\t               on black. When not given, these colors are set\n"
 	    "\t               explicitly.\n"
+	    "\t-e             For codepages containing a generic currency\n"
+	    "\t               symbol, use the Euro symbol instead. As a\n"
+	    "\t               special case, replace the dotless i in CP-850.\n"
 	    "\t-l             Attempt to enforce left-to-right direction by\n"
 	    "\t               wrapping output in a Unicode LTR override\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
@@ -158,7 +161,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRTbcdloprtuw";
+    const char onceflags[] = "BCEPRTbcdeloprtuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -180,6 +183,7 @@ Config *Config_fromOpts(int argc, char **argv)
 #endif
     config->brokenpipe = -1;
     config->markltr = 0;
+    config->euro = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -259,6 +263,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'd':
 			config->defcolors = 1;
+			break;
+
+		    case 'e':
+			config->euro = 1;
 			break;
 
 		    case 'l':
@@ -387,6 +395,11 @@ int Config_brokenpipe(const Config *self)
 int Config_markltr(const Config *self)
 {
     return self->markltr;
+}
+
+int Config_euro(const Config *self)
+{
+    return self->euro;
 }
 
 void Config_destroy(Config *self)

@@ -103,6 +103,7 @@ int main(int argc, char **argv)
     AnsiTermWriter_usedefcols(Config_defcolors(config));
     AnsiTermWriter_markltr(Config_markltr(config));
     AnsiTermWriter_brokenpipe(Config_brokenpipe(config));
+    AnsiTermWriter_useeuro(Config_euro(config));
     if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 

@@ -13,8 +13,7 @@ typedef enum Codepage {
     CP_737,
     CP_775,
     CP_850,
-    CP_852,
-    CP_858
+    CP_852
 } Codepage;
 
 typedef enum UnicodeFormat {
@@ -28,6 +27,7 @@ void AnsiTermWriter_usedefcols(int arg);
 void AnsiTermWriter_usecp(Codepage cp);
 void AnsiTermWriter_useformat(UnicodeFormat format);
 void AnsiTermWriter_usebom(int arg);
+void AnsiTermWriter_useeuro(int arg);
 void AnsiTermWriter_crlf(int arg);
 void AnsiTermWriter_brokenpipe(int arg);
 void AnsiTermWriter_markltr(int arg);
