@@ -36,11 +36,12 @@ struct Config
     int test;
     int crlf;
     int brokenpipe;
+    int markltr;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRTbdpr] [-c codepage] [-o outfile]\n"
+    fprintf(stderr, "Usage: %s [-BCEPRTbdlpr] [-c codepage] [-o outfile]\n"
 	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -65,6 +66,8 @@ static void usage(const char *prgname)
 	    "\t-d             Use default terminal colors for VGA's gray\n"
 	    "\t               on black. When not given, these colors are set\n"
 	    "\t               explicitly.\n"
+	    "\t-l             Attempt to enforce left-to-right direction by\n"
+	    "\t               wrapping output in a Unicode LTR override\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
 	    "\t               output goes to the standard output.\n"
 	    "\t-p             Force replacing the pipe bar with a broken bar\n"
@@ -154,7 +157,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRTbcdoprtuw";
+    const char onceflags[] = "BCEPRTbcdloprtuw";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -175,6 +178,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->crlf = 0;
 #endif
     config->brokenpipe = -1;
+    config->markltr = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -254,6 +258,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'd':
 			config->defcolors = 1;
+			break;
+
+		    case 'l':
+			config->markltr = 1;
 			break;
 
 		    case 'p':
@@ -373,6 +381,11 @@ int Config_crlf(const Config *self)
 int Config_brokenpipe(const Config *self)
 {
     return self->brokenpipe;
+}
+
+int Config_markltr(const Config *self)
+{
+    return self->markltr;
 }
 
 void Config_destroy(Config *self)

@@ -25,6 +25,7 @@ void AnsiTermWriter_useformat(UnicodeFormat format);
 void AnsiTermWriter_usebom(int arg);
 void AnsiTermWriter_crlf(int arg);
 void AnsiTermWriter_brokenpipe(int arg);
+void AnsiTermWriter_markltr(int arg);
 
 Codepage AnsiTermWriter_cpbyname(const char *name);
 int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas);

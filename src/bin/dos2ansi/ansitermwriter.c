@@ -119,6 +119,7 @@ static UnicodeFormat outformat = UF_UTF8;
 static int usebom = 1;
 static int crlf = 0;
 static int brokenpipe = 1;
+static int markltr = 0;
 
 static int writebuf(Stream *stream)
 {
@@ -294,6 +295,11 @@ void AnsiTermWriter_brokenpipe(int arg)
     brokenpipe = !!arg;
 }
 
+void AnsiTermWriter_markltr(int arg)
+{
+    markltr = !!arg;
+}
+
 Codepage AnsiTermWriter_cpbyname(const char *name)
 {
     if ((name[0] == 'c' || name[0] == 'C')
@@ -325,6 +331,7 @@ int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
     if (!height) return 0;
 
     if (usebom && out(stream, 0xfeffU) != 0) return -1;
+    if (markltr && out(stream, 0x202dU) != 0) return -1;
 
     for (size_t i = 0; i < height; ++i)
     {
@@ -364,6 +371,7 @@ int AnsiTermWriter_write(Stream *stream, const VgaCanvas *canvas)
 	if (crlf && out(stream, '\r') != 0) return -1;
 	if (out(stream, '\n') != 0) return -1;
     }
+    if (markltr && out(stream, 0x202cU) != 0) return -1;
     return writebuf(stream);
 }
 

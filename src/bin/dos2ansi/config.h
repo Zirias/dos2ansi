@@ -19,6 +19,7 @@ int Config_colors(const Config *self);
 int Config_test(const Config *self);
 int Config_crlf(const Config *self);
 int Config_brokenpipe(const Config *self);
+int Config_markltr(const Config *self);
 void Config_destroy(Config *self);
 
 #endif
