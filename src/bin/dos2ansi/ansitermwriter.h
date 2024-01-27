@@ -10,6 +10,7 @@ typedef enum Codepage {
     CP_437,
     CP_708,
     CP_720,
+    CP_737,
     CP_850,
     CP_858
 } Codepage;
