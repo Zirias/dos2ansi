@@ -1,4 +1,5 @@
 #include "ansitermwriter.h"
+#include "codepage.h"
 #include "config.h"
 #include "dosreader.h"
 #include "stream.h"
@@ -21,6 +22,7 @@ int main(int argc, char **argv)
     Stream *dosfile = 0;
     Stream *ansifile = 0;
     VgaCanvas *canvas = 0;
+    Codepage *cp = 0;
 
     config = Config_fromOpts(argc, argv);
     if (!config) goto done;
@@ -90,8 +92,13 @@ int main(int argc, char **argv)
 #endif
 	ansifile = Stream_createFile(stdout);
     }
-    Codepage cp = Config_codepage(config);
-    if ((int)cp >= 0) AnsiTermWriter_usecp(cp);
+
+    CodepageFlags cpflags = CPF_NONE;
+    if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
+    if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
+    if (Config_euro(config)) cpflags |= CPF_EUROSYM;
+    cp = Codepage_create(Config_codepage(config), cpflags);
+
     int format = Config_format(config);
     if (format < 0) format = defformat;
     AnsiTermWriter_useformat(format);
@@ -102,12 +109,11 @@ int main(int argc, char **argv)
     AnsiTermWriter_usecolors(Config_colors(config));
     AnsiTermWriter_usedefcols(Config_defcolors(config));
     AnsiTermWriter_markltr(Config_markltr(config));
-    AnsiTermWriter_brokenpipe(Config_brokenpipe(config));
-    AnsiTermWriter_useeuro(Config_euro(config));
-    if (AnsiTermWriter_write(ansifile, canvas) != 0) goto done;
+    if (AnsiTermWriter_write(ansifile, cp, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 
 done:
+    Codepage_destroy(cp);
     Stream_destroy(dosfile);
     Stream_destroy(ansifile);
     VgaCanvas_destroy(canvas);

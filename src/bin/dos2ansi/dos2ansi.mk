@@ -1,4 +1,5 @@
 dos2ansi_MODULES:=	ansitermwriter \
+			codepage \
 			config \
 			dosreader \
 			main \

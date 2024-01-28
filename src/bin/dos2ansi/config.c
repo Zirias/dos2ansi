@@ -1,6 +1,6 @@
 #include "config.h"
 
-#include "ansitermwriter.h"
+#include "codepage.h"
 #include "util.h"
 
 #include <errno.h>
@@ -122,10 +122,10 @@ static int optArg(Config *config, char *args, int *idx, char *op)
     if (!*idx) return -1;
     switch (args[--*idx])
     {
-	Codepage cp;
+	CodepageId cp;
 
 	case 'c':
-	    cp = AnsiTermWriter_cpbyname(op);
+	    cp = CodepageId_byName(op);
 	    if ((int)cp < 0) return -1;
 	    config->codepage = cp;
 	    break;
@@ -174,7 +174,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->width = 80;
     config->defcolors = 0;
     config->ignoreeof = 0;
-    config->codepage = -1;
+    config->codepage = CP_437;
     config->format = -1;
     config->bom = -1;
     config->colors = 1;
