@@ -1,9 +1,11 @@
 #include "ansitermwriter.h"
+#include "bufferedwriter.h"
 #include "codepage.h"
 #include "config.h"
 #include "dosreader.h"
 #include "stream.h"
 #include "testwriter.h"
+#include "unicodewriter.h"
 #include "vgacanvas.h"
 
 #include <stdio.h>
@@ -14,6 +16,8 @@
 #  include <fcntl.h>
 #  include <windows.h>
 #endif
+
+#define OUTBUFSIZE 4096
 
 int main(int argc, char **argv)
 {
@@ -93,22 +97,26 @@ int main(int argc, char **argv)
 	ansifile = Stream_createFile(stdout);
     }
 
+    int format = Config_format(config);
+    if (format < 0) format = defformat;
+    int wantbom = Config_bom(config);
+    if (wantbom < 0) wantbom = format != UF_UTF8;
+
+    ansifile = BufferedWriter_create(ansifile, OUTBUFSIZE);
+    ansifile = UnicodeWriter_create(ansifile, format);
+
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
     if (Config_euro(config)) cpflags |= CPF_EUROSYM;
     cp = Codepage_create(Config_codepage(config), cpflags);
 
-    int format = Config_format(config);
-    if (format < 0) format = defformat;
-    AnsiTermWriter_useformat(format);
-    int wantbom = Config_bom(config);
-    if (wantbom < 0) wantbom = format != UF_UTF8;
     AnsiTermWriter_usebom(wantbom);
     AnsiTermWriter_crlf(Config_crlf(config));
     AnsiTermWriter_usecolors(Config_colors(config));
     AnsiTermWriter_usedefcols(Config_defcolors(config));
     AnsiTermWriter_markltr(Config_markltr(config));
+
     if (AnsiTermWriter_write(ansifile, cp, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 

@@ -7,82 +7,15 @@
 #include <stdint.h>
 #include <string.h>
 
-static char buf[1024];
-static size_t bufsz = 0;
 static int usecolors = 1;
 static int usedefcols = 0;
-static UnicodeFormat outformat = UF_UTF8;
 static int usebom = 1;
 static int crlf = 0;
 static int markltr = 0;
 
-static int writebuf(Stream *stream)
-{
-    if (!bufsz) return 0;
-    size_t bufpos = 0;
-    while (bufpos < bufsz)
-    {
-	size_t written = Stream_write(stream, buf+bufpos, bufsz-bufpos);
-	if (!written) return -1;
-	bufpos += written;
-    }
-    bufsz = 0;
-    return 0;
-}
-
-static int putbuf(Stream *stream, char c)
-{
-    if (bufsz == sizeof buf)
-    {
-	if (writebuf(stream) != 0) return -1;
-    }
-    buf[bufsz++] = c;
-    return 0;
-}
-
-static int toutf8(Stream *stream, uint16_t c)
-{
-    if (c < 0x80) return putbuf(stream, c);
-    unsigned char lb = c & 0xff;
-    unsigned char hb = c >> 8;
-    if (c < 0x800)
-    {
-	if (putbuf(stream, 0xc0U | (hb << 2) | (lb >> 6)) != 0) return -1;
-	if (putbuf(stream, 0x80U | (lb & 0x3fU)) != 0) return -1;
-    }
-    else
-    {
-	if (putbuf(stream, 0xe0U | (hb >> 4)) != 0) return -1;
-	if (putbuf(stream,  0x80U | ((hb << 2) & 0x3fU)
-		    | (lb >> 6)) != 0) return -1;
-	if (putbuf(stream, 0x80U | (lb & 0x3fU)) != 0) return -1;
-    }
-    return 0;
-}
-
-static int toutf16(Stream *stream, uint16_t c)
-{
-    if (putbuf(stream, c >> 8) != 0) return -1;
-    if (putbuf(stream, c & 0xffU) != 0) return -1;
-    return 0;
-}
-
-static int toutf16le(Stream *stream, uint16_t c)
-{
-    if (putbuf(stream, c & 0xffU) != 0) return -1;
-    if (putbuf(stream, c >> 8) != 0) return -1;
-    return 0;
-}
-
-static int (*const outfuncs[])(Stream *, uint16_t) = {
-    toutf8,
-    toutf16,
-    toutf16le
-};
-
 static int out(Stream *stream, uint16_t c)
 {
-    return outfuncs[outformat](stream, c);
+    return -(Stream_write(stream, &c, sizeof c) != sizeof c);
 }
 
 static int writeansidc(Stream *stream, int newbg, int bg, int newfg, int fg,
@@ -164,11 +97,6 @@ void AnsiTermWriter_usedefcols(int arg)
     usedefcols = !!arg;
 }
 
-void AnsiTermWriter_useformat(UnicodeFormat format)
-{
-    outformat = format;
-}
-
 void AnsiTermWriter_usebom(int arg)
 {
     usebom = !!arg;
@@ -234,6 +162,6 @@ int AnsiTermWriter_write(Stream *stream, const Codepage *cp,
 	if (out(stream, '\n') != 0) return -1;
     }
     if (markltr && out(stream, 0x202cU) != 0) return -1;
-    return writebuf(stream);
+    return Stream_flush(stream);
 }
 
