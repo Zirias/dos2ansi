@@ -307,6 +307,7 @@ void VgaCanvas_destroy(VgaCanvas *self)
 {
     if (!self) return;
     for (size_t i = 0; i < self->linecapa; ++i) free(self->lines[i]);
+    free(self->lines);
     free(self);
 }
 
