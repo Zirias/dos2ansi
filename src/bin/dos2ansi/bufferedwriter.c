@@ -57,6 +57,7 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
 	return bufavail + Stream_write(self->stream, cptr, size);
     }
     memcpy(writer->buf, cptr, size);
+    writer->bufused = size;
     return bufavail + size;
 }
 
