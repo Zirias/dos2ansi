@@ -3,10 +3,17 @@
 
 #include "decl.h"
 
-#include <stddef.h>
-
 C_CLASS_DECL(VgaCanvas);
-C_CLASS_DECL(VgaLine);
+C_CLASS_DECL(Codepage);
+C_CLASS_DECL(Stream);
+
+typedef enum VgaSerFlags
+{
+    VSF_NONE	= 0,
+    VSF_CRLF	= 1 << 0,   /* write newlines as CRLF instead of just LF */
+    VSF_BOM	= 1 << 1,   /* start with a BOM (byte order mark) */
+    VSF_LTRO	= 1 << 2    /* wrap output in left-to-right override */
+} VgaSerFlags;
 
 VgaCanvas *VgaCanvas_create(int width, int tabwidth);
 
@@ -22,14 +29,9 @@ void VgaCanvas_up(VgaCanvas *self, unsigned n);
 void VgaCanvas_down(VgaCanvas *self, unsigned n);
 void VgaCanvas_left(VgaCanvas *self, unsigned n);
 void VgaCanvas_right(VgaCanvas *self, unsigned n);
-void VgaCanvas_finalize(VgaCanvas *self);
 
-int VgaCanvas_hascolor(const VgaCanvas *self);
-size_t VgaCanvas_height(const VgaCanvas *self);
-const VgaLine *VgaCanvas_line(const VgaCanvas *self, size_t lineno);
-int VgaLine_len(const VgaLine *self);
-unsigned char VgaLine_att(const VgaLine *self, int pos);
-char VgaLine_chr(const VgaLine *self, int pos);
+int VgaCanvas_serialize(const VgaCanvas *self,
+	Stream *out, const Codepage *cp, VgaSerFlags flags);
 
 void VgaCanvas_destroy(VgaCanvas *self);
 

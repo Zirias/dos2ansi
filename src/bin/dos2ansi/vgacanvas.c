@@ -1,5 +1,7 @@
 #include "vgacanvas.h"
 
+#include "codepage.h"
+#include "stream.h"
 #include "util.h"
 
 #include <stdint.h>
@@ -11,6 +13,18 @@
 #define FL_BLINK 2
 #define FL_REVERSE 4
 #define FL_HIDDEN 8
+
+typedef struct VgaChar
+{
+    uint8_t att;
+    uint8_t chr;
+} VgaChar;
+
+typedef struct VgaLine
+{
+    int len;
+    VgaChar chars[];
+} VgaLine;
 
 struct VgaCanvas
 {
@@ -24,19 +38,6 @@ struct VgaCanvas
     uint8_t fg;
     uint8_t bg;
     uint8_t flags;
-    uint8_t hascolor;
-};
-
-typedef struct VgaChar
-{
-    uint8_t att;
-    uint8_t chr;
-} VgaChar;
-
-struct VgaLine
-{
-    int len;
-    VgaChar chars[];
 };
 
 static VgaLine *createline(int width)
@@ -83,7 +84,6 @@ VgaCanvas *VgaCanvas_create(int width, int tabwidth)
     self->fg = 7U;
     self->bg = 0;
     self->flags = 0;
-    self->hascolor = 0;
     expand(self);
     return self;
 }
@@ -241,9 +241,9 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
     else self->x += n;
 }
 
-void VgaCanvas_finalize(VgaCanvas *self)
+static int finalize(const VgaCanvas *self)
 {
-    self->hascolor = 0;
+    int hascolor = 0;
     for (size_t i = 0; i < self->height; ++i)
     {
 	VgaLine *l = self->lines[i];
@@ -254,46 +254,66 @@ void VgaCanvas_finalize(VgaCanvas *self)
 		    !(l->chars[l->len-1].att & 0x70U)) --l->len;
 	    else break;
 	}
-	if (!self->hascolor) for (int j = 0; j < l->len; ++j)
+	if (!hascolor) for (int j = 0; j < l->len; ++j)
 	{
 	    if (l->chars[j].att != 0x07U)
 	    {
-		self->hascolor = 1;
+		hascolor = 1;
 		break;
 	    }
 	}
     }
+    return hascolor;
 }
 
-int VgaCanvas_hascolor(const VgaCanvas *self)
+static int put(Stream *stream, uint16_t c)
 {
-    return self->hascolor;
+    return Stream_write(stream, &c, sizeof c);
 }
 
-size_t VgaCanvas_height(const VgaCanvas *self)
+int VgaCanvas_serialize(const VgaCanvas *self,
+	Stream *out, const Codepage *cp, VgaSerFlags flags)
 {
-    return self->height;
-}
+    if (!self->height) return 0;
 
-const VgaLine *VgaCanvas_line(const VgaCanvas *self, size_t lineno)
-{
-    if (lineno >= self->height) return 0;
-    return self->lines[lineno];
-}
+    int att = -1;
+    int hascolor = finalize(self);
 
-int VgaLine_len(const VgaLine *self)
-{
-    return self->len;
-}
+    if ((flags & VSF_BOM) && !put(out, 0xfeffU)) return -1;
+    if ((flags & VSF_LTRO) && !put(out, 0x202dU)) return -1;
 
-unsigned char VgaLine_att(const VgaLine *self, int pos)
-{
-    return self->chars[pos].att;
-}
+    for (size_t i = 0; i < self->height; ++i)
+    {
+	const VgaLine *line = self->lines[i];
+	for (int j = 0; j < line->len; ++j)
+	{
+	    if (hascolor)
+	    {
+		unsigned char newatt = line->chars[j].att;
+		if (newatt != att)
+		{
+		    if (!put(out, 0xee00U | newatt)) return -1;
+		    att = newatt;
+		}
+	    }
+	    if (!put(out, Codepage_map(cp, line->chars[j].chr))) return -1;
+	}
+	if (hascolor)
+	{
+	    if (i < self->height-1)
+	    {
+		att &= 0x8fU;
+		if (!put(out, 0xee00U | att)) return -1;
+	    }
+	    else if (!put(out, 0xef00U)) return -1;
+	}
+	if ((flags & VSF_CRLF) && !put(out, '\r')) return -1;
+	if (!put(out, '\n')) return -1;
+    }
 
-char VgaLine_chr(const VgaLine *self, int pos)
-{
-    return self->chars[pos].chr;
+    if ((flags & VSF_LTRO) && !put(out, 0x202cU)) return -1;
+
+    return Stream_flush(out);
 }
 
 void VgaCanvas_destroy(VgaCanvas *self)

@@ -1,5 +1,4 @@
 dos2ansi_MODULES:=	ansicolorwriter \
-			ansitermwriter \
 			bufferedwriter \
 			codepage \
 			config \

@@ -1,5 +1,4 @@
 #include "ansicolorwriter.h"
-#include "ansitermwriter.h"
 #include "bufferedwriter.h"
 #include "codepage.h"
 #include "config.h"
@@ -24,8 +23,8 @@ int main(int argc, char **argv)
 {
     int rc = EXIT_FAILURE;
     Config *config = 0;
-    Stream *dosfile = 0;
-    Stream *ansifile = 0;
+    Stream *in = 0;
+    Stream *out = 0;
     VgaCanvas *canvas = 0;
     Codepage *cp = 0;
 
@@ -34,8 +33,8 @@ int main(int argc, char **argv)
 
     if (Config_test(config))
     {
-	dosfile = Stream_createMemory();
-	TestWriter_write(dosfile);
+	in = Stream_createMemory();
+	TestWriter_write(in);
     }
     else
     {
@@ -48,24 +47,23 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error opening `%s' for reading.", infile);
 		goto done;
 	    }
-	    dosfile = Stream_createFile(f);
+	    in = Stream_createFile(f);
 	}
 	else
 	{
 #ifdef _WIN32
 	    _setmode(_fileno(stdin), _O_BINARY);
 #endif
-	    dosfile = Stream_createFile(stdin);
+	    in = Stream_createFile(stdin);
 	}
     }
 
     canvas = VgaCanvas_create(Config_width(config), Config_tabwidth(config));
     if (!canvas) goto done;
     if (Config_ignoreeof(config)) DosReader_ignoreeof(1);
-    if (DosReader_read(canvas, dosfile) != 0) goto done;
-    Stream_destroy(dosfile);
-    dosfile = 0;
-    VgaCanvas_finalize(canvas);
+    if (DosReader_read(canvas, in) != 0) goto done;
+    Stream_destroy(in);
+    in = 0;
 
     const char *outfile = Config_outfile(config);
     int defformat = UF_UTF8;
@@ -77,7 +75,7 @@ int main(int argc, char **argv)
 	    fprintf(stderr, "Error opening `%s' for writing.", outfile);
 	    goto done;
 	}
-	ansifile = Stream_createFile(f);
+	out = Stream_createFile(f);
     }
     else
     {
@@ -95,7 +93,7 @@ int main(int argc, char **argv)
 	}
 	else defformat = UF_UTF16;
 #endif
-	ansifile = Stream_createFile(stdout);
+	out = Stream_createFile(stdout);
     }
 
     int format = Config_format(config);
@@ -103,31 +101,33 @@ int main(int argc, char **argv)
     int wantbom = Config_bom(config);
     if (wantbom < 0) wantbom = format != UF_UTF8;
 
-    ansifile = BufferedWriter_create(ansifile, OUTBUFSIZE);
-    ansifile = UnicodeWriter_create(ansifile, format);
-
     AnsiColorFlags acflags = ACF_NONE;
     if (!Config_colors(config)) acflags |= ACF_STRIP;
     if (Config_defcolors(config)) acflags |= ACF_DEFAULT;
-    ansifile = AnsiColorWriter_create(ansifile, acflags);
 
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
     if (Config_euro(config)) cpflags |= CPF_EUROSYM;
+
+    VgaSerFlags vsflags = VSF_NONE;
+    if (wantbom) vsflags |= VSF_BOM;
+    if (Config_crlf(config)) vsflags |= VSF_CRLF;
+    if (Config_markltr(config)) vsflags |= VSF_LTRO;
+
+    out = BufferedWriter_create(out, OUTBUFSIZE);
+    out = UnicodeWriter_create(out, format);
+    out = AnsiColorWriter_create(out, acflags);
     cp = Codepage_create(Config_codepage(config), cpflags);
 
-    AnsiTermWriter_usebom(wantbom);
-    AnsiTermWriter_crlf(Config_crlf(config));
-    AnsiTermWriter_markltr(Config_markltr(config));
+    if (VgaCanvas_serialize(canvas, out, cp, vsflags) != 0) goto done;
 
-    if (AnsiTermWriter_write(ansifile, cp, canvas) != 0) goto done;
     rc = EXIT_SUCCESS;
 
 done:
     Codepage_destroy(cp);
-    Stream_destroy(dosfile);
-    Stream_destroy(ansifile);
+    Stream_destroy(in);
+    Stream_destroy(out);
     VgaCanvas_destroy(canvas);
     Config_destroy(config);
 
