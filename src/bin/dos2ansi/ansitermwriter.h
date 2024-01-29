@@ -7,8 +7,6 @@ C_CLASS_DECL(Codepage);
 C_CLASS_DECL(Stream);
 C_CLASS_DECL(VgaCanvas);
 
-void AnsiTermWriter_usecolors(int arg);
-void AnsiTermWriter_usedefcols(int arg);
 void AnsiTermWriter_usebom(int arg);
 void AnsiTermWriter_crlf(int arg);
 void AnsiTermWriter_markltr(int arg);

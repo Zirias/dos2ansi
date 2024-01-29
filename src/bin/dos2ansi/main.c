@@ -1,3 +1,4 @@
+#include "ansicolorwriter.h"
 #include "ansitermwriter.h"
 #include "bufferedwriter.h"
 #include "codepage.h"
@@ -105,6 +106,11 @@ int main(int argc, char **argv)
     ansifile = BufferedWriter_create(ansifile, OUTBUFSIZE);
     ansifile = UnicodeWriter_create(ansifile, format);
 
+    AnsiColorFlags acflags = ACF_NONE;
+    if (!Config_colors(config)) acflags |= ACF_STRIP;
+    if (Config_defcolors(config)) acflags |= ACF_DEFAULT;
+    ansifile = AnsiColorWriter_create(ansifile, acflags);
+
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
@@ -113,8 +119,6 @@ int main(int argc, char **argv)
 
     AnsiTermWriter_usebom(wantbom);
     AnsiTermWriter_crlf(Config_crlf(config));
-    AnsiTermWriter_usecolors(Config_colors(config));
-    AnsiTermWriter_usedefcols(Config_defcolors(config));
     AnsiTermWriter_markltr(Config_markltr(config));
 
     if (AnsiTermWriter_write(ansifile, cp, canvas) != 0) goto done;

@@ -286,16 +286,9 @@ int VgaLine_len(const VgaLine *self)
     return self->len;
 }
 
-int VgaLine_fg(const VgaLine *self, int pos)
+unsigned char VgaLine_att(const VgaLine *self, int pos)
 {
-    if (pos >= self->len || pos < 0) return -1;
-    return self->chars[pos].att & 0x0fU;
-}
-
-int VgaLine_bg(const VgaLine *self, int pos)
-{
-    if (pos >= self->len || pos < 0) return -1;
-    return self->chars[pos].att >> 4;
+    return self->chars[pos].att;
 }
 
 char VgaLine_chr(const VgaLine *self, int pos)

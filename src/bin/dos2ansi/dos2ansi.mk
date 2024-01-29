@@ -1,4 +1,5 @@
-dos2ansi_MODULES:=	ansitermwriter \
+dos2ansi_MODULES:=	ansicolorwriter \
+			ansitermwriter \
 			bufferedwriter \
 			codepage \
 			config \
