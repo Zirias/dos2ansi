@@ -201,6 +201,7 @@ static void WriterStream_destroy(WriterStream *self)
     if (self->writer->destroy) self->writer->destroy(self->writer);
     else
     {
+	WriterStream_flush(self);
 	Stream_destroy(self->writer->stream);
 	free(self->writer);
     }
