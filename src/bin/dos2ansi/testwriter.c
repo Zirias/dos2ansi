@@ -2,23 +2,35 @@
 
 #include "stream.h"
 
+#include <string.h>
+
 static char line[256];
 
-static int writeline(Stream *stream, int len)
+static int write(Stream *stream, const char *p, size_t len)
 {
-    size_t wrpos = 0;
     size_t written;
-    while ((written = Stream_write(stream, line, len-wrpos)))
+    while ((written = Stream_write(stream, p, len)))
     {
-	wrpos += written;
-	if (written == (size_t)len) return 0;
+	p += written;
+	if (!(len -= written)) return 0;
     }
     return -1;
 }
 
+static int writeline(Stream *stream, size_t len)
+{
+    return write(stream, line, len);
+}
+
+static int writestr(Stream *stream, const char *str)
+{
+    return write(stream, str, strlen(str));
+}
+
 int TestWriter_write(Stream *stream)
 {
-    int linepos = 0;
+    if (writestr(stream, "Codepage:\r\n\r\n") < 0) return -1;
+    size_t linepos = 0;
     linepos += sprintf(line+linepos, "\33[1;44m 0x ");
     for (unsigned char i = 0; i < 16; ++i)
     {
@@ -51,6 +63,28 @@ int TestWriter_write(Stream *stream)
 	linepos += sprintf(line+linepos, "\r\n");
 	if (writeline(stream, linepos) < 0) return -1;
     }
+    if (writestr(stream,
+		"\r\nColors:\r\n\r\n    Foreground:    ") < 0) return -1;
+    linepos = 0;
+    for (unsigned i = 1; i < 16; ++i)
+    {
+	if (i == 8) linepos += sprintf(line+linepos, "\33[1m");
+	linepos += sprintf(line+linepos, "\33[3%um\36\37", i%8);
+    }
+    if (writeline(stream, linepos) < 0) return -1;
+    if (writestr(stream,
+		"\33[m\r\n    Background:    \33[30m") < 0) return -1;
+    linepos = 0;
+    for (unsigned i = 1; i < 16; ++i)
+    {
+	if (i == 8) linepos += sprintf(line+linepos, "\33[5m");
+	linepos += sprintf(line+linepos, "\33[4%um\1\2", i%8);
+    }
+    if (writeline(stream, linepos) < 0) return -1;
+    if (writestr(stream,
+		"\33[m\r\n\r\n  \3  dos2ansi v0.5  \16\r\n") < 0) return -1;
+    linepos += sprintf(line+linepos, "\33[m\r\n");
+
     return 0;
 }
 
