@@ -241,17 +241,28 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
     else self->x += n;
 }
 
-static int finalize(const VgaCanvas *self)
+static int put(Stream *stream, uint16_t c)
 {
+    return Stream_write(stream, &c, sizeof c);
+}
+
+int VgaCanvas_serialize(const VgaCanvas *self,
+	Stream *out, const Codepage *cp, VgaSerFlags flags)
+{
+    if (!self->height) return 0;
+
+    if ((flags & VSF_BOM) && !put(out, 0xfeffU)) return -1;
+    if ((flags & VSF_LTRO) && !put(out, 0x202dU)) return -1;
+
     int hascolor = 0;
     for (size_t i = 0; i < self->height; ++i)
     {
 	VgaLine *l = self->lines[i];
 	l->len = self->width;
-	while (l->len > 0)
+	if (flags & VSF_CHOP) while (l->len > 0)
 	{
 	    if (l->chars[l->len-1].chr == 0x20 &&
-		    !(l->chars[l->len-1].att & 0x70U)) --l->len;
+		    !(l->chars[l->len-1].att & 0xf0U)) --l->len;
 	    else break;
 	}
 	if (!hascolor) for (int j = 0; j < l->len; ++j)
@@ -263,28 +274,11 @@ static int finalize(const VgaCanvas *self)
 	    }
 	}
     }
-    return hascolor;
-}
-
-static int put(Stream *stream, uint16_t c)
-{
-    return Stream_write(stream, &c, sizeof c);
-}
-
-int VgaCanvas_serialize(const VgaCanvas *self,
-	Stream *out, const Codepage *cp, VgaSerFlags flags)
-{
-    if (!self->height) return 0;
-
-    int att = -1;
-    int hascolor = finalize(self);
-
-    if ((flags & VSF_BOM) && !put(out, 0xfeffU)) return -1;
-    if ((flags & VSF_LTRO) && !put(out, 0x202dU)) return -1;
 
     for (size_t i = 0; i < self->height; ++i)
     {
 	const VgaLine *line = self->lines[i];
+	int att = -1;
 	for (int j = 0; j < line->len; ++j)
 	{
 	    if (hascolor)
@@ -298,15 +292,7 @@ int VgaCanvas_serialize(const VgaCanvas *self,
 	    }
 	    if (!put(out, Codepage_map(cp, line->chars[j].chr))) return -1;
 	}
-	if (hascolor)
-	{
-	    if (i < self->height-1)
-	    {
-		att &= 0xfU;
-		if (!put(out, 0xee00U | att)) return -1;
-	    }
-	    else if (!put(out, 0xef00U)) return -1;
-	}
+	if (hascolor && !put(out, 0xef00U)) return -1;
 	if ((flags & VSF_CRLF) && !put(out, '\r')) return -1;
 	if (!put(out, '\n')) return -1;
     }

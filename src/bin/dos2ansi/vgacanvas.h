@@ -12,7 +12,8 @@ typedef enum VgaSerFlags
     VSF_NONE	= 0,
     VSF_CRLF	= 1 << 0,   /* write newlines as CRLF instead of just LF */
     VSF_BOM	= 1 << 1,   /* start with a BOM (byte order mark) */
-    VSF_LTRO	= 1 << 2    /* wrap output in left-to-right override */
+    VSF_LTRO	= 1 << 2,   /* wrap output in left-to-right override */
+    VSF_CHOP	= 1 << 3,   /* attempt to shorten lines */
 } VgaSerFlags;
 
 VgaCanvas *VgaCanvas_create(int width, int tabwidth);

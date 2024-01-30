@@ -206,15 +206,16 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
 	return Stream_write(self->stream, ptr, size);
     }
     if (writer->flags & ACF_STRIP) return size;
-    if (!put(self->stream, 0x1b)) return 0;
     int defcols = !!(writer->flags & ACF_DEFAULT);
     if (c == 0xef00)
     {
 	c = 0xee07;
-	defcols = 1;
+	defcols = defcols ? 1 : 2;
     }
     int newfg = c & 0xfU;
     int newbg = (c >> 4) & 0xfU;
+    if (defcols < 2 && newfg == writer->fg && newbg == writer->bg) return size;
+    if (!put(self->stream, 0x1b)) return 0;
     if (defcols && newbg == 0 && newfg == 7)
     {
 	if (!put(self->stream, '[')) return 0;
@@ -229,8 +230,8 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     }
     else if (!writesimple(writer, newfg, newbg, defcols)) return 0;
     if (!put(self->stream, 'm')) return 0;
-    writer->fg = newfg;
-    writer->bg = newbg;
+    writer->fg = defcols == 2 ? -1 : newfg;
+    writer->bg = defcols == 2 ? -1 : newbg;
     return size;
 }
 

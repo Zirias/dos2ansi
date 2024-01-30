@@ -21,6 +21,11 @@ int Config_crlf(const Config *self);
 int Config_brokenpipe(const Config *self);
 int Config_markltr(const Config *self);
 int Config_euro(const Config *self);
+int Config_intcolors(const Config *self);
+int Config_rgbcolors(const Config *self);
+int Config_blink(const Config *self);
+int Config_reverse(const Config *self);
+int Config_nobrown(const Config *self);
 void Config_destroy(Config *self);
 
 #endif

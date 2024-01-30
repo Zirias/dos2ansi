@@ -31,10 +31,12 @@ int main(int argc, char **argv)
     config = Config_fromOpts(argc, argv);
     if (!config) goto done;
 
+    int width = Config_width(config);
     if (Config_test(config))
     {
 	in = Stream_createMemory();
 	TestWriter_write(in);
+	width = 70;
     }
     else
     {
@@ -58,7 +60,7 @@ int main(int argc, char **argv)
 	}
     }
 
-    canvas = VgaCanvas_create(Config_width(config), Config_tabwidth(config));
+    canvas = VgaCanvas_create(width, Config_tabwidth(config));
     if (!canvas) goto done;
     if (Config_ignoreeof(config)) DosReader_ignoreeof(1);
     if (DosReader_read(canvas, in) != 0) goto done;
@@ -104,6 +106,11 @@ int main(int argc, char **argv)
     AnsiColorFlags acflags = ACF_NONE;
     if (!Config_colors(config)) acflags |= ACF_STRIP;
     if (Config_defcolors(config)) acflags |= ACF_DEFAULT;
+    if (Config_intcolors(config)) acflags |= ACF_BRIGHTCOLS;
+    if (Config_rgbcolors(config)) acflags |= ACF_RGBCOLS;
+    if (Config_blink(config)) acflags |= ACF_LBG_BLINK;
+    if (Config_reverse(config)) acflags |= ACF_LBG_REV;
+    if (Config_nobrown(config)) acflags |= ACF_RGBNOBROWN;
 
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
@@ -114,6 +121,7 @@ int main(int argc, char **argv)
     if (wantbom) vsflags |= VSF_BOM;
     if (Config_crlf(config)) vsflags |= VSF_CRLF;
     if (Config_markltr(config)) vsflags |= VSF_LTRO;
+    if (Config_defcolors(config)) vsflags |= VSF_CHOP;
 
     out = BufferedWriter_create(out, OUTBUFSIZE);
     out = UnicodeWriter_create(out, format);

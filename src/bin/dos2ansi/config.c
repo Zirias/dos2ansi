@@ -38,12 +38,17 @@ struct Config
     int brokenpipe;
     int markltr;
     int euro;
+    int intcolors;
+    int rgbcolors;
+    int blink;
+    int reverse;
+    int nobrown;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRTbdelpr] [-c codepage] [-o outfile]\n"
-	    "\t\t[-t tabwidth] [-u format] [-w width] [infile]\n",
+    fprintf(stderr, "Usage: %s [-BCEPRTbdeiklprvxy] [-c codepage]\n"
+	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
 	    "\t               (default: enabled for UTF16/UTF16LE)\n"
@@ -73,6 +78,10 @@ static void usage(const char *prgname)
 	    "\t               symbol, use the Euro symbol instead. As\n"
 	    "\t               special cases, replace other characters in\n"
 	    "\t               codepages 850, 857, 864 and 869.\n"
+	    "\t-i             Attempt to use explicit intense colors.\n"
+	    "\t-k             Use blink for intense background.\n"
+	    "\t               Note that blink is unlikely to work in modern\n"
+	    "\t               terminals.\n"
 	    "\t-l             Attempt to enforce left-to-right direction by\n"
 	    "\t               wrapping output in a Unicode LTR override\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
@@ -91,8 +100,13 @@ static void usage(const char *prgname)
 #else
 	    "\t               UTF8 (default), UTF16, UTF16LE\n"
 #endif
+	    "\t-v             Use reverse for intense background.\n"
+	    "\t               Implies not using blink (-k).\n"
 	    "\t-w width       Width of the (virtual) screen.\n"
 	    "\t               min: 16, default: 80, max: 1024\n"
+	    "\t-x             Attempt to use exact CGA/VGA colors\n"
+	    "\t-y             Do not replace dark yellow with brown,\n"
+	    "\t               implies exact colors (-x).\n"
 	    "\n"
 	    "\tinfile         Read input from this file. If not given,\n"
 	    "\t               input is read from the standard input.\n\n",
@@ -164,7 +178,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRTbcdeloprtuw";
+    const char onceflags[] = "BCEPRTbcdeikloprtuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -187,6 +201,11 @@ Config *Config_fromOpts(int argc, char **argv)
     config->brokenpipe = -1;
     config->markltr = 0;
     config->euro = 0;
+    config->intcolors = 0;
+    config->rgbcolors = 0;
+    config->blink = 0;
+    config->reverse = 0;
+    config->nobrown = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -272,6 +291,14 @@ Config *Config_fromOpts(int argc, char **argv)
 			config->euro = 1;
 			break;
 
+		    case 'i':
+			config->intcolors = 1;
+			break;
+
+		    case 'k':
+			config->blink = 1;
+			break;
+
 		    case 'l':
 			config->markltr = 1;
 			break;
@@ -282,6 +309,19 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'r':
 			config->crlf = 1;
+			break;
+
+		    case 'v':
+			config->reverse = 1;
+			break;
+
+		    case 'x':
+			config->rgbcolors = 1;
+			break;
+
+		    case 'y':
+			config->rgbcolors = 1;
+			config->nobrown = 1;
 			break;
 
 		    default:
@@ -403,6 +443,31 @@ int Config_markltr(const Config *self)
 int Config_euro(const Config *self)
 {
     return self->euro;
+}
+
+int Config_intcolors(const Config *self)
+{
+    return self->intcolors;
+}
+
+int Config_rgbcolors(const Config *self)
+{
+    return self->rgbcolors;
+}
+
+int Config_blink(const Config *self)
+{
+    return self->blink;
+}
+
+int Config_reverse(const Config *self)
+{
+    return self->reverse;
+}
+
+int Config_nobrown(const Config *self)
+{
+    return self->nobrown;
 }
 
 void Config_destroy(Config *self)
