@@ -101,7 +101,8 @@ static void usage(const char *prgname)
 	    "\t               UTF8 (default), UTF16, UTF16LE\n"
 #endif
 	    "\t-v             Use reverse for intense background.\n"
-	    "\t               Implies not using blink (-k).\n"
+	    "\t               Conflicts with blink (-k) and ignored with\n"
+	    "\t               intense (-i) or exact (-x) colors.\n"
 	    "\t-w width       Width of the (virtual) screen.\n"
 	    "\t               min: 16, default: 80, max: 1024\n"
 	    "\t-x             Attempt to use exact CGA/VGA colors\n"
