@@ -52,7 +52,27 @@ static int writergb(AnsiColorWriter *self,
 	int newfg, int newbg, int defcols)
 {
     char nextarg = '[';
-    if ((self->bg < 0 && newbg != 0) || newbg != self->bg)
+    int oldbg = self->bg;
+    if (self->flags & ACF_LBG_BLINK)
+    {
+	if (((oldbg < 0 && (newbg & 8U)) || (newbg & 8U) != (oldbg & 8U)))
+	{
+	    if (!put(self->base.stream, nextarg)) return 0;
+	    nextarg = ';';
+	    if (newbg & 8U)
+	    {
+		if (!put(self->base.stream, '5')) return 0;
+	    }
+	    else
+	    {
+		if (!put(self->base.stream, '2')) return 0;
+		if (!put(self->base.stream, '5')) return 0;
+	    }
+	}
+	if (oldbg > 7) oldbg &= 7U;
+	newbg &= 7U;
+    }
+    if ((oldbg < 0 && newbg != 0) || newbg != oldbg)
     {
 	if (!put(self->base.stream, nextarg)) return 0;
 	nextarg = ';';
@@ -98,7 +118,27 @@ static int writebright(AnsiColorWriter *self,
 	int newfg, int newbg, int defcols)
 {
     char nextarg = '[';
-    if ((self->bg < 0 && newbg != 0) || newbg != self->bg)
+    int oldbg = self->bg;
+    if (self->flags & ACF_LBG_BLINK)
+    {
+	if (((oldbg < 0 && (newbg & 8U)) || (newbg & 8U) != (oldbg & 8U)))
+	{
+	    if (!put(self->base.stream, nextarg)) return 0;
+	    nextarg = ';';
+	    if (newbg & 8U)
+	    {
+		if (!put(self->base.stream, '5')) return 0;
+	    }
+	    else
+	    {
+		if (!put(self->base.stream, '2')) return 0;
+		if (!put(self->base.stream, '5')) return 0;
+	    }
+	}
+	if (oldbg > 7) oldbg &= 7U;
+	newbg &= 7U;
+    }
+    if ((oldbg < 0 && newbg != 0) || newbg != oldbg)
     {
 	if (!put(self->base.stream, nextarg)) return 0;
 	nextarg = ';';
