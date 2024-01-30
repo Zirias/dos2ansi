@@ -302,7 +302,7 @@ int VgaCanvas_serialize(const VgaCanvas *self,
 	{
 	    if (i < self->height-1)
 	    {
-		att &= 0x8fU;
+		att &= 0xfU;
 		if (!put(out, 0xee00U | att)) return -1;
 	    }
 	    else if (!put(out, 0xef00U)) return -1;
