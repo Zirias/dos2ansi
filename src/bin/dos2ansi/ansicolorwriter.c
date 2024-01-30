@@ -31,6 +31,9 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     if (writer->flags & ACF_STRIP) return size;
     if (!put(self->stream, 0x1b)) return 0;
     int defcols = !!(writer->flags & ACF_DEFAULT);
+    char lightbg = 0;
+    if (writer->flags & ACF_LBG_REV) lightbg = '7';
+    else if (writer->flags & ACF_LBG_BLINK) lightbg = '5';
     if (c == 0xef00)
     {
 	c = 0xee07;
@@ -44,18 +47,20 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
 	if (!put(self->stream, nextarg)) return 0;
 	goto done;
     }
-    if ((writer->bg < 0 && (newbg & 8U)) || (newbg & 8U) != (writer->bg & 8U))
+    if (lightbg &&
+	    ((writer->bg < 0 && (newbg & 8U))
+	     || (newbg & 8U) != (writer->bg & 8U)))
     {
 	if (!put(self->stream, nextarg)) return 0;
 	nextarg = ';';
 	if (newbg & 8U)
 	{
-	    if (!put(self->stream, '5')) return 0;
+	    if (!put(self->stream, lightbg)) return 0;
 	}
 	else
 	{
 	    if (!put(self->stream, '2')) return 0;
-	    if (!put(self->stream, '5')) return 0;
+	    if (!put(self->stream, lightbg)) return 0;
 	}
     }
     if ((writer->fg < 0 && (newfg & 8U)) || (newfg & 8U) != (writer->fg & 8U))
