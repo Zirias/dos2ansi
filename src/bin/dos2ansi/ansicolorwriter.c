@@ -5,6 +5,27 @@
 
 #include <stdint.h>
 
+static const char *rgbcols[] = {
+    "16",   /* black */
+    "124",  /* red */
+    "34",   /* green */
+    "142",  /* dark yellow */
+    "19",   /* blue */
+    "127",  /* magenta */
+    "37",   /* cyan */
+    "248",  /* light gray */
+    "240",  /* dark gray */
+    "203",  /* light red */
+    "83",   /* light green */
+    "227",  /* yellow */
+    "63",   /* light blue */
+    "207",  /* light magenta */
+    "87",   /* light cyan */
+    "231"   /* white */
+};
+static const char *rgbbrown = "130";
+static const char *rgbinit = "8;5;";
+
 typedef struct AnsiColorWriter
 {
     StreamWriter base;
@@ -16,6 +37,61 @@ typedef struct AnsiColorWriter
 static size_t put(Stream *stream, uint16_t c)
 {
     return Stream_write(stream, &c, sizeof c);
+}
+
+static int putstr(Stream *stream, const char *str)
+{
+    while (*str)
+    {
+	if (!put(stream, *str++)) return 0;
+    }
+    return 1;
+}
+
+static int writergb(AnsiColorWriter *self,
+	int newfg, int newbg, int defcols)
+{
+    char nextarg = '[';
+    if ((self->bg < 0 && newbg != 0) || newbg != self->bg)
+    {
+	if (!put(self->base.stream, nextarg)) return 0;
+	nextarg = ';';
+	if (!put(self->base.stream, '4')) return 0;
+	if (defcols && newbg == 0)
+	{
+	    if (!put(self->base.stream, '9')) return 0;
+	}
+	else 
+	{
+	    const char *colstr = rgbcols[newbg];
+	    if (!(self->flags & ACF_RGBNOBROWN) && newbg == 3)
+	    {
+		colstr = rgbbrown;
+	    }
+	    if (!putstr(self->base.stream, rgbinit)) return 0;
+	    if (!putstr(self->base.stream, colstr)) return 0;
+	}
+    }
+    if ((self->fg < 0 && newfg != 7) || newfg != self->fg)
+    {
+	if (!put(self->base.stream, nextarg)) return 0;
+	if (!put(self->base.stream, '3')) return 0;
+	if (defcols && newfg == 7)
+	{
+	    if (!put(self->base.stream, '9')) return 0;
+	}
+	else
+	{
+	    const char *colstr = rgbcols[newfg];
+	    if (!(self->flags & ACF_RGBNOBROWN) && newfg == 3)
+	    {
+		colstr = rgbbrown;
+	    }
+	    if (!putstr(self->base.stream, rgbinit)) return 0;
+	    if (!putstr(self->base.stream, colstr)) return 0;
+	}
+    }
+    return 1;
 }
 
 static int writebright(AnsiColorWriter *self,
@@ -143,14 +219,15 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     {
 	if (!put(self->stream, '[')) return 0;
     }
+    else if (writer->flags & ACF_RGBCOLS)
+    {
+	if (!writergb(writer, newfg, newbg, defcols)) return 0;
+    }
     else if (writer->flags & ACF_BRIGHTCOLS)
     {
 	if (!writebright(writer, newfg, newbg, defcols)) return 0;
     }
-    else
-    {
-	if (!writesimple(writer, newfg, newbg, defcols)) return 0;
-    }
+    else if (!writesimple(writer, newfg, newbg, defcols)) return 0;
     if (!put(self->stream, 'm')) return 0;
     writer->fg = newfg;
     writer->bg = newbg;
