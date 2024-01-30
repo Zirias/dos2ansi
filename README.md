@@ -26,6 +26,9 @@ different terminals and fonts before reporting a bug in dos2ansi.
 * Supports SGR sequences as well as cursor movement sequences in the input
 * Autodetecs whether any visible color is used, if not, the output won't
   use any escape sequences
+* Supports flexible modes for color output, from simple 8-color mode with
+  attributes for "bright" colors up to exact CGA/VGA colors using 256-color
+  mode and more
 * Supports all simple control characters MS-DOS interpreted when outputting
   text: NUL (ignored), BEL (ignored), BS, TAB, LF, CR and ESC (ignored when
   it doesn't start some ANSI.SYS sequence)
@@ -39,7 +42,7 @@ different terminals and fonts before reporting a bug in dos2ansi.
 * Optionally translates the pipe bar symbol to a broken bar, matching the
   appearance with most hardware fonts
 * Includes a test mode rendering an encoding table with the selected settings
-  to verify appearance on your terminal
+  and the color palette to verify appearance on your terminal
 
 ## Test mode
 
