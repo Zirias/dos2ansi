@@ -28,7 +28,9 @@ different terminals and fonts before reporting a bug in dos2ansi.
   use any escape sequences
 * Supports flexible modes for color output, from simple 8-color mode with
   attributes for "bright" colors up to exact CGA/VGA colors using 256-color
-  mode and more
+  mode and more, including a terminfo (curses) based writer for unix-like
+  systems and one using the legacy Console API for older Windows versions
+  (pre Windows 10).
 * Supports all simple control characters MS-DOS interpreted when outputting
   text: NUL (ignored), BEL (ignored), BS, TAB, LF, CR and ESC (ignored when
   it doesn't start some ANSI.SYS sequence)
@@ -50,8 +52,6 @@ different terminals and fonts before reporting a bug in dos2ansi.
 
 ## Maybe planned
 
-* Output to terminal using native APIs (Windows) or termcap/terminfo
-  (non-Windows) instead of fixed ANSI sequences
 * Parse [SAUCE](https://github.com/radman1/sauce) metadata to e.g. get
   codepage information
 
