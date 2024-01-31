@@ -18,4 +18,9 @@ dos2ansi_DEFINES+=	-DWITH_CURSES
 endif
 endif
 
+ifeq ($(PLATFORM),win32)
+dos2ansi_MODULES+=	winconsolewriter
+dos2ansi_win32_RES:=	windres
+endif
+
 $(call binrules, dos2ansi)

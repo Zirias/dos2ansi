@@ -8,17 +8,18 @@
 #include "unicodewriter.h"
 #include "vgacanvas.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifdef WITH_CURSES
 #  include "ticolorwriter.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifdef _WIN32
-#  include <io.h>
+#  include "winconsolewriter.h"
 #  include <fcntl.h>
-#  include <windows.h>
+#  include <io.h>
+#  include <versionhelpers.h>
 #endif
 
 #define OUTBUFSIZE 4096
@@ -72,9 +73,15 @@ int main(int argc, char **argv)
     in = 0;
 
     const char *outfile = Config_outfile(config);
-    int defformat = UF_UTF8;
-#if defined(_WIN32) || defined(WITH_CURSES)
+#ifdef WITH_CURSES
     int useterm = 0;
+#endif
+#ifdef _WIN32
+    int usexterm = 0;
+    int useconsole = 0;
+    int defformat = UF_UTF16;
+#else
+    int defformat = UF_UTF8;
 #endif
     if (outfile)
     {
@@ -89,30 +96,44 @@ int main(int argc, char **argv)
     else
     {
 #ifdef _WIN32
-	int outfd = _fileno(stdout);
-	_setmode(outfd, _O_BINARY);
-	if (_isatty(outfd))
+	HANDLE outhdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD mode;
+	if (GetConsoleMode(outhdl, &mode))
 	{
-	    HANDLE outhdl = (HANDLE)_get_osfhandle(outfd);
-	    DWORD mode;
-	    GetConsoleMode(outhdl, &mode);
-	    mode |= 4; /* ENABLE_VIRTUAL_TERMINAL_PROCESSING */
-	    SetConsoleMode(outhdl, mode);
-	    SetConsoleOutputCP(CP_UTF8);
-	    if (!Config_forceansi(config)) useterm = 1;
+	    if (IsWindows10OrGreater())
+	    {
+		mode |= 4; /* ENABLE_VIRTUAL_TERMINAL_PROCESSING */
+		SetConsoleMode(outhdl, mode);
+		SetConsoleOutputCP(CP_UTF8);
+		defformat = UF_UTF8;
+		if (!Config_forceansi(config)) usexterm = 1;
+	    }
+	    else
+	    {
+		out = WinConsoleWriter_create(outhdl,
+			!Config_colors(config));
+		useconsole = 1;
+	    }
 	}
-	else defformat = UF_UTF16;
+	else
+	{
+	    int outfd = _fileno(stdout);
+	    _setmode(outfd, _O_BINARY);
+	}
 #endif
 #ifdef WITH_CURSES
 	if (!Config_forceansi(config)) useterm = 1;
 #endif
-	out = Stream_createFile(stdout);
+	if (!out) out = Stream_createFile(stdout);
     }
 
     int format = Config_format(config);
     if (format < 0) format = defformat;
     int wantbom = Config_bom(config);
     if (wantbom < 0) wantbom = format != UF_UTF8;
+#ifdef _WIN32
+    if (useconsole) wantbom = 0;
+#endif
 
     AnsiColorFlags acflags = ACF_NONE;
 #ifdef WITH_CURSES
@@ -135,6 +156,9 @@ int main(int argc, char **argv)
 	if (Config_blink(config)) acflags |= ACF_LBG_BLINK;
 	if (Config_reverse(config)) acflags |= ACF_LBG_REV;
 	if (Config_nobrown(config)) acflags |= ACF_RGBNOBROWN;
+#ifdef _WIN32
+	if (usexterm) acflags |= ACF_RGBCOLS;
+#endif
 #ifdef WITH_CURSES
     }
 #endif
@@ -151,13 +175,20 @@ int main(int argc, char **argv)
     if (Config_defcolors(config)) vsflags |= VSF_CHOP;
 
     out = BufferedWriter_create(out, OUTBUFSIZE);
-    out = UnicodeWriter_create(out, format);
-#ifdef WITH_CURSES
-    if (useterm)
-	out = TiColorWriter_create(out, tcflags);
-    else
+#ifdef _WIN32
+    if (!useconsole)
+    {
 #endif
-	out = AnsiColorWriter_create(out, acflags);
+	out = UnicodeWriter_create(out, format);
+#ifdef WITH_CURSES
+	if (useterm)
+	    out = TiColorWriter_create(out, tcflags);
+	else
+#endif
+	    out = AnsiColorWriter_create(out, acflags);
+#ifdef _WIN32
+    }
+#endif
 
     cp = Codepage_create(Config_codepage(config), cpflags);
 
