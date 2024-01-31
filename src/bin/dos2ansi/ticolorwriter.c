@@ -37,7 +37,7 @@ typedef struct TiColorWriter
     const char *setaf;
     const char *setab;
     const int *rgbcols;
-    TiColorFlags flags;
+    ColorFlags flags;
     int fg;
     int bg;
 } TiColorWriter;
@@ -52,8 +52,8 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     {
 	return Stream_write(self->stream, ptr, size);
     }
-    if (writer->flags & TCF_STRIP) return size;
-    int defcols = !!(writer->flags & TCF_DEFAULT);
+    if (writer->flags & CF_STRIP) return size;
+    int defcols = !!(writer->flags & CF_DEFAULT);
     if (c == 0xef00)
     {
 	c = 0xee07;
@@ -87,7 +87,7 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     {
 	newfgcol = writer->rgbcols[newfgcol];
 	newbgcol = writer->rgbcols[newbgcol];
-	if (!(writer->flags & TCF_RGBNOBROWN))
+	if (!(writer->flags & CF_RGBNOBROWN))
 	{
 	    newfgcol = RGBBROWN(newfgcol);
 	    newbgcol = RGBBROWN(newbgcol);
@@ -101,7 +101,7 @@ done:
     return size;
 }
 
-Stream *TiColorWriter_create(Stream *out, TiColorFlags flags)
+Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 {
     TiColorWriter *writer = xmalloc(sizeof *writer);
     writer->base.write = writeticol;
@@ -114,7 +114,7 @@ Stream *TiColorWriter_create(Stream *out, TiColorFlags flags)
     writer->rgbcols = 0;
     writer->fg = -1;
     writer->bg = -1;
-    if (flags & TCF_STRIP) goto done;
+    if (flags & CF_STRIP) goto done;
     int err;
     if (setupterm(0, STDOUT_FILENO, &err) == ERR) goto error;
     int ncols = tigetnum("colors");
@@ -141,15 +141,15 @@ Stream *TiColorWriter_create(Stream *out, TiColorFlags flags)
 	{
 	    writer->rgbcols = rgbcols;
 	}
-	flags &= ~TCF_LBG_REV;
+	flags &= ~CF_LBG_REV;
     }
-    if (flags & TCF_LBG_BLINK)
+    if (flags & CF_LBG_BLINK)
     {
 	if (tigetstr("blink")) writer->brightbg = "blink";
 	else if (tigetstr("mb")) writer->brightbg = "mb";
 	else writer->brightbg = "";
     }
-    if (flags & TCF_LBG_REV)
+    if (flags & CF_LBG_REV)
     {
 	if (tigetstr("rev")) writer->brightbg = "rev";
 	else if (tigetstr("mr")) writer->brightbg = "mr";
@@ -160,7 +160,7 @@ Stream *TiColorWriter_create(Stream *out, TiColorFlags flags)
     goto done;
 
 error:
-    writer->flags = TCF_STRIP;
+    writer->flags = CF_STRIP;
 done:
     return Stream_createWriter((StreamWriter *)writer);
 }

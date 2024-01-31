@@ -29,7 +29,7 @@ static const char *rgbinit = "8;5;";
 typedef struct AnsiColorWriter
 {
     StreamWriter base;
-    AnsiColorFlags flags;
+    ColorFlags flags;
     int bg;
     int fg;
 } AnsiColorWriter;
@@ -53,7 +53,7 @@ static int writergb(AnsiColorWriter *self,
 {
     char nextarg = '[';
     int oldbg = self->bg;
-    if (self->flags & ACF_LBG_BLINK)
+    if (self->flags & CF_LBG_BLINK)
     {
 	if (((oldbg < 0 && (newbg & 8U)) || (newbg & 8U) != (oldbg & 8U)))
 	{
@@ -84,7 +84,7 @@ static int writergb(AnsiColorWriter *self,
 	else 
 	{
 	    const char *colstr = rgbcols[newbg];
-	    if (!(self->flags & ACF_RGBNOBROWN) && newbg == 3)
+	    if (!(self->flags & CF_RGBNOBROWN) && newbg == 3)
 	    {
 		colstr = rgbbrown;
 	    }
@@ -103,7 +103,7 @@ static int writergb(AnsiColorWriter *self,
 	else
 	{
 	    const char *colstr = rgbcols[newfg];
-	    if (!(self->flags & ACF_RGBNOBROWN) && newfg == 3)
+	    if (!(self->flags & CF_RGBNOBROWN) && newfg == 3)
 	    {
 		colstr = rgbbrown;
 	    }
@@ -119,7 +119,7 @@ static int writebright(AnsiColorWriter *self,
 {
     char nextarg = '[';
     int oldbg = self->bg;
-    if (self->flags & ACF_LBG_BLINK)
+    if (self->flags & CF_LBG_BLINK)
     {
 	if (((oldbg < 0 && (newbg & 8U)) || (newbg & 8U) != (oldbg & 8U)))
 	{
@@ -176,8 +176,8 @@ static int writesimple(AnsiColorWriter *self,
 {
     char nextarg = '[';
     char lightbg = 0;
-    if (self->flags & ACF_LBG_REV) lightbg = '7';
-    else if (self->flags & ACF_LBG_BLINK) lightbg = '5';
+    if (self->flags & CF_LBG_REV) lightbg = '7';
+    else if (self->flags & CF_LBG_BLINK) lightbg = '5';
 
     if (lightbg &&
 	    ((self->bg < 0 && (newbg & 8U))
@@ -245,8 +245,8 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     {
 	return Stream_write(self->stream, ptr, size);
     }
-    if (writer->flags & ACF_STRIP) return size;
-    int defcols = !!(writer->flags & ACF_DEFAULT);
+    if (writer->flags & CF_STRIP) return size;
+    int defcols = !!(writer->flags & CF_DEFAULT);
     if (c == 0xef00)
     {
 	c = 0xee07;
@@ -260,11 +260,11 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     {
 	if (!put(self->stream, '[')) return 0;
     }
-    else if (writer->flags & ACF_RGBCOLS)
+    else if (writer->flags & CF_RGBCOLS)
     {
 	if (!writergb(writer, newfg, newbg, defcols)) return 0;
     }
-    else if (writer->flags & ACF_BRIGHTCOLS)
+    else if (writer->flags & CF_BRIGHTCOLS)
     {
 	if (!writebright(writer, newfg, newbg, defcols)) return 0;
     }
@@ -275,7 +275,7 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     return size;
 }
 
-Stream *AnsiColorWriter_create(Stream *out, AnsiColorFlags flags)
+Stream *AnsiColorWriter_create(Stream *out, ColorFlags flags)
 {
     AnsiColorWriter *writer = xmalloc(sizeof *writer);
     writer->base.write = write;

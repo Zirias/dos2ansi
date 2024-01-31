@@ -13,6 +13,8 @@
 
 #ifdef WITH_CURSES
 #  include "ticolorwriter.h"
+#else
+#  define TiColorWriter_create(s,f) (s)
 #endif
 
 #ifdef _WIN32
@@ -20,6 +22,11 @@
 #  include <fcntl.h>
 #  include <io.h>
 #  include <versionhelpers.h>
+#  define DEFFORMAT UF_UTF16
+#  define BINMODE(f) _setmode(_fileno(f), _O_BINARY)
+#else
+#  define DEFFORMAT UF_UTF8
+#  define BINMODE(f) (void)(f);
 #endif
 
 #define OUTBUFSIZE 4096
@@ -35,7 +42,6 @@ int main(int argc, char **argv)
 
     config = Config_fromOpts(argc, argv);
     if (!config) goto done;
-
     int width = Config_width(config);
     if (Config_test(config))
     {
@@ -58,9 +64,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-#ifdef _WIN32
-	    _setmode(_fileno(stdin), _O_BINARY);
-#endif
+	    BINMODE(stdin);
 	    in = Stream_createFile(stdin);
 	}
     }
@@ -73,16 +77,10 @@ int main(int argc, char **argv)
     in = 0;
 
     const char *outfile = Config_outfile(config);
-#ifdef WITH_CURSES
     int useterm = 0;
-#endif
-#ifdef _WIN32
-    int usexterm = 0;
+    int forcergb = 0;
     int useconsole = 0;
-    int defformat = UF_UTF16;
-#else
-    int defformat = UF_UTF8;
-#endif
+    int defformat = DEFFORMAT;
     if (outfile)
     {
 	FILE *f = fopen(outfile, "wb");
@@ -106,7 +104,7 @@ int main(int argc, char **argv)
 		SetConsoleMode(outhdl, mode);
 		SetConsoleOutputCP(CP_UTF8);
 		defformat = UF_UTF8;
-		if (!Config_forceansi(config)) usexterm = 1;
+		if (!Config_forceansi(config)) forcergb = 1;
 	    }
 	    else
 	    {
@@ -131,37 +129,17 @@ int main(int argc, char **argv)
     if (format < 0) format = defformat;
     int wantbom = Config_bom(config);
     if (wantbom < 0) wantbom = format != UF_UTF8;
-#ifdef _WIN32
     if (useconsole) wantbom = 0;
-#endif
 
-    AnsiColorFlags acflags = ACF_NONE;
-#ifdef WITH_CURSES
-    TiColorFlags tcflags = TCF_NONE;
-    if (useterm)
-    {
-	if (!Config_colors(config)) tcflags |= TCF_STRIP;
-	if (Config_defcolors(config)) tcflags |= TCF_DEFAULT;
-	if (Config_blink(config)) tcflags |= TCF_LBG_BLINK;
-	if (Config_reverse(config)) tcflags |= TCF_LBG_REV;
-	if (Config_nobrown(config)) tcflags |= TCF_RGBNOBROWN;
-    }
-    else
-    {
-#endif
-	if (!Config_colors(config)) acflags |= ACF_STRIP;
-	if (Config_defcolors(config)) acflags |= ACF_DEFAULT;
-	if (Config_intcolors(config)) acflags |= ACF_BRIGHTCOLS;
-	if (Config_rgbcolors(config)) acflags |= ACF_RGBCOLS;
-	if (Config_blink(config)) acflags |= ACF_LBG_BLINK;
-	if (Config_reverse(config)) acflags |= ACF_LBG_REV;
-	if (Config_nobrown(config)) acflags |= ACF_RGBNOBROWN;
-#ifdef _WIN32
-	if (usexterm) acflags |= ACF_RGBCOLS;
-#endif
-#ifdef WITH_CURSES
-    }
-#endif
+    ColorFlags cflags = CF_NONE;
+    if (!Config_colors(config)) cflags |= CF_STRIP;
+    if (Config_defcolors(config)) cflags |= CF_DEFAULT;
+    if (Config_intcolors(config)) cflags |= CF_BRIGHTCOLS;
+    if (Config_rgbcolors(config)) cflags |= CF_RGBCOLS;
+    if (Config_blink(config)) cflags |= CF_LBG_BLINK;
+    if (Config_reverse(config)) cflags |= CF_LBG_REV;
+    if (Config_nobrown(config)) cflags |= CF_RGBNOBROWN;
+    if (forcergb) cflags |= CF_RGBCOLS;
 
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
@@ -175,23 +153,13 @@ int main(int argc, char **argv)
     if (Config_defcolors(config)) vsflags |= VSF_CHOP;
 
     out = BufferedWriter_create(out, OUTBUFSIZE);
-#ifdef _WIN32
     if (!useconsole)
     {
-#endif
 	out = UnicodeWriter_create(out, format);
-#ifdef WITH_CURSES
-	if (useterm)
-	    out = TiColorWriter_create(out, tcflags);
-	else
-#endif
-	    out = AnsiColorWriter_create(out, acflags);
-#ifdef _WIN32
+	if (useterm) out = TiColorWriter_create(out, cflags);
+	else out = AnsiColorWriter_create(out, cflags);
     }
-#endif
-
     cp = Codepage_create(Config_codepage(config), cpflags);
-
     if (VgaCanvas_serialize(canvas, out, cp, vsflags) != 0) goto done;
 
     rc = EXIT_SUCCESS;
