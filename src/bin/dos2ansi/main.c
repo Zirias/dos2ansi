@@ -8,6 +8,11 @@
 #include "unicodewriter.h"
 #include "vgacanvas.h"
 
+#ifdef WITH_CURSES
+#  include "ticolorwriter.h"
+#  include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -69,6 +74,9 @@ int main(int argc, char **argv)
 
     const char *outfile = Config_outfile(config);
     int defformat = UF_UTF8;
+#if defined(_WIN32) || defined(WITH_CURSES)
+    int useterm = 0;
+#endif
     if (outfile)
     {
 	FILE *f = fopen(outfile, "wb");
@@ -92,8 +100,12 @@ int main(int argc, char **argv)
 	    mode |= 4; /* ENABLE_VIRTUAL_TERMINAL_PROCESSING */
 	    SetConsoleMode(outhdl, mode);
 	    SetConsoleOutputCP(CP_UTF8);
+	    useterm = 1;
 	}
 	else defformat = UF_UTF16;
+#endif
+#ifdef WITH_CURSES
+	if (isatty(STDOUT_FILENO)) useterm = 1;
 #endif
 	out = Stream_createFile(stdout);
     }
@@ -104,13 +116,29 @@ int main(int argc, char **argv)
     if (wantbom < 0) wantbom = format != UF_UTF8;
 
     AnsiColorFlags acflags = ACF_NONE;
-    if (!Config_colors(config)) acflags |= ACF_STRIP;
-    if (Config_defcolors(config)) acflags |= ACF_DEFAULT;
-    if (Config_intcolors(config)) acflags |= ACF_BRIGHTCOLS;
-    if (Config_rgbcolors(config)) acflags |= ACF_RGBCOLS;
-    if (Config_blink(config)) acflags |= ACF_LBG_BLINK;
-    if (Config_reverse(config)) acflags |= ACF_LBG_REV;
-    if (Config_nobrown(config)) acflags |= ACF_RGBNOBROWN;
+#ifdef WITH_CURSES
+    TiColorFlags tcflags = TCF_NONE;
+    if (useterm)
+    {
+	if (!Config_colors(config)) tcflags |= TCF_STRIP;
+	if (Config_defcolors(config)) tcflags |= TCF_DEFAULT;
+	if (Config_blink(config)) tcflags |= TCF_LBG_BLINK;
+	if (Config_reverse(config)) tcflags |= TCF_LBG_REV;
+	if (Config_nobrown(config)) tcflags |= TCF_RGBNOBROWN;
+    }
+    else
+    {
+#endif
+	if (!Config_colors(config)) acflags |= ACF_STRIP;
+	if (Config_defcolors(config)) acflags |= ACF_DEFAULT;
+	if (Config_intcolors(config)) acflags |= ACF_BRIGHTCOLS;
+	if (Config_rgbcolors(config)) acflags |= ACF_RGBCOLS;
+	if (Config_blink(config)) acflags |= ACF_LBG_BLINK;
+	if (Config_reverse(config)) acflags |= ACF_LBG_REV;
+	if (Config_nobrown(config)) acflags |= ACF_RGBNOBROWN;
+#ifdef WITH_CURSES
+    }
+#endif
 
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
@@ -125,7 +153,13 @@ int main(int argc, char **argv)
 
     out = BufferedWriter_create(out, OUTBUFSIZE);
     out = UnicodeWriter_create(out, format);
-    out = AnsiColorWriter_create(out, acflags);
+#ifdef WITH_CURSES
+    if (useterm)
+	out = TiColorWriter_create(out, tcflags);
+    else
+#endif
+	out = AnsiColorWriter_create(out, acflags);
+
     cp = Codepage_create(Config_codepage(config), cpflags);
 
     if (VgaCanvas_serialize(canvas, out, cp, vsflags) != 0) goto done;
