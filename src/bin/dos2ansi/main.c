@@ -10,7 +10,6 @@
 
 #ifdef WITH_CURSES
 #  include "ticolorwriter.h"
-#  include <unistd.h>
 #endif
 
 #include <stdio.h>
@@ -100,12 +99,12 @@ int main(int argc, char **argv)
 	    mode |= 4; /* ENABLE_VIRTUAL_TERMINAL_PROCESSING */
 	    SetConsoleMode(outhdl, mode);
 	    SetConsoleOutputCP(CP_UTF8);
-	    useterm = 1;
+	    if (!Config_forceansi(config)) useterm = 1;
 	}
 	else defformat = UF_UTF16;
 #endif
 #ifdef WITH_CURSES
-	if (isatty(STDOUT_FILENO)) useterm = 1;
+	if (!Config_forceansi(config)) useterm = 1;
 #endif
 	out = Stream_createFile(stdout);
     }

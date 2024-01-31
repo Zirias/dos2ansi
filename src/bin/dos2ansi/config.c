@@ -43,11 +43,12 @@ struct Config
     int blink;
     int reverse;
     int nobrown;
+    int forceansi;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRTbdeiklprvxy] [-c codepage]\n"
+    fprintf(stderr, "Usage: %s [-BCEPRTabdeiklprvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -63,6 +64,10 @@ static void usage(const char *prgname)
 	    "\t-T             Test mode, do not read any input, instead\n"
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
+	    "\t-a             Force using the generic ANSI color writer.\n"
+	    "\t               When built with curses support on non-Windows,\n"
+	    "\t               a terminfo based writer is used instead unless\n"
+	    "\t               an output file is given with -o.\n"
 	    "\t-b             Enable writing a BOM (default see -B above)\n"
 	    "\t-c codepage    The DOS codepage used by the input file.\n"
 	    "\t               May be prefixed with CP (any casing) and an\n"
@@ -179,7 +184,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRTbcdeikloprtuvwxy";
+    const char onceflags[] = "BCEPRTabcdeikloprtuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -207,6 +212,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->blink = 0;
     config->reverse = 0;
     config->nobrown = 0;
+    config->forceansi = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -278,6 +284,10 @@ Config *Config_fromOpts(int argc, char **argv)
 		    case 'T':
 			config->test = 1;
 			config->ignoreeof = 1;
+			break;
+
+		    case 'a':
+			config->forceansi = 1;
 			break;
 
 		    case 'b':
@@ -469,6 +479,11 @@ int Config_reverse(const Config *self)
 int Config_nobrown(const Config *self)
 {
     return self->nobrown;
+}
+
+int Config_forceansi(const Config *self)
+{
+    return self->forceansi;
 }
 
 void Config_destroy(Config *self)
