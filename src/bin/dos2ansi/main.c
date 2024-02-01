@@ -146,11 +146,11 @@ static Stream *createStdoutStream(const Config *config,
 static Stream *createColorWriter(const Config *config,
 	Stream *out, ColorFlags flags)
 {
-    if (Config_forceansi(config))
+    if (!Config_outfile(config) && !Config_forceansi(config))
     {
-	return AnsiColorWriter_create(out, flags);
+	return TiColorWriter_create(out, flags);
     }
-    else return TiColorWriter_create(out, flags);
+    else return AnsiColorWriter_create(out, flags);
 }
 
 #else
