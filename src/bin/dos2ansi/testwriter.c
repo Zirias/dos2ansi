@@ -81,8 +81,8 @@ int TestWriter_write(Stream *stream)
 	linepos += sprintf(line+linepos, "\33[4%um\1\2", i%8);
     }
     if (writeline(stream, linepos) < 0) return -1;
-    if (writestr(stream,
-		"\33[m\r\n\r\n  \3  dos2ansi v0.5  \16\r\n") < 0) return -1;
+    if (writestr(stream, "\33[m\r\n\r\n  \3  dos2ansi v"
+		DOS2ANSIVERSTR " \16\r\n") < 0) return -1;
     linepos += sprintf(line+linepos, "\33[m\r\n");
 
     return 0;

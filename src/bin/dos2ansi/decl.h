@@ -1,6 +1,8 @@
 #ifndef DOS2ANSI_DECL_H
 #define DOS2ANSI_DECL_H
 
+#define DOS2ANSIVERSTR "0.6"
+
 #undef dos2ansi___cdecl
 #undef SOEXPORT
 #undef SOLOCAL
