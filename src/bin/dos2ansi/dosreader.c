@@ -7,14 +7,8 @@
 #include <string.h>
 
 static char buf[1024];
-static int ignoreeof = 0;
 
-void DosReader_ignoreeof(int arg)
-{
-    ignoreeof = !!arg;
-}
-
-int DosReader_read(VgaCanvas *canvas, Stream *stream)
+int DosReader_read(VgaCanvas *canvas, Stream *stream, int ignoreeof)
 {
     size_t bufsz;
     int escargs[8];
