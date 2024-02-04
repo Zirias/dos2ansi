@@ -134,6 +134,12 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 	if (tigetstr("bold")) writer->brightfg = "bold";
 	else if (tigetstr("md")) writer->brightfg = "md";
 	else writer->brightfg = "";
+	if (flags & CF_LBG_REV)
+	{
+	    if (tigetstr("rev")) writer->brightbg = "rev";
+	    else if (tigetstr("mr")) writer->brightbg = "mr";
+	    else writer->brightbg = "";
+	}
     }
     else
     {
@@ -147,12 +153,6 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     {
 	if (tigetstr("blink")) writer->brightbg = "blink";
 	else if (tigetstr("mb")) writer->brightbg = "mb";
-	else writer->brightbg = "";
-    }
-    if (flags & CF_LBG_REV)
-    {
-	if (tigetstr("rev")) writer->brightbg = "rev";
-	else if (tigetstr("mr")) writer->brightbg = "mr";
 	else writer->brightbg = "";
     }
 
