@@ -3,7 +3,7 @@
     <assemblyIdentity
 	type="win32"
 	name="dos2ansi"
-	version="0.6.1.0"
+	version="0.6.2.0"
 	processorArchitecture="x86"
     />
     <description>dos2ansi</description>
