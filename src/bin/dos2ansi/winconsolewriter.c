@@ -36,23 +36,27 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
 	}
 	if (pos < remaining)
 	{
-	    uint16_t ansiattr = str[pos++];
-	    if (ansiattr == 0xef00) ansiattr = 0x0007;
-	    else ansiattr &= 0xff;
-	    WORD winattr = 0;
-	    if (ansiattr & (1 << 0)) winattr |= FOREGROUND_RED;
-	    if (ansiattr & (1 << 1)) winattr |= FOREGROUND_GREEN;
-	    if (ansiattr & (1 << 2)) winattr |= FOREGROUND_BLUE;
-	    if (ansiattr & (1 << 3)) winattr |= FOREGROUND_INTENSITY;
-	    if (ansiattr & (1 << 4)) winattr |= BACKGROUND_RED;
-	    if (ansiattr & (1 << 5)) winattr |= BACKGROUND_GREEN;
-	    if (ansiattr & (1 << 6)) winattr |= BACKGROUND_BLUE;
-	    if (ansiattr & (1 << 7)) winattr |= BACKGROUND_INTENSITY;
-	    if (!SetConsoleTextAttribute(writer->console, winattr))
+	    if (!writer->stripcolors)
 	    {
-		writer->err = 1;
-		goto done;
+		uint16_t ansiattr = str[pos++];
+		if (ansiattr == 0xef00) ansiattr = 0x0007;
+		else ansiattr &= 0xff;
+		WORD winattr = 0;
+		if (ansiattr & (1 << 0)) winattr |= FOREGROUND_RED;
+		if (ansiattr & (1 << 1)) winattr |= FOREGROUND_GREEN;
+		if (ansiattr & (1 << 2)) winattr |= FOREGROUND_BLUE;
+		if (ansiattr & (1 << 3)) winattr |= FOREGROUND_INTENSITY;
+		if (ansiattr & (1 << 4)) winattr |= BACKGROUND_RED;
+		if (ansiattr & (1 << 5)) winattr |= BACKGROUND_GREEN;
+		if (ansiattr & (1 << 6)) winattr |= BACKGROUND_BLUE;
+		if (ansiattr & (1 << 7)) winattr |= BACKGROUND_INTENSITY;
+		if (!SetConsoleTextAttribute(writer->console, winattr))
+		{
+		    writer->err = 1;
+		    goto done;
+		}
 	    }
+	    else ++pos;
 	    ++written;
 	}
 	str += pos;
