@@ -114,7 +114,7 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     writer->rgbcols = 0;
     writer->fg = -1;
     writer->bg = -1;
-    if (flags & CF_STRIP) goto done;
+    if (flags & CF_STRIP) goto error;
     int err;
     if (setupterm(0, STDOUT_FILENO, &err) == ERR) goto error;
     int ncols = tigetnum("colors");
