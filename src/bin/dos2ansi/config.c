@@ -44,11 +44,12 @@ struct Config
     int reverse;
     int nobrown;
     int forceansi;
+    int showsauce;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRTabdeiklprvxy] [-c codepage]\n"
+    fprintf(stderr, "Usage: %s [-BCEPRTabdeiklprsvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -102,6 +103,8 @@ static void usage(const char *prgname)
 	    "\t               (default: see -P above)\n"
 	    "\t-r             Line endings with CR (DOS format,\n"
 	    "\t               default on Windows)\n"
+	    "\t-s             Show SAUCE metadata if available.\n"
+	    "\t               Conflicts with ignoring EOF (-E).\n"
 	    "\t-t tabwidth    Distance of tabstop positions.\n"
 	    "\t               min: 2, default: 8, max: width or 255\n"
 	    "\t-u format      Unicode output format, one of\n"
@@ -190,7 +193,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRTabcdeikloprtuvwxy";
+    const char onceflags[] = "BCEPRTabcdeikloprstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -219,6 +222,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->reverse = 0;
     config->nobrown = 0;
     config->forceansi = 0;
+    config->showsauce = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -326,6 +330,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'r':
 			config->crlf = 1;
+			break;
+
+		    case 's':
+			config->showsauce = 1;
 			break;
 
 		    case 'v':
@@ -490,6 +498,11 @@ int Config_nobrown(const Config *self)
 int Config_forceansi(const Config *self)
 {
     return self->forceansi;
+}
+
+int Config_showsauce(const Config *self)
+{
+    return self->showsauce;
 }
 
 void Config_destroy(Config *self)

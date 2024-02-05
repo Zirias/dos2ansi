@@ -27,6 +27,7 @@ int Config_blink(const Config *self);
 int Config_reverse(const Config *self);
 int Config_nobrown(const Config *self);
 int Config_forceansi(const Config *self);
+int Config_showsauce(const Config *self);
 void Config_destroy(Config *self);
 
 #endif

@@ -5,6 +5,7 @@
 #include "config.h"
 #include "dosreader.h"
 #include "sauce.h"
+#include "sauceprinter.h"
 #include "stream.h"
 #include "testwriter.h"
 #include "unicodewriter.h"
@@ -245,11 +246,28 @@ int main(int argc, char **argv)
 
     int width = insettings.forcedwidth;
     if (width < 0) width = Config_width(config);
+    if (Config_showsauce(config)) width = 80;
     canvas = VgaCanvas_create(width, Config_tabwidth(config));
     if (!canvas) goto done;
 
-    if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
-    if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
+    int cpid = Config_codepage(config);
+    if (Config_showsauce(config))
+    {
+	DosReader_seekAfterEof(in);
+	if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
+	if (sauce) SaucePrinter_print(canvas, sauce);
+	else
+	{
+	    fputs("No SAUCE found!\n", stderr);
+	    goto done;
+	}
+	cpid = CP_437;
+    }
+    else
+    {
+	if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
+	if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
+    }
     Stream_destroy(in);
     in = 0;
 
@@ -261,7 +279,7 @@ int main(int argc, char **argv)
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
     if (Config_euro(config)) cpflags |= CPF_EUROSYM;
-    cp = Codepage_create(Config_codepage(config), cpflags);
+    cp = Codepage_create(cpid, cpflags);
 
     VgaSerFlags vsflags = VSF_NONE;
     int wantbom = outsettings.forcedbom;
