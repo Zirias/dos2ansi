@@ -199,8 +199,8 @@ Config *Config_fromOpts(int argc, char **argv)
     Config *config = xmalloc(sizeof *config);
     config->infile = 0;
     config->outfile = 0;
-    config->tabwidth = 8;
-    config->width = 80;
+    config->tabwidth = -1;
+    config->width = -1;
     config->defcolors = 0;
     config->ignoreeof = 0;
     config->codepage = CP_437;
@@ -382,7 +382,7 @@ Config *Config_fromOpts(int argc, char **argv)
 	}
 next:	;
     }
-    if (naidx || config->tabwidth >= config->width)
+    if (naidx)
     {
 	usage(prgname);
 	goto error;

@@ -244,17 +244,40 @@ int main(int argc, char **argv)
     in = createInputStream(config, &insettings);
     if (!in) goto done;
 
-    int width = insettings.forcedwidth;
+    int width = -1;
+    if (Config_showsauce(config)
+	    && DosReader_seekAfterEof(in) == 0
+	    && Stream_status(in) == SS_DOSEOF)
+    {
+	sauce = Sauce_read(in);
+	width = 80;
+    }
+    else if (!Config_showsauce(config))
+    {
+	Stream *tmp = Stream_createMemory();
+	if (DosReader_readUntilEof(in, tmp) == 0)
+	{
+	    if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
+	    Stream_destroy(in);
+	    in = tmp;
+	    tmp = 0;
+	}
+	else Stream_destroy(tmp);
+    }
+
+    if (width < 0 && sauce) width = Sauce_width(sauce);
     if (width < 0) width = Config_width(config);
-    if (Config_showsauce(config)) width = 80;
-    canvas = VgaCanvas_create(width, Config_tabwidth(config));
+    if (width < 0) width = 80;
+    int tabwidth = Config_tabwidth(config);
+    if (tabwidth < 0) tabwidth = 8;
+    if (tabwidth > width) tabwidth = width;
+
+    canvas = VgaCanvas_create(width, tabwidth);
     if (!canvas) goto done;
 
     int cpid = Config_codepage(config);
     if (Config_showsauce(config))
     {
-	DosReader_seekAfterEof(in);
-	if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
 	if (sauce) SaucePrinter_print(canvas, sauce);
 	else
 	{
@@ -263,11 +286,7 @@ int main(int argc, char **argv)
 	}
 	cpid = CP_437;
     }
-    else
-    {
-	if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
-	if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
-    }
+    else if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
     Stream_destroy(in);
     in = 0;
 
