@@ -32,6 +32,7 @@ typedef struct FileStream
 typedef struct ReaderStream
 {
     struct Stream base;
+    const void *magic;
     StreamReader *reader;
 } ReaderStream;
 
@@ -39,6 +40,7 @@ typedef struct ReaderStream
 typedef struct WriterStream
 {
     struct Stream base;
+    const void *magic;
     StreamWriter *writer;
 } WriterStream;
 
@@ -60,22 +62,44 @@ Stream *Stream_createFile(FILE *file)
     return (Stream *)self;
 }
 
-Stream *Stream_createReader(StreamReader *reader)
+Stream *Stream_createReader(StreamReader *reader, const void *magic)
 {
-    if (!reader->read || (!reader->status && !reader->stream)) return 0;
+    if (!magic || !reader->read ||
+	    (!reader->status && !reader->stream)) return 0;
     ReaderStream *self = xmalloc(sizeof *self);
     self->base.size = T_READERSTREAM;
+    self->magic = magic;
     self->reader = reader;
     return (Stream *)self;
 }
 
-Stream *Stream_createWriter(StreamWriter *writer)
+Stream *Stream_createWriter(StreamWriter *writer, const void *magic)
 {
-    if (!writer->write || (!writer->status && !writer->stream)) return 0;
+    if (!magic || !writer->write ||
+	    (!writer->status && !writer->stream)) return 0;
     WriterStream *self = xmalloc(sizeof *self);
     self->base.size = T_WRITERSTREAM;
+    self->magic = magic;
     self->writer = writer;
     return (Stream *)self;
+}
+
+StreamReader *Stream_reader(Stream *self, const void *magic)
+{
+    if (!magic || self->size != T_READERSTREAM) return 0;
+    ReaderStream *rs = (ReaderStream *)self;
+    if (rs->magic == magic) return rs->reader;
+    if (!rs->reader->stream) return 0;
+    return Stream_reader(rs->reader->stream, magic);
+}
+
+StreamWriter *Stream_writer(Stream *self, const void *magic)
+{
+    if (!magic || self->size != T_WRITERSTREAM) return 0;
+    WriterStream *ws = (WriterStream *)self;
+    if (ws->magic == magic) return ws->writer;
+    if (!ws->writer->stream) return 0;
+    return Stream_writer(ws->writer->stream, magic);
 }
 
 static size_t MemoryStream_write(MemoryStream *self,

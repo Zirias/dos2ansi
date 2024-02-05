@@ -162,6 +162,6 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 error:
     writer->flags = CF_STRIP;
 done:
-    return Stream_createWriter((StreamWriter *)writer);
+    return Stream_createWriter((StreamWriter *)writer, rgbcols);
 }
 

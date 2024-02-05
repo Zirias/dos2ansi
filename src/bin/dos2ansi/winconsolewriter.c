@@ -13,6 +13,8 @@ typedef struct WinConsoleWriter
     int err;
 } WinConsoleWriter;
 
+static const char *magic = "";
+
 static size_t write(StreamWriter *self, const void *ptr, size_t size)
 {
     WinConsoleWriter *writer = (WinConsoleWriter *)self;
@@ -88,6 +90,6 @@ Stream *WinConsoleWriter_create(HANDLE console, int stripcolors)
     writer->console = console;
     writer->stripcolors = stripcolors;
     writer->err = 0;
-    return Stream_createWriter((StreamWriter *)writer);
+    return Stream_createWriter((StreamWriter *)writer, magic);
 }
 

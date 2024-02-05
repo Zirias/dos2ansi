@@ -286,6 +286,6 @@ Stream *AnsiColorWriter_create(Stream *out, ColorFlags flags)
     writer->flags = flags;
     writer->bg = -1;
     writer->fg = -1;
-    return Stream_createWriter((StreamWriter *)writer);
+    return Stream_createWriter((StreamWriter *)writer, rgbbrown);
 }
 

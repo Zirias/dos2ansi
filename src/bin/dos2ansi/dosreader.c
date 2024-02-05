@@ -16,6 +16,8 @@ typedef struct DosReader
     char buf[];
 } DosReader;
 
+static const char *magic = "";
+
 static size_t read(StreamReader *self, void *ptr, size_t size)
 {
     DosReader *reader = (DosReader *)self;
@@ -80,6 +82,6 @@ Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
     reader->bufpos = 0;
     reader->ignoreeof = ignoreeof;
     reader->doseof = 0;
-    return Stream_createReader((StreamReader *)reader);
+    return Stream_createReader((StreamReader *)reader, magic);
 }
 

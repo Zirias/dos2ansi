@@ -32,8 +32,11 @@ struct StreamWriter
 
 Stream *Stream_createMemory(void);
 Stream *Stream_createFile(FILE *file);
-Stream *Stream_createReader(StreamReader *reader);
-Stream *Stream_createWriter(StreamWriter *writer);
+Stream *Stream_createReader(StreamReader *reader, const void *magic);
+Stream *Stream_createWriter(StreamWriter *writer, const void *magic);
+
+StreamReader *Stream_reader(Stream *self, const void *magic);
+StreamWriter *Stream_writer(Stream *self, const void *magic);
 
 size_t Stream_write(Stream *self, const void *ptr, size_t sz);
 size_t Stream_read(Stream *self, void *ptr, size_t sz);

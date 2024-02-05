@@ -11,6 +11,8 @@ typedef struct UnicodeWriter
     int (*outfunc)(Stream *stream, uint16_t c);
 } UnicodeWriter;
 
+static const char *magic = "";
+
 static int put(Stream *stream, unsigned char c)
 {
     return Stream_write(stream, &c, 1);
@@ -81,6 +83,6 @@ Stream *UnicodeWriter_create(Stream *out, UnicodeFormat format)
 	    writer->outfunc = toutf16le;
 	    break;
     }
-    return Stream_createWriter((StreamWriter *)writer);
+    return Stream_createWriter((StreamWriter *)writer, magic);
 }
 

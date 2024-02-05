@@ -13,6 +13,8 @@ typedef struct BufferedWriter
     char buf[];
 } BufferedWriter;
 
+static const char *magic = "";
+
 static int flush(StreamWriter *self)
 {
     BufferedWriter *writer = (BufferedWriter *)self;
@@ -71,5 +73,5 @@ Stream *BufferedWriter_create(Stream *out, size_t bufsize)
     writer->base.stream = out;
     writer->bufsize = bufsize;
     writer->bufused = 0;
-    return Stream_createWriter((StreamWriter *)writer);
+    return Stream_createWriter((StreamWriter *)writer, magic);
 }
