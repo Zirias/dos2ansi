@@ -48,8 +48,11 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
 	    if (eofpos) buflen = eofpos - (reader->buf + reader->bufpos);
 	}
 	if (!buflen) break;
-	memcpy(cptr, reader->buf + reader->bufpos, buflen);
-	cptr += buflen;
+	if (cptr)
+	{
+	    memcpy(cptr, reader->buf + reader->bufpos, buflen);
+	    cptr += buflen;
+	}
 	nread += buflen;
 	reader->bufpos += buflen;
 	if (!reader->ignoreeof && reader->bufpos < reader->bufused
@@ -83,5 +86,15 @@ Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
     reader->ignoreeof = ignoreeof;
     reader->doseof = 0;
     return Stream_createReader((StreamReader *)reader, magic);
+}
+
+int DosReader_seekAfterEof(Stream *stream)
+{
+    StreamReader *self = Stream_reader(stream, magic);
+    if (!self) return EOF;
+    DosReader *reader = (DosReader *)self;
+    while (read(self, 0, reader->bufsize)) ;
+    if (!reader->doseof) return EOF;
+    return 0;
 }
 
