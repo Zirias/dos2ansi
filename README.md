@@ -45,13 +45,14 @@ different terminals and fonts before reporting a bug in dos2ansi.
   appearance with most hardware fonts
 * Includes a test mode rendering an encoding table with the selected settings
   and the color palette to verify appearance on your terminal
+* Parses a subset of [SAUCE](https://github.com/radman1/sauce) metadata useful
+  for MS-DOS text files, which is used to set some defaults (screen width,
+  blinking mode and codepage) and can also be displayed
 
 ## Test mode
 
 ![Test mode on Windows](.github/screenshots/dos2ansi_test_win32.png?raw=true)
 
-## Maybe planned
+## SAUCE display
 
-* Parse [SAUCE](https://github.com/radman1/sauce) metadata to e.g. get
-  codepage information
-
+![SAUCE in KDE's konsole](.github/screenshots/dos2ansi_sauce.png?raw=true)
