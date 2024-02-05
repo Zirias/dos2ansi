@@ -89,8 +89,14 @@ static time_t getSauceDate(RawSauce *raw, size_t pos)
     }
     if (len != 8) return (time_t)(-1);
     struct tm tm = {0};
-    if (!strptime(src, "%Y%m%d", &tm)) return (time_t)(-1);
-    return timegm(&tm);
+    char buf[5] = {0};
+    memcpy(buf, src+6, 2);
+    tm.tm_mday = atoi(buf);
+    memcpy(buf, src+4, 2);
+    tm.tm_mon = atoi(buf)-1;
+    memcpy(buf, src, 4);
+    tm.tm_year = atoi(buf)-1900;
+    return mktime(&tm);
 }
 
 static unsigned getSauceInt(RawSauce *raw, size_t pos, int word)

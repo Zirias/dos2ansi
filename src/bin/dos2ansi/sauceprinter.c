@@ -63,7 +63,7 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
     const char *datestr = "";
     if (date != (time_t)(-1))
     {
-	strftime(buf, sizeof buf, "%d %b %Y", gmtime(&date));
+	strftime(buf, sizeof buf, "%d %b %Y", localtime(&date));
 	datestr = buf;
     }
     putpair(canvas, "Date", datestr);
