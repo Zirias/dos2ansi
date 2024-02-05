@@ -45,11 +45,12 @@ struct Config
     int nobrown;
     int forceansi;
     int showsauce;
+    int nosauce;
 };
 
 static void usage(const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRTabdeiklprsvxy] [-c codepage]\n"
+    fprintf(stderr, "Usage: %s [-BCEPRSTabdeiklprsvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname);
     fputs("\n\t-B             Disable writing a BOM\n"
@@ -62,6 +63,7 @@ static void usage(const char *prgname)
 	    "\t               codepages not having an explicit broken bar)\n"
 	    "\t-R             Line endings without CR (Unix format,\n"
 	    "\t               default on non-Windows)\n"
+	    "\t-S             Don't attempt to read SAUCE metadata.\n"
 	    "\t-T             Test mode, do not read any input, instead\n"
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
@@ -118,6 +120,7 @@ static void usage(const char *prgname)
 	    "\t               Conflicts with blink (-k) and ignored with\n"
 	    "\t               intense (-i) or exact (-x) colors.\n"
 	    "\t-w width       Width of the (virtual) screen.\n"
+	    "\t               Ignored if the width is available from SAUCE.\n"
 	    "\t               min: 16, default: 80, max: 1024\n"
 	    "\t-x             Attempt to use exact CGA/VGA colors\n"
 	    "\t-y             Do not replace dark yellow with brown,\n"
@@ -193,7 +196,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRTabcdeikloprstuvwxy";
+    const char onceflags[] = "BCEPRSTabcdeikloprstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -223,6 +226,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->nobrown = 0;
     config->forceansi = 0;
     config->showsauce = 0;
+    config->nosauce = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -289,6 +293,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'R':
 			config->crlf = 0;
+			break;
+
+		    case 'S':
+			config->nosauce = 1;
 			break;
 
 		    case 'T':
@@ -503,6 +511,11 @@ int Config_forceansi(const Config *self)
 int Config_showsauce(const Config *self)
 {
     return self->showsauce;
+}
+
+int Config_nosauce(const Config *self)
+{
+    return self->nosauce;
 }
 
 void Config_destroy(Config *self)

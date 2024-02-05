@@ -31,6 +31,7 @@
 #define STREAMBUFSIZE 4096
 
 typedef struct InputStreamSettings {
+    Sauce *sauce;
     int forcedwidth;
 } InputStreamSettings;
 
@@ -51,26 +52,59 @@ static Stream *createInputStream(const Config *config,
 	in = Stream_createMemory();
 	TestWriter_write(in);
 	settings->forcedwidth = 70;
+	return in;
+    }
+
+    const char *infile = Config_infile(config);
+    if (infile)
+    {
+	FILE *f = fopen(infile, "rb");
+	if (!f)
+	{
+	    fprintf(stderr, "Error opening `%s' for reading.", infile);
+	    return 0;
+	}
+	in = Stream_createFile(f);
     }
     else
     {
-	const char *infile = Config_infile(config);
-	if (infile)
+	BINMODE(stdin);
+	in = Stream_createFile(stdin);
+    }
+
+    in = DosReader_create(in, STREAMBUFSIZE,
+	    !Config_showsauce(config) && Config_ignoreeof(config));
+
+    if (Config_showsauce(config)
+	    && DosReader_seekAfterEof(in) == 0
+	    && Stream_status(in) == SS_DOSEOF)
+    {
+	settings->sauce = Sauce_read(in);
+	settings->forcedwidth = 80;
+    }
+    else if (!Config_showsauce(config)
+	    && !Config_ignoreeof(config)
+	    && !Config_nosauce(config))
+    {
+	Stream *tmp = Stream_createMemory();
+	if (DosReader_readUntilEof(in, tmp) == 0)
 	{
-	    FILE *f = fopen(infile, "rb");
-	    if (!f)
+	    if (Stream_status(in) == SS_DOSEOF)
 	    {
-		fprintf(stderr, "Error opening `%s' for reading.", infile);
-		return 0;
+		settings->sauce = Sauce_read(in);
 	    }
-	    in = Stream_createFile(f);
+	    Stream_destroy(in);
+	    in = tmp;
+	    tmp = 0;
 	}
-	else
-	{
-	    BINMODE(stdin);
-	    in = Stream_createFile(stdin);
-	}
-	in = DosReader_create(in, STREAMBUFSIZE, Config_ignoreeof(config));
+	else Stream_destroy(tmp);
+    }
+
+    if (Config_showsauce(config) && !settings->sauce)
+    {
+	fputs("No SAUCE found!\n", stderr);
+	Stream_destroy(in);
+	in = 0;
     }
 
     return in;
@@ -233,39 +267,19 @@ int main(int argc, char **argv)
     Config *config = 0;
     Stream *in = 0;
     Stream *out = 0;
-    Sauce *sauce = 0;
     VgaCanvas *canvas = 0;
     Codepage *cp = 0;
+    InputStreamSettings insettings = {0};
+    OutputStreamSettings outsettings = {0};
 
     config = Config_fromOpts(argc, argv);
     if (!config) goto done;
 
-    InputStreamSettings insettings;
     in = createInputStream(config, &insettings);
     if (!in) goto done;
 
-    int width = -1;
-    if (Config_showsauce(config)
-	    && DosReader_seekAfterEof(in) == 0
-	    && Stream_status(in) == SS_DOSEOF)
-    {
-	sauce = Sauce_read(in);
-	width = 80;
-    }
-    else if (!Config_showsauce(config))
-    {
-	Stream *tmp = Stream_createMemory();
-	if (DosReader_readUntilEof(in, tmp) == 0)
-	{
-	    if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
-	    Stream_destroy(in);
-	    in = tmp;
-	    tmp = 0;
-	}
-	else Stream_destroy(tmp);
-    }
-
-    if (width < 0 && sauce) width = Sauce_width(sauce);
+    int width = insettings.forcedwidth;
+    if (width < 0 && insettings.sauce) width = Sauce_width(insettings.sauce);
     if (width < 0) width = Config_width(config);
     if (width < 0) width = 80;
     int tabwidth = Config_tabwidth(config);
@@ -274,26 +288,23 @@ int main(int argc, char **argv)
 
     canvas = VgaCanvas_create(width, tabwidth);
     if (!canvas) goto done;
-
-    int cpid = Config_codepage(config);
-    if (Config_showsauce(config))
+    if (Config_showsauce(config) && insettings.sauce)
     {
-	if (sauce) SaucePrinter_print(canvas, sauce);
-	else
-	{
-	    fputs("No SAUCE found!\n", stderr);
-	    goto done;
-	}
-	cpid = CP_437;
+	SaucePrinter_print(canvas, insettings.sauce);
     }
-    else if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
+    else
+    {
+	if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
+    }
     Stream_destroy(in);
     in = 0;
 
-    OutputStreamSettings outsettings;
     out = createOutputStream(config, &outsettings);
     if (!out) goto done;
 
+    int cpid;
+    if (Config_showsauce(config)) cpid = CP_437;
+    else cpid = Config_codepage(config);
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
@@ -314,7 +325,7 @@ int main(int argc, char **argv)
 
 done:
     Codepage_destroy(cp);
-    Sauce_destroy(sauce);
+    Sauce_destroy(insettings.sauce);
     Stream_destroy(in);
     Stream_destroy(out);
     VgaCanvas_destroy(canvas);
