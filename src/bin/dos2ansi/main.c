@@ -1,8 +1,10 @@
 #include "ansicolorwriter.h"
+#include "ansisysrenderer.h"
 #include "bufferedwriter.h"
 #include "codepage.h"
 #include "config.h"
 #include "dosreader.h"
+#include "sauce.h"
 #include "stream.h"
 #include "testwriter.h"
 #include "unicodewriter.h"
@@ -25,7 +27,7 @@
 #  define BINMODE(f) (void)(f);
 #endif
 
-#define OUTBUFSIZE 4096
+#define STREAMBUFSIZE 4096
 
 typedef struct InputStreamSettings {
     int forcedwidth;
@@ -67,6 +69,7 @@ static Stream *createInputStream(const Config *config,
 	    BINMODE(stdin);
 	    in = Stream_createFile(stdin);
 	}
+	in = DosReader_create(in, STREAMBUFSIZE, Config_ignoreeof(config));
     }
 
     return in;
@@ -198,7 +201,7 @@ static Stream *createOutputStream(const Config *config,
 		&settings->forcedbom);
     }
 
-    out = BufferedWriter_create(out, OUTBUFSIZE);
+    out = BufferedWriter_create(out, STREAMBUFSIZE);
 
     if (defformat >= 0)
     {
@@ -229,6 +232,7 @@ int main(int argc, char **argv)
     Config *config = 0;
     Stream *in = 0;
     Stream *out = 0;
+    Sauce *sauce = 0;
     VgaCanvas *canvas = 0;
     Codepage *cp = 0;
 
@@ -244,7 +248,8 @@ int main(int argc, char **argv)
     canvas = VgaCanvas_create(width, Config_tabwidth(config));
     if (!canvas) goto done;
 
-    if (DosReader_read(canvas, in, Config_ignoreeof(config)) != 0) goto done;
+    if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
+    if (Stream_status(in) == SS_DOSEOF) sauce = Sauce_read(in);
     Stream_destroy(in);
     in = 0;
 
@@ -272,6 +277,7 @@ int main(int argc, char **argv)
 
 done:
     Codepage_destroy(cp);
+    Sauce_destroy(sauce);
     Stream_destroy(in);
     Stream_destroy(out);
     VgaCanvas_destroy(canvas);

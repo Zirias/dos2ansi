@@ -3,9 +3,12 @@
 
 #include "decl.h"
 
-C_CLASS_DECL(Stream);
-C_CLASS_DECL(VgaCanvas);
+#include <stddef.h>
 
-int DosReader_read(VgaCanvas *canvas, Stream *stream, int ignoreeof);
+#define SS_DOSEOF -1
+
+C_CLASS_DECL(Stream);
+
+Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof);
 
 #endif

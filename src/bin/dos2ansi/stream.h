@@ -6,11 +6,20 @@
 #include <stdio.h>
 
 C_CLASS_DECL(Stream);
+C_CLASS_DECL(StreamReader);
 C_CLASS_DECL(StreamWriter);
 
 #define SS_OK 0
 #define SS_EOF 1
 #define SS_ERROR 2
+
+struct StreamReader
+{
+    size_t  (*read)(StreamReader *self, void *ptr, size_t size);
+    int	    (*status)(const StreamReader *self);
+    void    (*destroy)(StreamReader *self);
+    Stream  *stream;
+};
 
 struct StreamWriter
 {
@@ -23,6 +32,7 @@ struct StreamWriter
 
 Stream *Stream_createMemory(void);
 Stream *Stream_createFile(FILE *file);
+Stream *Stream_createReader(StreamReader *reader);
 Stream *Stream_createWriter(StreamWriter *writer);
 
 size_t Stream_write(Stream *self, const void *ptr, size_t sz);

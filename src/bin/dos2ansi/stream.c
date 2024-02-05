@@ -28,7 +28,14 @@ typedef struct FileStream
     FILE *file;
 } FileStream;
 
-#define T_WRITERSTREAM 2
+#define T_READERSTREAM 2
+typedef struct ReaderStream
+{
+    struct Stream base;
+    StreamReader *reader;
+} ReaderStream;
+
+#define T_WRITERSTREAM 3
 typedef struct WriterStream
 {
     struct Stream base;
@@ -50,6 +57,15 @@ Stream *Stream_createFile(FILE *file)
     FileStream *self = xmalloc(sizeof *self);
     self->base.size = T_FILESTREAM;
     self->file = file;
+    return (Stream *)self;
+}
+
+Stream *Stream_createReader(StreamReader *reader)
+{
+    if (!reader->read || (!reader->status && !reader->stream)) return 0;
+    ReaderStream *self = xmalloc(sizeof *self);
+    self->base.size = T_READERSTREAM;
+    self->reader = reader;
     return (Stream *)self;
 }
 
@@ -96,6 +112,8 @@ size_t Stream_write(Stream *self, const void *ptr, size_t sz)
     {
 	case T_FILESTREAM:
 	    return FileStream_write((FileStream *)self, ptr, sz);
+	case T_READERSTREAM:
+	    return 0;
 	case T_WRITERSTREAM:
 	    return WriterStream_write((WriterStream *)self, ptr, sz);
 	default:
@@ -117,12 +135,19 @@ static size_t FileStream_read(FileStream *self, void *ptr, size_t sz)
     return fread(ptr, 1, sz, self->file);
 }
 
+static size_t ReaderStream_read(ReaderStream *self, void *ptr, size_t sz)
+{
+    return self->reader->read(self->reader, ptr, sz);
+}
+
 size_t Stream_read(Stream *self, void *ptr, size_t sz)
 {
     switch (self->size)
     {
 	case T_FILESTREAM:
 	    return FileStream_read((FileStream *)self, ptr, sz);
+	case T_READERSTREAM:
+	    return ReaderStream_read((ReaderStream *)self, ptr, sz);
 	case T_WRITERSTREAM:
 	    return 0;
 	default:
@@ -164,6 +189,12 @@ static int FileStream_status(const FileStream *self)
     else return SS_OK;
 }
 
+static int ReaderStream_status(const ReaderStream *self)
+{
+    if (self->reader->status) return self->reader->status(self->reader);
+    return Stream_status(self->reader->stream);
+}
+
 static int WriterStream_status(const WriterStream *self)
 {
     if (self->writer->status) return self->writer->status(self->writer);
@@ -176,6 +207,8 @@ int Stream_status(const Stream *self)
     {
 	case T_FILESTREAM:
 	    return FileStream_status((const FileStream *)self);
+	case T_READERSTREAM:
+	    return ReaderStream_status((const ReaderStream *)self);
 	case T_WRITERSTREAM:
 	    return WriterStream_status((const WriterStream *)self);
 	default:
@@ -196,6 +229,16 @@ static void FileStream_destroy(FileStream *self)
     }
 }
 
+static void ReaderStream_destroy(ReaderStream *self)
+{
+    if (self->reader->destroy) self->reader->destroy(self->reader);
+    else
+    {
+	Stream_destroy(self->reader->stream);
+	free(self->reader);
+    }
+}
+
 static void WriterStream_destroy(WriterStream *self)
 {
     if (self->writer->destroy) self->writer->destroy(self->writer);
@@ -213,6 +256,7 @@ void Stream_destroy(Stream *self)
     switch (self->size)
     {
 	case T_FILESTREAM: FileStream_destroy((FileStream *)self); break;
+	case T_READERSTREAM: ReaderStream_destroy((ReaderStream *)self); break;
 	case T_WRITERSTREAM: WriterStream_destroy((WriterStream *)self); break;
 	default: MemoryStream_destroy((MemoryStream *)self);
     }

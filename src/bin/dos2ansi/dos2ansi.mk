@@ -1,9 +1,11 @@
 dos2ansi_MODULES:=	ansicolorwriter \
+			ansisysrenderer \
 			bufferedwriter \
 			codepage \
 			config \
 			dosreader \
 			main \
+			sauce \
 			stream \
 			testwriter \
 			unicodewriter \
