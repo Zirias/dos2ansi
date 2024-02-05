@@ -211,7 +211,7 @@ static Stream *createColorWriter(const Config *config,
 
 #endif
 
-static Stream *createOutputStream(const Config *config,
+static Stream *createOutputStream(const Config *config, const Sauce *sauce,
 	OutputStreamSettings *settings)
 {
     Stream *out = 0;
@@ -252,8 +252,9 @@ static Stream *createOutputStream(const Config *config,
 	if (Config_defcolors(config)) cflags |= CF_DEFAULT;
 	if (Config_intcolors(config)) cflags |= CF_BRIGHTCOLS;
 	if (Config_rgbcolors(config)) cflags |= CF_RGBCOLS;
-	if (Config_blink(config)) cflags |= CF_LBG_BLINK;
-	if (Config_reverse(config)) cflags |= CF_LBG_REV;
+	if ((sauce && !Sauce_nonblink(sauce))
+		|| Config_blink(config)) cflags |= CF_LBG_BLINK;
+	else if (Config_reverse(config)) cflags |= CF_LBG_REV;
 	if (Config_nobrown(config)) cflags |= CF_RGBNOBROWN;
 	out = createColorWriter(config, out, cflags);
     }
@@ -299,12 +300,13 @@ int main(int argc, char **argv)
     Stream_destroy(in);
     in = 0;
 
-    out = createOutputStream(config, &outsettings);
+    out = createOutputStream(config, insettings.sauce, &outsettings);
     if (!out) goto done;
 
-    int cpid;
+    int cpid = -1;
     if (Config_showsauce(config)) cpid = CP_437;
-    else cpid = Config_codepage(config);
+    if (cpid < 0 && insettings.sauce) cpid = Sauce_cpid(insettings.sauce);
+    if (cpid < 0) cpid = Config_codepage(config);
     CodepageFlags cpflags = CPF_NONE;
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;

@@ -75,7 +75,6 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
     putpair(canvas, "File type", Sauce_type(sauce));
     int width = Sauce_width(sauce);
     int height = Sauce_height(sauce);
-
     if (width >= 0)
     {
 	if (height >= 0)
@@ -94,6 +93,13 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
 	sprintf(buf, "%d", height);
 	putpair(canvas, "Height", buf);
     }
+    int nonblink = Sauce_nonblink(sauce);
+    if (nonblink >= 0) putpair(canvas, "Background mode", nonblink ?
+	    "bright colors" : "blinking (default)");
+    const char *font = Sauce_font(sauce);
+    if (font) putpair(canvas, "Font", font);
+    const char *codepage = Sauce_codepage(sauce);
+    if (codepage) putpair(canvas, "Codepage", codepage);
 
     VgaCanvas_put(canvas, (char)0xc8);
     for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xcd);

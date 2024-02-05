@@ -1,5 +1,6 @@
 #include "sauce.h"
 
+#include "codepage.h"
 #include "stream.h"
 #include "util.h"
 
@@ -13,18 +14,25 @@
 #define RDBUFCHUNK 0x208
 #define RDCHUNK 0x200
 
+#define CP_DEFAULT 0
+#define CP_IMPLICIT 1
+#define CP_NAMED 2
+#define CP_OTHER 3
+
 struct Sauce
 {
     char *title;
     char *author;
     char *group;
     char *tinfos;
+    const char *cpname;
     time_t date;
     uint16_t tinfo1;
     uint16_t tinfo2;
     uint8_t datatype;
     uint8_t filetype;
     uint8_t tflags;
+    uint8_t cp;
 };
 
 typedef struct RawSauce
@@ -32,6 +40,15 @@ typedef struct RawSauce
     size_t size;
     char bytes[];
 } RawSauce;
+
+static const char *cpfonts[] =
+{
+    "IBM VGA ",
+    "IBM VGA50 ",
+    "IBM VGA25G ",
+    "IBM EGA ",
+    "IBM EGA43 "
+};
 
 static RawSauce *RawSauce_read(Stream *in)
 {
@@ -120,13 +137,37 @@ Sauce *Sauce_read(Stream *in)
     self->author = getSauceStr(raw, 42, 20);
     self->group = getSauceStr(raw, 62, 20);
     self->tinfos = getSauceStr(raw, 106, 22);
+    self->cpname = 0;
     self->date = getSauceDate(raw, 82);
     self->tinfo1 = getSauceInt(raw, 96, 1);
     self->tinfo2 = getSauceInt(raw, 98, 1);
     self->datatype = getSauceInt(raw, 94, 0);
     self->filetype = getSauceInt(raw, 95, 0);
     self->tflags = getSauceInt(raw, 105, 0);
+    self->cp = CP_DEFAULT;
     free(raw);
+
+    if (self->datatype == 1 && self->filetype < 3 && self->tinfos)
+    {
+	for (unsigned i = 0; i < sizeof cpfonts / sizeof *cpfonts; ++i)
+	{
+	    size_t len = strlen(cpfonts[i]);
+	    if (!strncmp(self->tinfos, cpfonts[i], len)
+		    && strlen(self->tinfos + len) == 3)
+	    {
+		self->cpname = self->tinfos + len;
+		self->tinfos[len-1] = 0;
+		self->cp = CP_NAMED;
+		break;
+	    }
+	}
+	if (self->cp == CP_DEFAULT)
+	{
+	    if (!strncmp(self->tinfos, "IBM ", 4)) self->cp = CP_IMPLICIT;
+	    else self->cp = CP_OTHER;
+	}
+    }
+
     return self;
 }
 
@@ -178,6 +219,43 @@ int Sauce_height(const Sauce *self)
     if (self->datatype != 1 || self->filetype > 2) return -1;
     if (!self->tinfo2) return -1;
     return self->tinfo2;
+}
+
+int Sauce_nonblink(const Sauce *self)
+{
+    if (self->datatype != 1
+	    || self->filetype < 1 || self->filetype > 2) return -1;
+    return self->tflags & 1;
+}
+
+const char *Sauce_font(const Sauce *self)
+{
+    if (self->datatype != 1 || self->filetype > 2) return 0;
+    if (!self->tinfos) return "IBM VGA (default)";
+    return self->tinfos;
+}
+
+const char *Sauce_codepage(const Sauce *self)
+{
+    if (self->datatype != 1 || self->filetype > 2) return 0;
+    switch (self->cp)
+    {
+	case CP_DEFAULT: return "437 (default)";
+	case CP_IMPLICIT: return "437 (implicit)";
+	case CP_NAMED: return self->cpname;
+	case CP_OTHER: return "Other (unknown)";
+	default: return 0;
+    }
+}
+
+int Sauce_cpid(const Sauce *self)
+{
+    if (self->datatype != 1 || self->filetype > 2) return -1;
+    if (self->cp == CP_DEFAULT || self->cp == CP_OTHER) return -1;
+    if (self->cp == CP_IMPLICIT) return CP_437;
+    const char *cpname = self->cpname;
+    if (!strcmp(cpname, "MIK")) cpname = "866";
+    return CodepageId_byName(cpname);
 }
 
 void Sauce_destroy(Sauce *self)

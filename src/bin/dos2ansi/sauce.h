@@ -16,6 +16,10 @@ time_t Sauce_date(const Sauce *self);
 const char *Sauce_type(const Sauce *self);
 int Sauce_width(const Sauce *self);
 int Sauce_height(const Sauce *self);
+int Sauce_nonblink(const Sauce *self);
+const char *Sauce_font(const Sauce *self);
+const char *Sauce_codepage(const Sauce *self);
+int Sauce_cpid(const Sauce *self);
 void Sauce_destroy(Sauce *self);
 
 #endif
