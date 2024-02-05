@@ -26,7 +26,7 @@ static void putleft(VgaCanvas *canvas,
 
 static void putpair(VgaCanvas *canvas, const char *key, const char *val)
 {
-    VgaCanvas_put(canvas, 0xba);
+    VgaCanvas_put(canvas, (char)0xba);
     VgaCanvas_setFg(canvas, 3);
     putright(canvas, 16, ' ', key);
     VgaCanvas_put(canvas, ':');
@@ -40,7 +40,7 @@ static void putpair(VgaCanvas *canvas, const char *key, const char *val)
     VgaCanvas_setFg(canvas, 7);
     VgaCanvas_setBold(canvas, 1);
     for (int i = 0; i < 7; ++i) VgaCanvas_put(canvas, ' ');
-    VgaCanvas_put(canvas, 0xba);
+    VgaCanvas_put(canvas, (char)0xba);
 }
 
 void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
@@ -51,9 +51,9 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
     VgaCanvas_setFg(canvas, 7);
     VgaCanvas_setBold(canvas, 1);
 
-    VgaCanvas_put(canvas, 0xc9);
-    for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, 0xcd);
-    VgaCanvas_put(canvas, 0xbb);
+    VgaCanvas_put(canvas, (char)0xc9);
+    for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xcd);
+    VgaCanvas_put(canvas, (char)0xbb);
 
     putpair(canvas, "Title", Sauce_title(sauce));
     putpair(canvas, "Author", Sauce_author(sauce));
@@ -68,9 +68,9 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
     }
     putpair(canvas, "Date", datestr);
 
-    VgaCanvas_put(canvas, 0xc7);
-    for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, 0xc4);
-    VgaCanvas_put(canvas, 0xb6);
+    VgaCanvas_put(canvas, (char)0xc7);
+    for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xc4);
+    VgaCanvas_put(canvas, (char)0xb6);
 
     putpair(canvas, "File type", Sauce_type(sauce));
     int width = Sauce_width(sauce);
@@ -95,8 +95,8 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
 	putpair(canvas, "Height", buf);
     }
 
-    VgaCanvas_put(canvas, 0xc8);
-    for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, 0xcd);
-    VgaCanvas_put(canvas, 0xbc);
+    VgaCanvas_put(canvas, (char)0xc8);
+    for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xcd);
+    VgaCanvas_put(canvas, (char)0xbc);
 }
 
