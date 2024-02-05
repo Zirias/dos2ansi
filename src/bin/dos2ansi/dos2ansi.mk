@@ -6,6 +6,7 @@ dos2ansi_MODULES:=	ansicolorwriter \
 			dosreader \
 			main \
 			sauce \
+			sauceprinter \
 			stream \
 			testwriter \
 			unicodewriter \
