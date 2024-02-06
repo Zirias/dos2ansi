@@ -325,7 +325,7 @@ static int FileStream_flush(FileStream *self)
 {
     if (!(self->flags & FOF_WRITE)) return EOF;
 #ifdef USE_POSIX
-    return fdatasync(self->fd);
+    return 0;
 #else
     return fflush(self->file);
 #endif
