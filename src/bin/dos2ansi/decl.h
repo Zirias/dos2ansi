@@ -1,7 +1,7 @@
 #ifndef DOS2ANSI_DECL_H
 #define DOS2ANSI_DECL_H
 
-#define DOS2ANSIVERSTR "0.7"
+#define DOS2ANSIVERSTR "0.8"
 
 #undef dos2ansi___cdecl
 #undef SOEXPORT
