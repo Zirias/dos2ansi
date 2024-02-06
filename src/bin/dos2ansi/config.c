@@ -14,6 +14,7 @@
 #define XSTR(m) #m
 
 #ifdef _WIN32
+#  include <windows.h>
 #  define strcmplc _stricmp
 #else
 #  define _POSIX_C_SOURCE 200112L
@@ -23,6 +24,9 @@
 
 struct Config
 {
+#ifdef _WIN32
+    char *argvstore;
+#endif
     const char *infile;
     const char *outfile;
     int tabwidth;
@@ -188,7 +192,47 @@ static int optArg(Config *config, char *args, int *idx, char *op)
     return 0;
 }
 
+#ifdef _WIN32
+static Config *createConfig(int argc, char **argv);
 Config *Config_fromOpts(int argc, char **argv)
+{
+    Config *config = 0;
+    LPWSTR *wargv = 0;
+    char *argvstore = 0;
+    argv = 0;
+
+    LPWSTR cmdline = GetCommandLineW();
+    size_t argvstoresz = 3 * (wcslen(cmdline) + 1);
+    argvstore = xmalloc(argvstoresz);
+    wargv = CommandLineToArgvW(cmdline, &argc);
+    if (!wargv) goto done;
+    argv = xmalloc(argc * sizeof *argv);
+    size_t argvstorepos = 0;
+    for (int i = 0; i < argc; ++i)
+    {
+	size_t mblen;
+	if (!(mblen = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1,
+			argvstore + argvstorepos, argvstoresz - argvstorepos,
+			0, 0))) goto done;
+	argv[i] = argvstore + argvstorepos;
+	argvstorepos += mblen;
+    }
+
+    config = createConfig(argc, argv);
+    config->argvstore = xrealloc(argvstore, argvstorepos);
+    argvstore = 0;
+
+done:
+    free(argv);
+    free(argvstore);
+    if (wargv) LocalFree(wargv);
+    return config;
+}
+
+static Config *createConfig(int argc, char **argv)
+#else
+Config *Config_fromOpts(int argc, char **argv)
+#endif
 {
     int endflags = 0;
     int escapedash = 0;
@@ -520,6 +564,10 @@ int Config_nosauce(const Config *self)
 
 void Config_destroy(Config *self)
 {
+#ifdef _WIN32
+    if (!self) return;
+    free(self->argvstore);
+#endif
     free(self);
 }
 
