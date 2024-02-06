@@ -51,7 +51,7 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
     VgaCanvas_setFg(canvas, 7);
     VgaCanvas_setBold(canvas, 1);
 
-    putleft(canvas, 79, (char)0xcd, "\xc9\xcd\xcd\xb5 SAUCE \xc6");
+    putleft(canvas, 79, (char)0xcd, "\xc9\xcd\xcd\xcd\xcd\xb5 SAUCE \xc6");
     VgaCanvas_put(canvas, (char)0xbb);
 
     const char *title = Sauce_title(sauce);
@@ -107,6 +107,6 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
 
     VgaCanvas_put(canvas, (char)0xc8);
     putright(canvas, 79, (char)0xcd, "\xb5 \3  dos2ansi v"
-	    DOS2ANSIVERSTR "  \16 \xc6\xcd\xcd\xbc");
+	    DOS2ANSIVERSTR "  \16 \xc6\xcd\xcd\xcd\xcd\xbc");
 }
 
