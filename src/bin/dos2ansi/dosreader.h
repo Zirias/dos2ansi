@@ -12,5 +12,6 @@ C_CLASS_DECL(Stream);
 Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof);
 int DosReader_readUntilEof(Stream *stream, Stream *out);
 int DosReader_seekAfterEof(Stream *stream);
+int DosReader_setIgnoreEof(Stream *stream, int ignoreeof);
 
 #endif

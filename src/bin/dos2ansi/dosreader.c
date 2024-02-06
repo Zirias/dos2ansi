@@ -125,3 +125,12 @@ int DosReader_seekAfterEof(Stream *stream)
     return 0;
 }
 
+int DosReader_setIgnoreEof(Stream *stream, int ignoreeof)
+{
+    StreamReader *self = Stream_reader(stream, magic);
+    if (!self) return EOF;
+    DosReader *reader = (DosReader *)self;
+    reader->ignoreeof = ignoreeof;
+    return 0;
+}
+

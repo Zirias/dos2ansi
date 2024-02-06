@@ -79,6 +79,7 @@ static Stream *createInputStream(const Config *config,
 	    && DosReader_seekAfterEof(in) == 0
 	    && Stream_status(in) == SS_DOSEOF)
     {
+	DosReader_setIgnoreEof(in, 1);
 	settings->sauce = Sauce_read(in);
 	settings->forcedwidth = 80;
     }
@@ -91,6 +92,7 @@ static Stream *createInputStream(const Config *config,
 	{
 	    if (Stream_status(in) == SS_DOSEOF)
 	    {
+		DosReader_setIgnoreEof(in, 1);
 		settings->sauce = Sauce_read(in);
 	    }
 	    Stream_destroy(in);
