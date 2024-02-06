@@ -33,6 +33,8 @@ struct Sauce
     uint8_t filetype;
     uint8_t tflags;
     uint8_t cp;
+    uint8_t lines;
+    char comment[][65];
 };
 
 typedef struct RawSauce
@@ -80,20 +82,51 @@ error:
     return 0;
 }
 
-static char *getSauceStr(RawSauce *raw, size_t pos, size_t maxlen)
+static size_t checkSauceStr(char *src, size_t maxlen)
 {
-    char *src = raw->bytes + (raw->size - MINSAUCE) + pos;
     size_t len = 0;
     for (size_t i = 0; i < maxlen; ++i)
     {
 	if (!src[i]) break;
-	if (src[i] != 0x20) len = i+1;
+	if (src[i] != 0x20)
+	{
+	    /* filter control characters, they should never appear */
+	    if ((src[i] >= 7 && src[i] <= 10) || src[i] == 13 || src[i] == 27)
+	    {
+		src[i] = 0x20;
+	    }
+	    len = i+1;
+	}
     }
+    return len;
+}
+
+static char *getSauceStr(RawSauce *raw, size_t pos, size_t maxlen)
+{
+    char *src = raw->bytes + (raw->size - MINSAUCE) + pos;
+    size_t len = checkSauceStr(src, maxlen);
     if (!len) return 0;
     char *str = xmalloc(len + 1);
     memcpy(str, src, len);
     str[len] = 0;
     return str;
+}
+
+static int checkSauceComment(RawSauce *raw, unsigned lines)
+{
+    size_t size = 64 * lines + MINSAUCE + 5;
+    if (raw->size < size) return -1;
+    char *tag = raw->bytes + (raw->size - size);
+    if (strncmp(tag, "COMNT", 5) != 0) return -1;
+    return 0;
+}
+
+static void getSauceComment(char *dst, RawSauce *raw, int lines, int lineno)
+{
+    char *src = raw->bytes + (raw->size - MINSAUCE - 64 * (lines - lineno));
+    size_t len = checkSauceStr(src, 64);
+    memcpy(dst, src, len);
+    dst[len] = 0;
 }
 
 static time_t getSauceDate(RawSauce *raw, size_t pos)
@@ -132,7 +165,10 @@ Sauce *Sauce_read(Stream *in)
     RawSauce *raw = RawSauce_read(in);
     if (!raw) return 0;
 
-    Sauce *self = xmalloc(sizeof *self);
+    int lines = getSauceInt(raw, 104, 0);
+    if (lines && checkSauceComment(raw, lines) < 0) lines = 0;
+
+    Sauce *self = xmalloc(sizeof *self + lines * sizeof *self->comment);
     self->title = getSauceStr(raw, 7, 35);
     self->author = getSauceStr(raw, 42, 20);
     self->group = getSauceStr(raw, 62, 20);
@@ -145,6 +181,11 @@ Sauce *Sauce_read(Stream *in)
     self->filetype = getSauceInt(raw, 95, 0);
     self->tflags = getSauceInt(raw, 105, 0);
     self->cp = CP_DEFAULT;
+    self->lines = lines;
+    for (int i = 0; i < lines; ++i)
+    {
+	getSauceComment(self->comment[i], raw, lines, i);
+    }
     free(raw);
 
     if (self->datatype == 1 && self->filetype < 3 && self->tinfos)
@@ -256,6 +297,17 @@ int Sauce_cpid(const Sauce *self)
     const char *cpname = self->cpname;
     if (!strcmp(cpname, "MIK")) cpname = "866";
     return CodepageId_byName(cpname);
+}
+
+int Sauce_comments(const Sauce *self)
+{
+    return self->lines;
+}
+
+const char *Sauce_comment(const Sauce *self, int lineno)
+{
+    if (lineno < 0 || lineno >= self->lines) return 0;
+    return self->comment[lineno];
 }
 
 void Sauce_destroy(Sauce *self)

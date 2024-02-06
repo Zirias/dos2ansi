@@ -20,6 +20,8 @@ int Sauce_nonblink(const Sauce *self);
 const char *Sauce_font(const Sauce *self);
 const char *Sauce_codepage(const Sauce *self);
 int Sauce_cpid(const Sauce *self);
+int Sauce_comments(const Sauce *self);
+const char *Sauce_comment(const Sauce *self, int lineno);
 void Sauce_destroy(Sauce *self);
 
 #endif
