@@ -12,11 +12,11 @@
 #endif
 
 #ifdef _WIN32
-#  include <fcntl.h>
-#  include <io.h>
-#  define BINMODE(f) _setmode(_fileno(f), _O_BINARY)
+#  define BINFLAG _O_BINARY
+#  define BINMODE(fd) _setmode((fd), BINFLAG)
 #else
-#  define BINMODE(f) (void)(f)
+#  define BINFLAG 0
+#  define BINMODE(fd) (void)(fd)
 #endif
 
 #define MS_CHUNKSZ 1024
@@ -93,6 +93,7 @@ Stream *Stream_createStandard(StandardStreamType type)
 	    self->flags = FOF_WRITE;
 	    break;
     }
+    BINMODE(self->fd);
     self->status = SS_OK;
 #else
     FILE *f;
@@ -109,7 +110,6 @@ Stream *Stream_createStandard(StandardStreamType type)
 	   break;
     }
     setvbuf(f, 0, _IONBF, 0);
-    BINMODE(f);
     self->file = f;
 #endif
     return (Stream *)self;
@@ -119,7 +119,7 @@ Stream *Stream_openFile(const char *filename, FileOpenFlags flags)
 {
     if (!(flags & (FOF_READ|FOF_WRITE))) return 0;
 #ifdef USE_POSIX
-    int openflags = 0;
+    int openflags = BINFLAG;
     if (flags & FOF_WRITE)
     {
 	if (flags & FOF_READ) openflags |= O_RDWR;
@@ -133,10 +133,14 @@ Stream *Stream_openFile(const char *filename, FileOpenFlags flags)
     self->fd = fd;
     self->status = SS_OK;
 #else
-    char mode[4] = "";
+    char mode[4] = {0};
     char *mptr = mode;
-    if (flags & FOF_READ) *mptr++ = 'r';
-    if (flags & FOF_WRITE) *mptr++ = 'w';
+    if (flags & FOF_WRITE)
+    {
+	*mptr++ = 'w';
+	if (flags & FOF_READ) *mptr++ = '+';
+    }
+    else if (flags & FOF_READ) *mptr++ = 'r';
     *mptr = 'b';
     FILE *file = fopen(filename, mode);
     if (!file) return 0;
