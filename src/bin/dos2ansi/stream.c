@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef USE_POSIX
+#  include <unistd.h>
+#endif
+
 #define MS_CHUNKSZ 1024
 
 struct Stream
@@ -26,6 +30,10 @@ typedef struct FileStream
 {
     struct Stream base;
     FILE *file;
+#ifdef USE_POSIX
+    int fd;
+    int status;
+#endif
 } FileStream;
 
 #define T_READERSTREAM 2
@@ -59,6 +67,10 @@ Stream *Stream_createFile(FILE *file)
     FileStream *self = xmalloc(sizeof *self);
     self->base.size = T_FILESTREAM;
     self->file = file;
+#ifdef USE_POSIX
+    self->fd = fileno(file);
+    self->status = SS_OK;
+#endif
     return (Stream *)self;
 }
 
@@ -121,7 +133,19 @@ static size_t MemoryStream_write(MemoryStream *self,
 
 static size_t FileStream_write(FileStream *self, const void *ptr, size_t sz)
 {
+#ifdef USE_POSIX
+    if (self->status != SS_OK) return 0;
+    ssize_t rc = write(self->fd, ptr, sz);
+    if (rc < 0)
+    {
+	self->status = SS_ERROR;
+	return 0;
+    }
+    if (rc == 0) self->status = SS_EOF;
+    return rc;
+#else
     return fwrite(ptr, 1, sz, self->file);
+#endif
 }
 
 static size_t WriterStream_write(WriterStream *self,
@@ -156,7 +180,19 @@ static size_t MemoryStream_read(MemoryStream *self, void *ptr, size_t sz)
 
 static size_t FileStream_read(FileStream *self, void *ptr, size_t sz)
 {
+#ifdef USE_POSIX
+    if (self->status != SS_OK) return 0;
+    ssize_t rc = read(self->fd, ptr, sz);
+    if (rc < 0)
+    {
+	self->status = SS_ERROR;
+	return 0;
+    }
+    if (rc == 0) self->status = SS_EOF;
+    return rc;
+#else
     return fread(ptr, 1, sz, self->file);
+#endif
 }
 
 static size_t ReaderStream_read(ReaderStream *self, void *ptr, size_t sz)
@@ -181,7 +217,12 @@ size_t Stream_read(Stream *self, void *ptr, size_t sz)
 
 static int FileStream_flush(FileStream *self)
 {
+#ifdef USE_POSIX
+    (void)self;
+    return 0;
+#else
     return fflush(self->file);
+#endif
 }
 
 static int WriterStream_flush(WriterStream *self)
@@ -208,9 +249,13 @@ static int MemoryStream_status(const MemoryStream *self)
 
 static int FileStream_status(const FileStream *self)
 {
+#ifdef USE_POSIX
+    return self->status;
+#else
     if (ferror(self->file)) return SS_ERROR;
     else if (feof(self->file)) return SS_EOF;
     else return SS_OK;
+#endif
 }
 
 static int ReaderStream_status(const ReaderStream *self)

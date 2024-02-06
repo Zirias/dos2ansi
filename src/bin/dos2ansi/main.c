@@ -28,6 +28,8 @@
 #  define BINMODE(f) (void)(f);
 #endif
 
+#define STREAMBUFSIZE (256*1024)
+
 typedef struct InputStreamSettings {
     Sauce *sauce;
     int forcedwidth;
@@ -72,7 +74,7 @@ static Stream *createInputStream(const Config *config,
 	in = Stream_createFile(stdin);
     }
 
-    in = DosReader_create(in, BUFSIZ,
+    in = DosReader_create(in, STREAMBUFSIZE,
 	    !Config_showsauce(config) && Config_ignoreeof(config));
 
     if (Config_showsauce(config)
@@ -239,7 +241,7 @@ static Stream *createOutputStream(const Config *config, const Sauce *sauce,
 		&settings->forcedbom);
     }
 
-    out = BufferedWriter_create(out, BUFSIZ);
+    out = BufferedWriter_create(out, STREAMBUFSIZE);
 
     if (defformat >= 0)
     {
