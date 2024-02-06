@@ -11,14 +11,6 @@
 #  include <unistd.h>
 #endif
 
-#ifdef _WIN32
-#  define BINFLAG _O_BINARY
-#  define BINMODE(fd) _setmode((fd), BINFLAG)
-#else
-#  define BINFLAG 0
-#  define BINMODE(fd) (void)(fd)
-#endif
-
 #define MS_CHUNKSZ 1024
 
 struct Stream
@@ -177,7 +169,7 @@ w32done:
     self->file = file;
     self->status = SS_OK;
 #elif defined(USE_POSIX)
-    int openflags = BINFLAG;
+    int openflags = 0;
     if (flags & FOF_WRITE)
     {
 	if (flags & FOF_READ) openflags |= O_RDWR;
