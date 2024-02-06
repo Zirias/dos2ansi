@@ -28,8 +28,6 @@
 #  define BINMODE(f) (void)(f);
 #endif
 
-#define STREAMBUFSIZE 4096
-
 typedef struct InputStreamSettings {
     Sauce *sauce;
     int forcedwidth;
@@ -64,15 +62,17 @@ static Stream *createInputStream(const Config *config,
 	    fprintf(stderr, "Error opening `%s' for reading.", infile);
 	    return 0;
 	}
+	setvbuf(f, 0, _IONBF, 0);
 	in = Stream_createFile(f);
     }
     else
     {
+	setvbuf(stdin, 0, _IONBF, 0);
 	BINMODE(stdin);
 	in = Stream_createFile(stdin);
     }
 
-    in = DosReader_create(in, STREAMBUFSIZE,
+    in = DosReader_create(in, BUFSIZ,
 	    !Config_showsauce(config) && Config_ignoreeof(config));
 
     if (Config_showsauce(config)
@@ -152,12 +152,12 @@ static Stream *createStdoutStream(const Config *config,
 	}
 	*forcedbom = 0; /* never write a BOM to Windows console */
     }
-    else
+    if (!out)
     {
-	int outfd = _fileno(stdout);
-	_setmode(outfd, _O_BINARY);
+	setvbuf(stdout, 0, _IONBF, 0);
+	BINMODE(stdout);
+	out = Stream_createFile(stdout);
     }
-    if (!out) out = Stream_createFile(stdout);
     return out;
 }
 
@@ -230,6 +230,7 @@ static Stream *createOutputStream(const Config *config, const Sauce *sauce,
 	    return 0;
 	}
 	initOutFlags(&cflags, &defformat, &settings->forcedbom);
+	setvbuf(f, 0, _IONBF, 0);
 	out = Stream_createFile(f);
     }
     else
@@ -238,7 +239,7 @@ static Stream *createOutputStream(const Config *config, const Sauce *sauce,
 		&settings->forcedbom);
     }
 
-    out = BufferedWriter_create(out, STREAMBUFSIZE);
+    out = BufferedWriter_create(out, BUFSIZ);
 
     if (defformat >= 0)
     {
