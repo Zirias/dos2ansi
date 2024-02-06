@@ -9,6 +9,20 @@ C_CLASS_DECL(Stream);
 C_CLASS_DECL(StreamReader);
 C_CLASS_DECL(StreamWriter);
 
+typedef enum FileOpenFlags
+{
+    FOF_NONE	= 0,
+    FOF_READ	= 1 << 0,
+    FOF_WRITE	= 1 << 1
+} FileOpenFlags;
+
+typedef enum StandardStreamType
+{
+    SST_STDIN,
+    SST_STDOUT,
+    SST_STDERR
+} StandardStreamType;
+
 #define SS_OK 0
 #define SS_EOF 1
 #define SS_ERROR 2
@@ -31,7 +45,8 @@ struct StreamWriter
 };
 
 Stream *Stream_createMemory(void);
-Stream *Stream_createFile(FILE *file);
+Stream *Stream_openFile(const char *filename, FileOpenFlags flags);
+Stream *Stream_createStandard(StandardStreamType type);
 Stream *Stream_createReader(StreamReader *reader, const void *magic);
 Stream *Stream_createWriter(StreamWriter *writer, const void *magic);
 

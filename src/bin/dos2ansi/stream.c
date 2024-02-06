@@ -7,7 +7,16 @@
 #include <string.h>
 
 #ifdef USE_POSIX
+#  include <fcntl.h>
 #  include <unistd.h>
+#endif
+
+#ifdef _WIN32
+#  include <fcntl.h>
+#  include <io.h>
+#  define BINMODE(f) _setmode(_fileno(f), _O_BINARY)
+#else
+#  define BINMODE(f) (void)(f)
 #endif
 
 #define MS_CHUNKSZ 1024
@@ -29,11 +38,13 @@ typedef struct MemoryStream
 typedef struct FileStream
 {
     struct Stream base;
-    FILE *file;
 #ifdef USE_POSIX
     int fd;
     int status;
+#else
+    FILE *file;
 #endif
+    FileOpenFlags flags;
 } FileStream;
 
 #define T_READERSTREAM 2
@@ -62,15 +73,79 @@ Stream *Stream_createMemory(void)
     return (Stream *)self;
 }
 
-Stream *Stream_createFile(FILE *file)
+Stream *Stream_createStandard(StandardStreamType type)
 {
     FileStream *self = xmalloc(sizeof *self);
     self->base.size = T_FILESTREAM;
-    self->file = file;
 #ifdef USE_POSIX
-    self->fd = fileno(file);
+    switch (type)
+    {
+	case SST_STDIN:
+	    self->fd = STDIN_FILENO;
+	    self->flags = FOF_READ;
+	    break;
+	case SST_STDOUT:
+	    self->fd = STDOUT_FILENO;
+	    self->flags = FOF_WRITE;
+	    break;
+	case SST_STDERR:
+	    self->fd = STDERR_FILENO;
+	    self->flags = FOF_WRITE;
+	    break;
+    }
     self->status = SS_OK;
+#else
+    FILE *f;
+    switch (type)
+    {
+	case SST_STDIN:
+	   f = stdin;
+	   break;
+	case SST_STDOUT:
+	   f = stdout;
+	   break;
+	case SST_STDERR:
+	   f = stderr;
+	   break;
+    }
+    setvbuf(f, 0, _IONBF, 0);
+    BINMODE(f);
+    self->file = f;
 #endif
+    return (Stream *)self;
+}
+
+Stream *Stream_openFile(const char *filename, FileOpenFlags flags)
+{
+    if (!(flags & (FOF_READ|FOF_WRITE))) return 0;
+#ifdef USE_POSIX
+    int openflags = 0;
+    if (flags & FOF_WRITE)
+    {
+	if (flags & FOF_READ) openflags |= O_RDWR;
+	else openflags |= O_WRONLY;
+	openflags |= O_CREAT|O_TRUNC;
+    }
+    else if (flags & FOF_READ) openflags |= O_RDONLY;
+    int fd = open(filename, openflags);
+    if (fd < 0) return 0;
+    FileStream *self = xmalloc(sizeof *self);
+    self->fd = fd;
+    self->status = SS_OK;
+#else
+    char mode[4] = "";
+    char *mptr = mode;
+    if (flags & FOF_READ) *mptr++ = 'r';
+    if (flags & FOF_WRITE) *mptr++ = 'w';
+    *mptr = 'b';
+    FILE *file = fopen(filename, mode);
+    if (!file) return 0;
+    setvbuf(file, 0, _IONBF, 0);
+    FileStream *self = xmalloc(sizeof *self);
+    self->file = file;
+#endif
+    self->base.size = T_FILESTREAM;
+    self->flags = flags;
     return (Stream *)self;
 }
 
@@ -133,6 +208,7 @@ static size_t MemoryStream_write(MemoryStream *self,
 
 static size_t FileStream_write(FileStream *self, const void *ptr, size_t sz)
 {
+    if (!(self->flags & FOF_WRITE)) return 0;
 #ifdef USE_POSIX
     if (self->status != SS_OK) return 0;
     ssize_t rc = write(self->fd, ptr, sz);
@@ -180,6 +256,7 @@ static size_t MemoryStream_read(MemoryStream *self, void *ptr, size_t sz)
 
 static size_t FileStream_read(FileStream *self, void *ptr, size_t sz)
 {
+    if (!(self->flags & FOF_READ)) return 0;
 #ifdef USE_POSIX
     if (self->status != SS_OK) return 0;
     ssize_t rc = read(self->fd, ptr, sz);
@@ -217,8 +294,8 @@ size_t Stream_read(Stream *self, void *ptr, size_t sz)
 
 static int FileStream_flush(FileStream *self)
 {
+    if (!(self->flags & FOF_WRITE)) return EOF;
 #ifdef USE_POSIX
-    (void)self;
     return 0;
 #else
     return fflush(self->file);
@@ -292,10 +369,18 @@ static void MemoryStream_destroy(MemoryStream *self)
 
 static void FileStream_destroy(FileStream *self)
 {
+#ifdef USE_POSIX
+    if (self->fd != STDIN_FILENO && self->fd != STDOUT_FILENO
+	    && self->fd != STDERR_FILENO)
+    {
+	close(self->fd);
+    }
+#else
     if (self->file != stdin && self->file != stdout && self->file != stderr)
     {
 	fclose(self->file);
     }
+#endif
 }
 
 static void ReaderStream_destroy(ReaderStream *self)

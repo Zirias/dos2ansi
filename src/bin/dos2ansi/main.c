@@ -20,12 +20,7 @@
 
 #ifdef _WIN32
 #  include "winconsolewriter.h"
-#  include <fcntl.h>
-#  include <io.h>
 #  include <versionhelpers.h>
-#  define BINMODE(f) _setmode(_fileno(f), _O_BINARY)
-#else
-#  define BINMODE(f) (void)(f);
 #endif
 
 #define STREAMBUFSIZE (256*1024)
@@ -58,21 +53,11 @@ static Stream *createInputStream(const Config *config,
     const char *infile = Config_infile(config);
     if (infile)
     {
-	FILE *f = fopen(infile, "rb");
-	if (!f)
-	{
-	    fprintf(stderr, "Error opening `%s' for reading.", infile);
-	    return 0;
-	}
-	setvbuf(f, 0, _IONBF, 0);
-	in = Stream_createFile(f);
+	in = Stream_openFile(infile, FOF_READ);
+	if (!in) fprintf(stderr, "Error opening `%s' for reading.", infile);
     }
-    else
-    {
-	setvbuf(stdin, 0, _IONBF, 0);
-	BINMODE(stdin);
-	in = Stream_createFile(stdin);
-    }
+    else in = Stream_createStandard(SST_STDIN);
+    if (!in) return 0;
 
     in = DosReader_create(in, STREAMBUFSIZE,
 	    !Config_showsauce(config) && Config_ignoreeof(config));
@@ -154,12 +139,7 @@ static Stream *createStdoutStream(const Config *config,
 	}
 	*forcedbom = 0; /* never write a BOM to Windows console */
     }
-    if (!out)
-    {
-	setvbuf(stdout, 0, _IONBF, 0);
-	BINMODE(stdout);
-	out = Stream_createFile(stdout);
-    }
+    if (!out) out = Stream_createStandard(SST_STDOUT);
     return out;
 }
 
@@ -178,7 +158,7 @@ static Stream *createStdoutStream(const Config *config,
     (void)config;
 
     initOutFlags(cflags, defformat, forcedbom);
-    return Stream_createFile(stdout);
+    return Stream_createStandard(SST_STDOUT);
 }
 
 #endif
@@ -225,21 +205,13 @@ static Stream *createOutputStream(const Config *config, const Sauce *sauce,
     const char *outfile = Config_outfile(config);
     if (outfile)
     {
-	FILE *f = fopen(outfile, "wb");
-	if (!f)
-	{
-	    fprintf(stderr, "Error opening `%s' for writing.", outfile);
-	    return 0;
-	}
+	out = Stream_openFile(outfile, FOF_WRITE);
+	if (!out) fprintf(stderr, "Error opening `%s' for writing.", outfile);
 	initOutFlags(&cflags, &defformat, &settings->forcedbom);
-	setvbuf(f, 0, _IONBF, 0);
-	out = Stream_createFile(f);
     }
-    else
-    {
-	out = createStdoutStream(config, &cflags, &defformat,
-		&settings->forcedbom);
-    }
+    else out = createStdoutStream(config, &cflags, &defformat,
+	    &settings->forcedbom);
+    if (!out) return 0;
 
     out = BufferedWriter_create(out, STREAMBUFSIZE);
 
