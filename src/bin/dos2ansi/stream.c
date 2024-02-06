@@ -152,6 +152,15 @@ Stream *Stream_openFile(const char *filename, FileOpenFlags flags)
     if (!namechars) goto w32done;
     if (namechars < MAX_PATH)
     {
+	/* This is a best-effort hack. To be able to access paths longer
+	 * than MAX_PATH, we need to use the win32 namespace \\?\ passing
+	 * the path unprocessed to the filesystem. For this to work, it
+	 * must be an absolute path.
+	 * To also support relative paths, we must convert to an absolute
+	 * path which only works without this namespace.
+	 * Therefore, if the path is already longer than MAX_PATH, we just
+	 * assume it's already an absolute path and skip the conversion.
+	 */
 	DWORD abssz = namechars + 1024;
 	LPWSTR absname = xmalloc((abssz + 4) * sizeof *absname);
 	memcpy(absname, L"\\\\?\\", 4 * sizeof *wname);
