@@ -54,9 +54,14 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
     putleft(canvas, 79, (char)0xcd, "\xc9\xcd\xcd\xb5 SAUCE \xc6");
     VgaCanvas_put(canvas, (char)0xbb);
 
-    putpair(canvas, "Title", Sauce_title(sauce));
-    putpair(canvas, "Author", Sauce_author(sauce));
-    putpair(canvas, "Group", Sauce_group(sauce));
+    const char *title = Sauce_title(sauce);
+    if (!title) title = "<Unnamed>";
+    putpair(canvas, "Title", title);
+    const char *author = Sauce_author(sauce);
+    if (!author) author = "<Unknown>";
+    putpair(canvas, "Author", author);
+    const char *group = Sauce_group(sauce);
+    if (group) putpair(canvas, "Group", group);
 
     time_t date = Sauce_date(sauce);
     const char *datestr = "";
