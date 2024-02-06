@@ -27,6 +27,14 @@ typedef enum StandardStreamType
 #define SS_EOF 1
 #define SS_ERROR 2
 
+#ifdef USE_POSIX
+#define FILETYPE int
+#define NOTAFILE (-1)
+#else
+#define FILETYPE FILE *
+#define NOTAFILE ((void *)0)
+#endif
+
 struct StreamReader
 {
     size_t  (*read)(StreamReader *self, void *ptr, size_t size);
@@ -50,6 +58,7 @@ Stream *Stream_createStandard(StandardStreamType type);
 Stream *Stream_createReader(StreamReader *reader, const void *magic);
 Stream *Stream_createWriter(StreamWriter *writer, const void *magic);
 
+FILETYPE Stream_file(Stream *self);
 StreamReader *Stream_reader(Stream *self, const void *magic);
 StreamWriter *Stream_writer(Stream *self, const void *magic);
 

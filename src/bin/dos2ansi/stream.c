@@ -175,6 +175,31 @@ Stream *Stream_createWriter(StreamWriter *writer, const void *magic)
     return (Stream *)self;
 }
 
+FILETYPE Stream_file(Stream *self)
+{
+    if (self->size == T_READERSTREAM)
+    {
+	StreamReader *reader = ((ReaderStream *)self)->reader;
+	if (!reader->stream) return NOTAFILE;
+	return Stream_file(reader->stream);
+    }
+    else if (self->size == T_WRITERSTREAM)
+    {
+	StreamWriter *writer = ((WriterStream *)self)->writer;
+	if (!writer->stream) return NOTAFILE;
+	return Stream_file(writer->stream);
+    }
+    else if (self->size == T_FILESTREAM)
+    {
+#ifdef USE_POSIX
+	return ((FileStream *)self)->fd;
+#else
+	return ((FileStream *)self)->file;
+#endif
+    }
+    return NOTAFILE;
+}
+
 StreamReader *Stream_reader(Stream *self, const void *magic)
 {
     if (!magic || self->size != T_READERSTREAM) return 0;
@@ -300,7 +325,7 @@ static int FileStream_flush(FileStream *self)
 {
     if (!(self->flags & FOF_WRITE)) return EOF;
 #ifdef USE_POSIX
-    return 0;
+    return fdatasync(self->fd);
 #else
     return fflush(self->file);
 #endif

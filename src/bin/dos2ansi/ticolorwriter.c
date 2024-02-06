@@ -5,6 +5,7 @@
 
 #include <curses.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <term.h>
 #include <unistd.h>
 
@@ -42,6 +43,15 @@ typedef struct TiColorWriter
     int bg;
 } TiColorWriter;
 
+static TiColorWriter *instance = 0;
+
+static int putstream(int c)
+{
+    uint16_t unichr = c;
+    if (Stream_write(instance->base.stream, &unichr, 2) != 2) return EOF;
+    return c;
+}
+
 static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 {
     TiColorWriter *writer = (TiColorWriter *)self;
@@ -64,21 +74,20 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     int newfgcol = newfg;
     int newbgcol = newbg;
     if (defcols < 2 && newfg == writer->fg && newbg == writer->bg) return size;
-    if (Stream_flush(self->stream) != 0) return 0;
-    if (putp(tigetstr(writer->reset)) == ERR) return 0;
+    if (tputs(tigetstr(writer->reset), 1, putstream) == ERR) return 0;
     if (defcols && newbg == 0 && newfg == 7) goto done;
     if (writer->brightbg && (newbg & 8U))
     {
-	if (*writer->brightbg &&
-		putp(tigetstr(writer->brightbg)) == ERR) return 0;
+	if (*writer->brightbg && tputs(tigetstr(writer->brightbg),
+		    1, putstream) == ERR) return 0;
 	newbgcol &= 7U;
     }
     if (writer->brightfg)
     {
 	if ((newfg & 8U))
 	{
-	    if (*writer->brightfg &&
-		    putp(tigetstr(writer->brightfg)) == ERR) return 0;
+	    if (*writer->brightfg && tputs(tigetstr(writer->brightfg),
+			1, putstream) == ERR) return 0;
 	    newfgcol &= 7U;
 	}
 	newbgcol &= 7U;
@@ -93,21 +102,32 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 	    newbgcol = RGBBROWN(newbgcol);
 	}
     }
-    if (putp(tiparm(tigetstr(writer->setab), newbgcol)) == ERR) return 0;
-    if (putp(tiparm(tigetstr(writer->setaf), newfgcol)) == ERR) return 0;
+    if (tputs(tiparm(tigetstr(writer->setab), newbgcol),
+		1, putstream) == ERR) return 0;
+    if (tputs(tiparm(tigetstr(writer->setaf), newfgcol),
+		1, putstream) == ERR) return 0;
 done:
     writer->fg = defcols == 2 ? -1 : newfg;
     writer->bg = defcols == 2 ? -1 : newbg;
     return size;
 }
 
+static void destroyticol(StreamWriter *self)
+{
+    if (!self) return;
+    Stream_destroy(self->stream);
+    free(self);
+    instance = 0;
+}
+
 Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 {
+    if (instance) return 0;
     TiColorWriter *writer = xmalloc(sizeof *writer);
     writer->base.write = writeticol;
     writer->base.flush = 0;
     writer->base.status = 0;
-    writer->base.destroy = 0;
+    writer->base.destroy = destroyticol;
     writer->base.stream = out;
     writer->brightfg = 0;
     writer->brightbg = 0;
@@ -116,7 +136,7 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     writer->bg = -1;
     if (flags & CF_STRIP) goto error;
     int err;
-    if (setupterm(0, STDOUT_FILENO, &err) == ERR) goto error;
+    if (setupterm(0, Stream_file(out), &err) == ERR) goto error;
     int ncols = tigetnum("colors");
     if (ncols == ERR) ncols = tigetnum("Co");
     if (ncols == ERR || ncols < 8) goto error;
@@ -162,6 +182,7 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 error:
     writer->flags = CF_STRIP;
 done:
+    instance = writer;
     return Stream_createWriter((StreamWriter *)writer, rgbcols);
 }
 

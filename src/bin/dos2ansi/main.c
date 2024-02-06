@@ -168,19 +168,8 @@ static Stream *createStdoutStream(const Config *config,
 static Stream *createColorWriter(const Config *config,
 	Stream *out, ColorFlags flags)
 {
-    /* Can't use the terminfo color writer
-     * - when output doesn't go to stdout, because it uses putp() to write
-     *   control sequences directly there
-     * - when the output format isn't UTF8 (an 8bit encoding), because
-     *   terminfo output is plain ASCII
-     */
-    if (!Config_forceansi(config)
-	    && !Config_outfile(config)
-	    && Config_format(config) <= UF_UTF8)
-    {
-	return TiColorWriter_create(out, flags);
-    }
-    else return AnsiColorWriter_create(out, flags);
+    if (Config_forceansi(config)) return AnsiColorWriter_create(out, flags);
+    return TiColorWriter_create(out, flags);
 }
 
 #else
