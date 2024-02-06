@@ -27,12 +27,16 @@ typedef enum StandardStreamType
 #define SS_EOF 1
 #define SS_ERROR 2
 
-#ifdef USE_POSIX
-#define FILETYPE int
-#define NOTAFILE (-1)
+#if defined(_WIN32)
+#  include <windows.h>
+typedef HANDLE FILEHANDLE;
+#  define NOTAFILE INVALID_HANDLE_VALUE
+#elif defined(USE_POSIX)
+typedef int FILEHANDLE;
+#  define NOTAFILE ((FILEHANDLE)-1)
 #else
-#define FILETYPE FILE *
-#define NOTAFILE ((void *)0)
+typedef FILE *FILEHANDLE;
+#  define NOTAFILE ((FILEHANDLE)0)
 #endif
 
 struct StreamReader
@@ -58,7 +62,7 @@ Stream *Stream_createStandard(StandardStreamType type);
 Stream *Stream_createReader(StreamReader *reader, const void *magic);
 Stream *Stream_createWriter(StreamWriter *writer, const void *magic);
 
-FILETYPE Stream_file(Stream *self);
+FILEHANDLE Stream_file(Stream *self);
 StreamReader *Stream_reader(Stream *self, const void *magic);
 StreamWriter *Stream_writer(Stream *self, const void *magic);
 

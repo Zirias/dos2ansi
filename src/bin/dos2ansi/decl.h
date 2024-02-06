@@ -84,12 +84,14 @@
 #endif
 #define DECLEXPORT dos2ansi___cdecl
 
-#if defined __has_include
-#  if __has_include(<unistd.h>)
+#ifndef _WIN32
+#  if defined __has_include
+#    if __has_include(<unistd.h>)
+#      define USE_POSIX 1
+#    endif
+#  elif defined __unix__
 #    define USE_POSIX 1
 #  endif
-#elif defined __unix__
-#  define USE_POSIX 1
 #endif
 
 #ifdef USE_POSIX
