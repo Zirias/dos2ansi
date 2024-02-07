@@ -388,7 +388,7 @@ static size_t WriterStream_write(WriterStream *self,
     return self->writer->write(self->writer, ptr, sz);
 }
 
-size_t Stream_write(Stream *self, const void *ptr, size_t sz)
+static size_t writeDispatch(Stream *self, const void *ptr, size_t sz)
 {
     switch (self->size)
     {
@@ -403,17 +403,30 @@ size_t Stream_write(Stream *self, const void *ptr, size_t sz)
     }
 }
 
-size_t Stream_puts(Stream *self, const char *str)
+size_t Stream_write(Stream *self, const void *ptr, size_t sz)
 {
-    size_t sz = strlen(str);
     size_t wr = 0;
+    const char *cptr = ptr;
     while (wr < sz)
     {
-	size_t cs = Stream_write(self, str+wr, sz-wr);
-	if (!cs) return 0;
+	size_t cs = writeDispatch(self, cptr, sz-wr);
+	if (!cs) return wr;
 	wr += cs;
+	cptr += cs;
     }
     return wr;
+}
+
+int Stream_putc(Stream *self, int c)
+{
+    unsigned char b = c;
+    if (!Stream_write(self, &b, 1)) return -1;
+    return c;
+}
+
+size_t Stream_puts(Stream *self, const char *str)
+{
+    return Stream_write(self, str, strlen(str));
 }
 
 size_t Stream_printf(Stream *self, const char *format, ...)
@@ -431,7 +444,7 @@ size_t Stream_printf(Stream *self, const char *format, ...)
 	vsnprintf(xbuf, sz+1, format, ap);
 	va_end(ap);
     }
-    size_t wr = Stream_puts(self, xbuf ? xbuf : buf);
+    size_t wr = Stream_write(self, xbuf ? xbuf : buf, sz);
     free(xbuf);
     return wr;
 }
@@ -459,7 +472,7 @@ static size_t ReaderStream_read(ReaderStream *self, void *ptr, size_t sz)
     return self->reader->read(self->reader, ptr, sz);
 }
 
-size_t Stream_read(Stream *self, void *ptr, size_t sz)
+static size_t readDispatch(Stream *self, void *ptr, size_t sz)
 {
     switch (self->size)
     {
@@ -472,6 +485,27 @@ size_t Stream_read(Stream *self, void *ptr, size_t sz)
 	default:
 	    return MemoryStream_read((MemoryStream *)self, ptr, sz);
     }
+}
+
+size_t Stream_read(Stream *self, void *ptr, size_t sz)
+{
+    size_t rd = 0;
+    char *cptr = ptr;
+    while (rd < sz)
+    {
+	size_t cs = readDispatch(self, cptr, sz-rd);
+	if (!cs) return rd;
+	rd += cs;
+	cptr += cs;
+    }
+    return rd;
+}
+
+int Stream_getc(Stream *self)
+{
+    unsigned char b;
+    if (!Stream_read(self, &b, 1)) return -1;
+    return b;
 }
 
 static int FileStream_flush(FileStream *self)

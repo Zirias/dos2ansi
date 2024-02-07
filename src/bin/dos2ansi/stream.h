@@ -72,9 +72,11 @@ StreamReader *Stream_reader(Stream *self, const void *magic);
 StreamWriter *Stream_writer(Stream *self, const void *magic);
 
 size_t Stream_write(Stream *self, const void *ptr, size_t sz);
+int Stream_putc(Stream *self, int c);
 size_t Stream_puts(Stream *self, const char *str);
 size_t Stream_printf(Stream *self, const char *format, ...);
 size_t Stream_read(Stream *self, void *ptr, size_t sz);
+int Stream_getc(Stream *self);
 int Stream_flush(Stream *self);
 StreamStatus Stream_status(const Stream *self);
 
