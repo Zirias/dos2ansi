@@ -1,6 +1,7 @@
-BOOLCONFVARS=	WITH_CURSES
+BOOLCONFVARS=	WITH_CURSES FORCE_STDIO
 
-WITH_CURSES?=	1
+WITH_CURSES?=	1	# Build curses/terminfo writer (non-Windows only)
+FORCE_STDIO?=	0	# Don't use platform-specific file/stream I/O
 
 include zimk/zimk.mk
 

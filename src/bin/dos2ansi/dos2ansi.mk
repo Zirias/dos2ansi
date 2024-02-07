@@ -26,4 +26,8 @@ dos2ansi_MODULES+=	winconsolewriter
 dos2ansi_win32_RES:=	windres
 endif
 
+ifeq ($(FORCE_STDIO),1)
+dos2ansi_DEFINES+=	-DFORCE_STDIO
+endif
+
 $(call binrules, dos2ansi)

@@ -32,7 +32,7 @@ typedef enum StreamStatus
     SS_ERROR	= 2	    /* An error occured */
 } StreamStatus;
 
-#if defined(_WIN32)
+#if defined(USE_WIN32)
 typedef void *FILEHANDLE;	    /* Use a HANDLE in client code */
 #  define NOTAFILE ((FILEHANDLE)-1)
 #elif defined(USE_POSIX)

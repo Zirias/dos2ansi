@@ -7,7 +7,7 @@
 
 #define MS_CHUNKSZ 1024
 
-#if defined(_WIN32)
+#if defined(USE_WIN32)
 #  include <windows.h>
 #  define FLUSHFILE(f) (FlushFileBuffers(f) ? 0 : -1)
 #  define CLOSEFILE(f) CloseHandle(f)
@@ -149,10 +149,17 @@ static StreamStatus readFile(int file, size_t *nread,
     return rc == 0 ? SS_EOF : SS_OK;
 }
 
-#else /* !_WIN32 && !USE_POSIX */
+#else /* !USE_WIN32 && !USE_POSIX */
 #  include <stdio.h>
 #  define FLUSHFILE(f) (fflush(f) < 0 ? -1 : 0)
 #  define CLOSEFILE(f) fclose(f)
+#  ifdef _WIN32
+#    include <fcntl.h>
+#    include <io.h>
+#    define BINMODE(f) _setmode(_fileno(f), _O_BINARY)
+#  else
+#    define BINMODE(f) ((void)(f))
+#  endif
 
 static FILE *getStdStream(StandardStreamType type)
 {
@@ -163,7 +170,11 @@ static FILE *getStdStream(StandardStreamType type)
 	case SST_STDOUT: file = stdout; break;
 	case SST_STDERR: file = stderr; break;
     }
-    if (file) setvbuf(file, 0, _IONBF, 0);
+    if (file)
+    {
+	setvbuf(file, 0, _IONBF, 0);
+	BINMODE(file);
+    }
     return file;
 }
 

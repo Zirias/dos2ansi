@@ -7,7 +7,6 @@
 #undef SOEXPORT
 #undef SOLOCAL
 #undef DECLEXPORT
-#undef USE_POSIX
 
 #define ATTR_ACCESS(x)
 #define ATTR_ALLOCSZ(x)
@@ -84,13 +83,20 @@
 #endif
 #define DECLEXPORT dos2ansi___cdecl
 
-#ifndef _WIN32
-#  if defined __has_include
-#    if __has_include(<unistd.h>)
-#      define USE_POSIX 1
+#undef USE_POSIX
+#undef USE_WIN32
+
+#ifndef FORCE_STDIO
+#  ifdef _WIN32
+#    define USE_WIN32
+#  else
+#    if defined __has_include
+#      if __has_include(<unistd.h>)
+#        define USE_POSIX
+#      endif
+#    elif defined __unix__
+#      define USE_POSIX
 #    endif
-#  elif defined __unix__
-#    define USE_POSIX 1
 #  endif
 #endif
 
