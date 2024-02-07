@@ -219,7 +219,8 @@ Config *Config_fromOpts(int argc, char **argv)
     }
 
     config = createConfig(argc, argv);
-    config->argvstore = xrealloc(argvstore, argvstorepos);
+    if (config) config->argvstore = xrealloc(argvstore, argvstorepos);
+    else free(argvstore);
     argvstore = 0;
 
 done:
