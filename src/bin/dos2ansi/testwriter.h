@@ -5,6 +5,6 @@
 
 C_CLASS_DECL(Stream);
 
-int TestWriter_write(Stream *stream);
+int TestWriter_write(Stream *stream) ATTR_NONNULL((1));
 
 #endif

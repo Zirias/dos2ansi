@@ -6,6 +6,7 @@
 
 C_CLASS_DECL(Stream);
 
-Stream *AnsiColorWriter_create(Stream *out, ColorFlags flags);
+Stream *AnsiColorWriter_create(Stream *out, ColorFlags flags)
+    ATTR_NONNULL((1)) ATTR_RETNONNULL;
 
 #endif

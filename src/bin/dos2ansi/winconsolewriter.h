@@ -7,6 +7,7 @@
 
 C_CLASS_DECL(Stream);
 
-Stream *WinConsoleWriter_create(HANDLE console, int stripcolors);
+Stream *WinConsoleWriter_create(HANDLE console, int stripcolors)
+    ATTR_NONNULL((1)) ATTR_RETNONNULL;
 
 #endif

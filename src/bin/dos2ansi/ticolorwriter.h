@@ -6,6 +6,6 @@
 
 C_CLASS_DECL(Stream);
 
-Stream *TiColorWriter_create(Stream *out, ColorFlags flags);
+Stream *TiColorWriter_create(Stream *out, ColorFlags flags) ATTR_NONNULL((1));
 
 #endif

@@ -18,18 +18,18 @@ typedef enum VgaSerFlags
 
 VgaCanvas *VgaCanvas_create(int width, int tabwidth);
 
-void VgaCanvas_put(VgaCanvas *self, char c);
-void VgaCanvas_setFg(VgaCanvas *self, char fg);
-void VgaCanvas_setBg(VgaCanvas *self, char bg);
-void VgaCanvas_setBold(VgaCanvas *self, int bold);
-void VgaCanvas_setBlink(VgaCanvas *self, int blink);
-void VgaCanvas_setReverse(VgaCanvas *self, int reverse);
-void VgaCanvas_setHidden(VgaCanvas *self, int hidden);
-void VgaCanvas_resetAttr(VgaCanvas *self);
-void VgaCanvas_up(VgaCanvas *self, unsigned n);
-void VgaCanvas_down(VgaCanvas *self, unsigned n);
-void VgaCanvas_left(VgaCanvas *self, unsigned n);
-void VgaCanvas_right(VgaCanvas *self, unsigned n);
+void VgaCanvas_put(VgaCanvas *self, char c) CMETHOD;
+void VgaCanvas_setFg(VgaCanvas *self, char fg) CMETHOD;
+void VgaCanvas_setBg(VgaCanvas *self, char bg) CMETHOD;
+void VgaCanvas_setBold(VgaCanvas *self, int bold) CMETHOD;
+void VgaCanvas_setBlink(VgaCanvas *self, int blink) CMETHOD;
+void VgaCanvas_setReverse(VgaCanvas *self, int reverse) CMETHOD;
+void VgaCanvas_setHidden(VgaCanvas *self, int hidden) CMETHOD;
+void VgaCanvas_resetAttr(VgaCanvas *self) CMETHOD;
+void VgaCanvas_up(VgaCanvas *self, unsigned n) CMETHOD;
+void VgaCanvas_down(VgaCanvas *self, unsigned n) CMETHOD;
+void VgaCanvas_left(VgaCanvas *self, unsigned n) CMETHOD;
+void VgaCanvas_right(VgaCanvas *self, unsigned n) CMETHOD;
 
 /* Serialize the canvas contents as a stream of uint16_t values containing
  * characters of the Unicode BMP in machine byte order, using a supplied
@@ -45,7 +45,8 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n);
  * to accept a single uint16_t at a time.
  */
 int VgaCanvas_serialize(const VgaCanvas *self,
-	Stream *out, const Codepage *cp, VgaSerFlags flags);
+	Stream *out, const Codepage *cp, VgaSerFlags flags)
+    CMETHOD ATTR_NONNULL((2)) ATTR_NONNULL((3));
 
 void VgaCanvas_destroy(VgaCanvas *self);
 

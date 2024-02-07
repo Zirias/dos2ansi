@@ -34,10 +34,11 @@ typedef enum CodepageFlags {
     CPF_EUROSYM	    = 1 << 2	/* use Euro variant if applicable */
 } CodepageFlags;
 
-CodepageId CodepageId_byName(const char *name);
+CodepageId CodepageId_byName(const char *name)
+    ATTR_NONNULL((1));
 
 Codepage *Codepage_create(CodepageId id, CodepageFlags flags);
-uint16_t Codepage_map(const Codepage *self, uint8_t c);
+uint16_t Codepage_map(const Codepage *self, uint8_t c) CMETHOD ATTR_PURE;
 void Codepage_destroy(Codepage *self);
 
 #endif

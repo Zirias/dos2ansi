@@ -9,9 +9,10 @@
 
 C_CLASS_DECL(Stream);
 
-Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof);
-int DosReader_readUntilEof(Stream *stream, Stream *out);
-int DosReader_seekAfterEof(Stream *stream);
-int DosReader_setIgnoreEof(Stream *stream, int ignoreeof);
+Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
+    ATTR_NONNULL((1)) ATTR_RETNONNULL;
+int DosReader_readUntilEof(Stream *stream, Stream *out) CMETHOD;
+int DosReader_seekAfterEof(Stream *stream) CMETHOD;
+int DosReader_setIgnoreEof(Stream *stream, int ignoreeof) CMETHOD;
 
 #endif

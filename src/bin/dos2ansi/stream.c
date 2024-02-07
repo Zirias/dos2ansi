@@ -20,8 +20,7 @@ static HANDLE getStdStream(StandardStreamType type)
     {
 	case SST_STDIN: return GetStdHandle(STD_INPUT_HANDLE);
 	case SST_STDOUT: return GetStdHandle(STD_OUTPUT_HANDLE);
-	case SST_STDERR: return GetStdHandle(STD_ERROR_HANDLE);
-	default: return INVALID_HANDLE_VALUE;
+	default: return GetStdHandle(STD_ERROR_HANDLE);
     }
 }
 
@@ -107,8 +106,7 @@ static int getStdStream(StandardStreamType type)
     {
 	case SST_STDIN: return STDIN_FILENO;
 	case SST_STDOUT: return STDOUT_FILENO;
-	case SST_STDERR: return STDERR_FILENO;
-	default: return -1;
+	default: return STDERR_FILENO;
     }
 }
 
@@ -166,14 +164,14 @@ static int streamConfigured[] = {0, 0, 0};
 
 static FILE *getStdStream(StandardStreamType type)
 {
-    FILE *file = 0;
+    FILE *file;
     switch (type)
     {
 	case SST_STDIN: file = stdin; break;
 	case SST_STDOUT: file = stdout; break;
-	case SST_STDERR: file = stderr; break;
+	default: file = stderr; break;
     }
-    if (file && !streamConfigured[type])
+    if (!streamConfigured[type])
     {
 	setvbuf(file, 0, _IONBF, 0);
 	BINMODE(file);
@@ -285,7 +283,6 @@ Stream *Stream_fromFile(FILEHANDLE file, FileOpenFlags flags)
 Stream *Stream_createStandard(StandardStreamType type)
 {
     FILEHANDLE std = getStdStream(type);
-    if (std == NOTAFILE) return 0;
     return Stream_fromFile(std,
 	    (type == SST_STDIN ? FOF_READ : FOF_WRITE) | FOF_NOCLOSE);
 }
@@ -300,8 +297,6 @@ Stream *Stream_openFile(const char *filename, FileOpenFlags flags)
 
 Stream *Stream_createReader(StreamReader *reader, const void *magic)
 {
-    if (!magic || !reader->read ||
-	    (!reader->status && !reader->stream)) return 0;
     ReaderStream *self = xmalloc(sizeof *self);
     self->base.size = T_READERSTREAM;
     self->magic = magic;
@@ -311,8 +306,6 @@ Stream *Stream_createReader(StreamReader *reader, const void *magic)
 
 Stream *Stream_createWriter(StreamWriter *writer, const void *magic)
 {
-    if (!magic || !writer->write ||
-	    (!writer->status && !writer->stream)) return 0;
     WriterStream *self = xmalloc(sizeof *self);
     self->base.size = T_WRITERSTREAM;
     self->magic = magic;
@@ -340,7 +333,7 @@ FILEHANDLE Stream_file(Stream *self)
 
 StreamReader *Stream_reader(Stream *self, const void *magic)
 {
-    if (!magic || self->size != T_READERSTREAM) return 0;
+    if (self->size != T_READERSTREAM) return 0;
     ReaderStream *rs = (ReaderStream *)self;
     if (rs->magic == magic) return rs->reader;
     if (!rs->reader->stream) return 0;
@@ -349,7 +342,7 @@ StreamReader *Stream_reader(Stream *self, const void *magic)
 
 StreamWriter *Stream_writer(Stream *self, const void *magic)
 {
-    if (!magic || self->size != T_WRITERSTREAM) return 0;
+    if (self->size != T_WRITERSTREAM) return 0;
     WriterStream *ws = (WriterStream *)self;
     if (ws->magic == magic) return ws->writer;
     if (!ws->writer->stream) return 0;
@@ -385,6 +378,7 @@ static size_t FileStream_write(FileStream *self, const void *ptr, size_t sz)
 static size_t WriterStream_write(WriterStream *self,
 	const void *ptr, size_t sz)
 {
+    if (!self->writer->write) return 0;
     return self->writer->write(self->writer, ptr, sz);
 }
 
@@ -469,6 +463,7 @@ static size_t FileStream_read(FileStream *self, void *ptr, size_t sz)
 
 static size_t ReaderStream_read(ReaderStream *self, void *ptr, size_t sz)
 {
+    if (!self->reader->read) return 0;
     return self->reader->read(self->reader, ptr, sz);
 }
 
@@ -544,13 +539,15 @@ static StreamStatus FileStream_status(const FileStream *self)
 static StreamStatus ReaderStream_status(const ReaderStream *self)
 {
     if (self->reader->status) return self->reader->status(self->reader);
-    return Stream_status(self->reader->stream);
+    if (self->reader->stream) return Stream_status(self->reader->stream);
+    return SS_ERROR;
 }
 
 static StreamStatus WriterStream_status(const WriterStream *self)
 {
     if (self->writer->status) return self->writer->status(self->writer);
-    return Stream_status(self->writer->stream);
+    if (self->writer->stream) return Stream_status(self->writer->stream);
+    return SS_ERROR;
 }
 
 StreamStatus Stream_status(const Stream *self)

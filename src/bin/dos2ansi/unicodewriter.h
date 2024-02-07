@@ -12,6 +12,7 @@ typedef enum UnicodeFormat
     UF_UTF16LE
 } UnicodeFormat;
 
-Stream *UnicodeWriter_create(Stream *out, UnicodeFormat format);
+Stream *UnicodeWriter_create(Stream *out, UnicodeFormat format)
+    ATTR_NONNULL((1)) ATTR_RETNONNULL;
 
 #endif
