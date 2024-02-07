@@ -410,7 +410,7 @@ size_t Stream_puts(Stream *self, const char *str)
     while (wr < sz)
     {
 	size_t cs = Stream_write(self, str+wr, sz-wr);
-	if (!cs) return -1;
+	if (!cs) return 0;
 	wr += cs;
     }
     return wr;
