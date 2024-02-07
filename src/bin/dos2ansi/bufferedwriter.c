@@ -20,14 +20,8 @@ static int flush(StreamWriter *self)
     BufferedWriter *writer = (BufferedWriter *)self;
     if (writer->bufused)
     {
-	size_t flushpos = 0;
-	while (flushpos < writer->bufused)
-	{
-	    size_t written = Stream_write(self->stream,
-		    writer->buf + flushpos, writer->bufused - flushpos);
-	    if (!written) return -1;
-	    flushpos += written;
-	}
+	if (!Stream_write(self->stream,
+		    writer->buf, writer->bufused)) return -1;
 	writer->bufused = 0;
     }
     return Stream_flush(self->stream);
@@ -46,13 +40,14 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
 	return size;
     }
 
-    if (bufavail)
+    if (bufavail && size <= writer->bufsize)
     {
 	memcpy(writer->buf + writer->bufused, cptr, bufavail);
 	cptr += bufavail;
 	size -= bufavail;
 	writer->bufused = writer->bufsize;
     }
+    else bufavail = 0;
     if (flush(self) < 0) return 0;
     if (size > writer->bufsize)
     {

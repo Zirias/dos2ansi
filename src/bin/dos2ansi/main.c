@@ -261,7 +261,7 @@ int main(int argc, char **argv)
     }
     else
     {
-	if (AnsiSysRenderer_render(canvas, in) != 0) goto done;
+	if (AnsiSysRenderer_render(canvas, in) < 0) goto done;
     }
     Stream_destroy(in);
     in = 0;

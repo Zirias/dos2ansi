@@ -62,13 +62,13 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 {
     TiColorWriter *writer = (TiColorWriter *)self;
     const uint16_t *unichr = ptr;
-    if (size != sizeof *unichr) return 0;
+    if (size < 2) return 0;
     uint16_t c = *unichr;
     if (c < 0xee00 || c > 0xef00)
     {
 	return Stream_write(self->stream, ptr, size);
     }
-    if (writer->flags & CF_STRIP) return size;
+    if (writer->flags & CF_STRIP) return 2;
     int defcols = !!(writer->flags & CF_DEFAULT);
     if (c == 0xef00)
     {
@@ -79,7 +79,7 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     int newbg = (c >> 4) & 0xfU;
     int newfgcol = newfg;
     int newbgcol = newbg;
-    if (defcols < 2 && newfg == writer->fg && newbg == writer->bg) return size;
+    if (defcols < 2 && newfg == writer->fg && newbg == writer->bg) return 2;
     if (tputs(tigetstr(writer->reset), 1, putstream) == ERR) return 0;
     if (defcols && newbg == 0 && newfg == 7) goto done;
     if (writer->brightbg && (newbg & 8U))
@@ -115,7 +115,7 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 done:
     writer->fg = defcols == 2 ? -1 : newfg;
     writer->bg = defcols == 2 ? -1 : newbg;
-    return size;
+    return 2;
 }
 
 static void destroyticol(StreamWriter *self)

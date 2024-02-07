@@ -34,6 +34,7 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
     reader->doseof = 0;
     while (!reader->doseof && nread < size)
     {
+	if (reader->bufpos == reader->bufused) reader->bufused = 0;
 	if (!reader->bufused)
 	{
 	    reader->bufpos = 0;
@@ -54,19 +55,8 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
 	    memcpy(cptr, reader->buf + reader->bufpos, buflen);
 	    cptr += buflen;
 	}
-	else if (reader->out)
-	{
-	    size_t written = 0;
-	    while (written < buflen)
-	    {
-		size_t wradd = Stream_write(reader->out,
-			reader->buf + reader->bufpos + written,
-			buflen - written);
-		if (!wradd) break;
-		written += wradd;
-	    }
-	    buflen = written;
-	}
+	else if (reader->out) Stream_write(reader->out,
+		reader->buf + reader->bufpos, buflen);
 	nread += buflen;
 	reader->bufpos += buflen;
 	if (!reader->ignoreeof && reader->bufpos < reader->bufused
@@ -75,7 +65,7 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
 	    ++reader->bufpos;
 	    reader->doseof = 1;
 	}
-	if (reader->bufpos == reader->bufused) reader->bufused = 0;
+	if (reader->bufused < reader->bufsize) break;
     }
     return nread;
 }

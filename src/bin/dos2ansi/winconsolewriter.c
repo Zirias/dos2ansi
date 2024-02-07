@@ -21,7 +21,7 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
     const uint16_t *str = ptr;
     size_t written = 0;
     if (writer->err) goto done;
-    size_t remaining = size / sizeof *str;
+    size_t remaining = size / 2;
     while (remaining)
     {
 	size_t pos = 0;

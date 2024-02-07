@@ -69,6 +69,7 @@ static RawSauce *RawSauce_read(Stream *in)
 	    if (avail > MAXSAUCE) goto error;
 	    self = xrealloc(self, sizeof *self + avail);
 	}
+	if (read < rdchunk) break;
     }
     int status = Stream_status(in);
     if (status != SS_EOF) goto error;
