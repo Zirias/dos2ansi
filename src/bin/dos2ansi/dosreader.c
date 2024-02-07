@@ -106,29 +106,29 @@ Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
 int DosReader_readUntilEof(Stream *stream, Stream *out)
 {
     StreamReader *self = Stream_reader(stream, magic);
-    if (!self) return EOF;
+    if (!self) return -1;
     DosReader *reader = (DosReader *)self;
     reader->out = out;
     while (read(self, 0, reader->bufsize)) ;
     reader->out = 0;
-    if (!reader->doseof) return EOF;
+    if (!reader->doseof) return -1;
     return 0;
 }
 
 int DosReader_seekAfterEof(Stream *stream)
 {
     StreamReader *self = Stream_reader(stream, magic);
-    if (!self) return EOF;
+    if (!self) return -1;
     DosReader *reader = (DosReader *)self;
     while (read(self, 0, reader->bufsize)) ;
-    if (!reader->doseof) return EOF;
+    if (!reader->doseof) return -1;
     return 0;
 }
 
 int DosReader_setIgnoreEof(Stream *stream, int ignoreeof)
 {
     StreamReader *self = Stream_reader(stream, magic);
-    if (!self) return EOF;
+    if (!self) return -1;
     DosReader *reader = (DosReader *)self;
     reader->ignoreeof = ignoreeof;
     return 0;

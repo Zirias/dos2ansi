@@ -2,6 +2,7 @@
 
 #include "stream.h"
 
+#include <stdio.h>
 #include <string.h>
 
 static char line[256];

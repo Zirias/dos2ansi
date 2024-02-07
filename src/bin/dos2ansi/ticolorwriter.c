@@ -9,6 +9,12 @@
 #include <term.h>
 #include <unistd.h>
 
+#ifdef USE_POSIX
+#define STREAMFILENO(s) Stream_file(s)
+#else
+#define STREAMFILENO(s) fileno((FILE *)Stream_file(s))
+#endif
+
 static const int rgbcols[] = {
     16,   /* black */
     124,  /* red */
@@ -48,7 +54,7 @@ static TiColorWriter *instance = 0;
 static int putstream(int c)
 {
     uint16_t unichr = c;
-    if (Stream_write(instance->base.stream, &unichr, 2) != 2) return EOF;
+    if (Stream_write(instance->base.stream, &unichr, 2) != 2) return -1;
     return c;
 }
 
@@ -136,7 +142,7 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     writer->bg = -1;
     if (flags & CF_STRIP) goto error;
     int err;
-    if (setupterm(0, Stream_file(out), &err) == ERR) goto error;
+    if (setupterm(0, STREAMFILENO(out), &err) == ERR) goto error;
     int ncols = tigetnum("colors");
     if (ncols == ERR) ncols = tigetnum("Co");
     if (ncols == ERR || ncols < 8) goto error;

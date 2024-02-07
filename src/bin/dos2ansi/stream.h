@@ -3,7 +3,7 @@
 
 #include "decl.h"
 
-#include <stdio.h>
+#include <stddef.h>
 
 C_CLASS_DECL(Stream);
 C_CLASS_DECL(StreamReader);
@@ -11,31 +11,35 @@ C_CLASS_DECL(StreamWriter);
 
 typedef enum FileOpenFlags
 {
-    FOF_NONE	= 0,
-    FOF_READ	= 1 << 0,
-    FOF_WRITE	= 1 << 1
+    FOF_NONE	= 0,	    /* Invalid */
+    FOF_READ	= 1 << 0,   /* Request read access */
+    FOF_WRITE	= 1 << 1,   /* Request write access, truncate if exists */
+    FOF_NOCLOSE	= 1 << 15   /* Don't close file on stream destruction */
 } FileOpenFlags;
 
 typedef enum StandardStreamType
 {
-    SST_STDIN,
-    SST_STDOUT,
-    SST_STDERR
+    SST_STDIN	= 0,	    /* FileStream for standard input */
+    SST_STDOUT	= 1,	    /* FileStream for standard output */
+    SST_STDERR	= 2	    /* FileStream for standard error */
 } StandardStreamType;
 
-#define SS_OK 0
-#define SS_EOF 1
-#define SS_ERROR 2
+typedef enum StreamStatus
+{
+    SS_RESERVED	= -1,	    /* Negative values for reader/writer extensions */
+    SS_OK	= 0,	    /* Stream is usable */
+    SS_EOF	= 1,	    /* Stream reached the end */
+    SS_ERROR	= 2	    /* An error occured */
+} StreamStatus;
 
 #if defined(_WIN32)
-#  include <windows.h>
-typedef HANDLE FILEHANDLE;
-#  define NOTAFILE INVALID_HANDLE_VALUE
+typedef void *FILEHANDLE;	    /* Use a HANDLE in client code */
+#  define NOTAFILE ((FILEHANDLE)-1)
 #elif defined(USE_POSIX)
 typedef int FILEHANDLE;
 #  define NOTAFILE ((FILEHANDLE)-1)
 #else
-typedef FILE *FILEHANDLE;
+typedef void *FILEHANDLE;	    /* Use a FILE * in client code */
 #  define NOTAFILE ((FILEHANDLE)0)
 #endif
 
@@ -57,8 +61,9 @@ struct StreamWriter
 };
 
 Stream *Stream_createMemory(void);
-Stream *Stream_openFile(const char *filename, FileOpenFlags flags);
+Stream *Stream_fromFile(FILEHANDLE file, FileOpenFlags flags);
 Stream *Stream_createStandard(StandardStreamType type);
+Stream *Stream_openFile(const char *filename, FileOpenFlags flags);
 Stream *Stream_createReader(StreamReader *reader, const void *magic);
 Stream *Stream_createWriter(StreamWriter *writer, const void *magic);
 
@@ -69,7 +74,7 @@ StreamWriter *Stream_writer(Stream *self, const void *magic);
 size_t Stream_write(Stream *self, const void *ptr, size_t sz);
 size_t Stream_read(Stream *self, void *ptr, size_t sz);
 int Stream_flush(Stream *self);
-int Stream_status(const Stream *self);
+StreamStatus Stream_status(const Stream *self);
 
 void Stream_destroy(Stream *self);
 

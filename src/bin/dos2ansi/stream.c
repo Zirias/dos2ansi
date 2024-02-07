@@ -2,16 +2,212 @@
 
 #include "util.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef USE_POSIX
+#define MS_CHUNKSZ 1024
+
+#if defined(_WIN32)
+#  include <windows.h>
+#  define FLUSHFILE(f) (FlushFileBuffers(f) ? 0 : -1)
+#  define CLOSEFILE(f) CloseHandle(f)
+
+static HANDLE getStdStream(StandardStreamType type)
+{
+    switch (type)
+    {
+	case SST_STDIN: return GetStdHandle(STD_INPUT_HANDLE);
+	case SST_STDOUT: return GetStdHandle(STD_OUTPUT_HANDLE);
+	case SST_STDERR: return GetStdHandle(STD_ERROR_HANDLE);
+	default: return INVALID_HANDLE_VALUE;
+    }
+}
+
+static HANDLE openFile(const char *filename, FileOpenFlags flags)
+{
+    DWORD access = 0;
+    DWORD share = 0;
+    DWORD disposition = OPEN_EXISTING;
+    if (flags & FOF_READ)
+    {
+	access |= GENERIC_READ;
+	if (!(flags & FOF_WRITE)) share |= FILE_SHARE_READ;
+    }
+    if (flags & FOF_WRITE)
+    {
+	access |= GENERIC_WRITE;
+	disposition = CREATE_ALWAYS;
+    }
+    size_t namechars = strlen(filename) + 1;
+    LPWSTR wname = xmalloc((namechars + 4) * sizeof *wname);
+    memcpy(wname, L"\\\\?\\", 4 * sizeof *wname);
+    HANDLE file = INVALID_HANDLE_VALUE;
+    namechars = MultiByteToWideChar(CP_UTF8, 0,
+	    filename, -1, wname+4, namechars);
+    if (!namechars) goto done;
+    if (namechars < MAX_PATH)
+    {
+	/* This is a best-effort hack. To be able to access paths longer
+	 * than MAX_PATH, we need to use the win32 namespace \\?\ passing
+	 * the path unprocessed to the filesystem. For this to work, it
+	 * must be an absolute path.
+	 * To also support relative paths, we must convert to an absolute
+	 * path which only works without this namespace.
+	 * Therefore, if the path is already longer than MAX_PATH, we just
+	 * assume it's already an absolute path and skip the conversion.
+	 */
+	DWORD abssz = namechars + 1024;
+	LPWSTR absname = xmalloc((abssz + 4) * sizeof *absname);
+	memcpy(absname, L"\\\\?\\", 4 * sizeof *wname);
+	DWORD abslen = GetFullPathNameW(wname+4, abssz, absname+4, 0);
+	free(wname);
+	wname = absname;
+	if (!abslen || abslen >= abssz) goto done;
+    }
+    file = CreateFileW(wname, access, share, 0, disposition, 0, 0);
+
+done:
+    free(wname);
+    return file;
+}
+
+static StreamStatus writeFile(HANDLE file, size_t *nwritten,
+	const void *ptr, size_t sz)
+{
+    StreamStatus status = SS_OK;
+    DWORD wsz;
+    if (!WriteFile(file, ptr, sz, &wsz, 0)) status = SS_ERROR;
+    else if (!wsz) status = SS_EOF;
+    *nwritten = wsz;
+    return status;
+}
+
+static StreamStatus readFile(HANDLE file, size_t *nread,
+	void *ptr, size_t sz)
+{
+    StreamStatus status = SS_OK;
+    DWORD rsz;
+    if (!ReadFile(file, ptr, sz, &rsz, 0)) status = SS_ERROR;
+    else if (!rsz) status = SS_EOF;
+    *nread = rsz;
+    return status;
+}
+
+#elif defined(USE_POSIX)
 #  include <fcntl.h>
 #  include <unistd.h>
-#endif
+#  define FLUSHFILE(f) fdatasync(f)
+#  define CLOSEFILE(f) close(f)
 
-#define MS_CHUNKSZ 1024
+static int getStdStream(StandardStreamType type)
+{
+    switch (type)
+    {
+	case SST_STDIN: return STDIN_FILENO;
+	case SST_STDOUT: return STDOUT_FILENO;
+	case SST_STDERR: return STDERR_FILENO;
+	default: return -1;
+    }
+}
+
+static int openFile(const char *filename, FileOpenFlags flags)
+{
+    int openflags = 0;
+    if (flags & FOF_WRITE)
+    {
+	if (flags & FOF_READ) openflags |= O_RDWR;
+	else openflags |= O_WRONLY;
+	openflags |= O_CREAT|O_TRUNC;
+    }
+    else if (flags & FOF_READ) openflags |= O_RDONLY;
+    return open(filename, openflags);
+}
+
+static StreamStatus writeFile(int file, size_t *nwritten,
+	const void *ptr, size_t sz)
+{
+    ssize_t rc = write(file, ptr, sz);
+    if (rc < 0)
+    {
+	*nwritten = 0;
+	return SS_ERROR;
+    }
+    *nwritten = rc;
+    return rc == 0 ? SS_EOF : SS_OK;
+}
+
+static StreamStatus readFile(int file, size_t *nread,
+	void *ptr, size_t sz)
+{
+    ssize_t rc = read(file, ptr, sz);
+    if (rc < 0)
+    {
+	*nread = 0;
+	return SS_ERROR;
+    }
+    *nread = rc;
+    return rc == 0 ? SS_EOF : SS_OK;
+}
+
+#else /* !_WIN32 && !USE_POSIX */
+#  include <stdio.h>
+#  define FLUSHFILE(f) (fflush(f) < 0 ? -1 : 0)
+#  define CLOSEFILE(f) fclose(f)
+
+static FILE *getStdStream(StandardStreamType type)
+{
+    FILE *file = 0;
+    switch (type)
+    {
+	case SST_STDIN: file = stdin; break;
+	case SST_STDOUT: file = stdout; break;
+	case SST_STDERR: file = stderr; break;
+    }
+    if (file) setvbuf(file, 0, _IONBF, 0);
+    return file;
+}
+
+static FILE *openFile(const char *filename, FileOpenFlags flags)
+{
+    char mode[4] = {0};
+    char *mptr = mode;
+    if (flags & FOF_WRITE)
+    {
+	*mptr++ = 'w';
+	if (flags & FOF_READ) *mptr++ = '+';
+    }
+    else if (flags & FOF_READ) *mptr++ = 'r';
+    *mptr = 'b';
+    FILE *file = fopen(filename, mode);
+    if (file) setvbuf(file, 0, _IONBF, 0);
+    return file;
+}
+
+static StreamStatus writeFile(FILE *file, size_t *nwritten,
+	const void *ptr, size_t sz)
+{
+    *nwritten = fwrite(ptr, 1, sz, file);
+    if (!*nwritten)
+    {
+	if (ferror(file)) return SS_ERROR;
+	if (feof(file)) return SS_EOF;
+    }
+    return SS_OK;
+}
+
+static StreamStatus readFile(FILE *file, size_t *nread,
+	void *ptr, size_t sz)
+{
+    *nread = fread(ptr, 1, sz, file);
+    if (!*nread)
+    {
+	if (ferror(file)) return SS_ERROR;
+	if (feof(file)) return SS_EOF;
+    }
+    return SS_OK;
+}
+
+#endif
 
 struct Stream
 {
@@ -31,11 +227,8 @@ typedef struct FileStream
 {
     struct Stream base;
     FILEHANDLE file;
-#if defined(_WIN32) || defined(USE_POSIX)
-    int status;
-#endif
     FileOpenFlags flags;
-    int noclose;
+    StreamStatus status;
 } FileStream;
 
 #define T_READERSTREAM 2
@@ -64,144 +257,30 @@ Stream *Stream_createMemory(void)
     return (Stream *)self;
 }
 
-Stream *Stream_createStandard(StandardStreamType type)
+Stream *Stream_fromFile(FILEHANDLE file, FileOpenFlags flags)
 {
     FileStream *self = xmalloc(sizeof *self);
     self->base.size = T_FILESTREAM;
-#if defined(_WIN32)
-    switch (type)
-    {
-	case SST_STDIN:
-	    self->file = GetStdHandle(STD_INPUT_HANDLE);
-	    break;
-	case SST_STDOUT:
-	    self->file = GetStdHandle(STD_OUTPUT_HANDLE);
-	    break;
-	case SST_STDERR:
-	    self->file = GetStdHandle(STD_ERROR_HANDLE);
-	    break;
-    }
+    self->file = file;
+    self->flags = flags;
     self->status = SS_OK;
-#elif defined(USE_POSIX)
-    switch (type)
-    {
-	case SST_STDIN:
-	    self->file = STDIN_FILENO;
-	    break;
-	case SST_STDOUT:
-	    self->file = STDOUT_FILENO;
-	    break;
-	case SST_STDERR:
-	    self->file = STDERR_FILENO;
-	    break;
-    }
-    self->status = SS_OK;
-#else
-    FILE *f;
-    switch (type)
-    {
-	case SST_STDIN:
-	   f = stdin;
-	   break;
-	case SST_STDOUT:
-	   f = stdout;
-	   break;
-	case SST_STDERR:
-	   f = stderr;
-	   break;
-    }
-    setvbuf(f, 0, _IONBF, 0);
-    self->file = f;
-#endif
-    self->flags = (type == SST_STDIN) ? FOF_READ : FOF_WRITE;
-    self->noclose = 1;
     return (Stream *)self;
+}
+
+Stream *Stream_createStandard(StandardStreamType type)
+{
+    FILEHANDLE std = getStdStream(type);
+    if (std == NOTAFILE) return 0;
+    return Stream_fromFile(std,
+	    (type == SST_STDIN ? FOF_READ : FOF_WRITE) | FOF_NOCLOSE);
 }
 
 Stream *Stream_openFile(const char *filename, FileOpenFlags flags)
 {
     if (!(flags & (FOF_READ|FOF_WRITE))) return 0;
-#if defined(_WIN32)
-    DWORD access = 0;
-    DWORD share = 0;
-    DWORD disposition = OPEN_EXISTING;
-    if (flags & FOF_READ)
-    {
-	access |= GENERIC_READ;
-	if (!(flags & FOF_WRITE)) share |= FILE_SHARE_READ;
-    }
-    if (flags & FOF_WRITE)
-    {
-	access |= GENERIC_WRITE;
-	disposition = CREATE_ALWAYS;
-    }
-    size_t namechars = strlen(filename) + 1;
-    LPWSTR wname = xmalloc((namechars + 4) * sizeof *wname);
-    memcpy(wname, L"\\\\?\\", 4 * sizeof *wname);
-    HANDLE file = NOTAFILE;
-    namechars = MultiByteToWideChar(CP_UTF8, 0,
-	    filename, -1, wname+4, namechars);
-    if (!namechars) goto w32done;
-    if (namechars < MAX_PATH)
-    {
-	/* This is a best-effort hack. To be able to access paths longer
-	 * than MAX_PATH, we need to use the win32 namespace \\?\ passing
-	 * the path unprocessed to the filesystem. For this to work, it
-	 * must be an absolute path.
-	 * To also support relative paths, we must convert to an absolute
-	 * path which only works without this namespace.
-	 * Therefore, if the path is already longer than MAX_PATH, we just
-	 * assume it's already an absolute path and skip the conversion.
-	 */
-	DWORD abssz = namechars + 1024;
-	LPWSTR absname = xmalloc((abssz + 4) * sizeof *absname);
-	memcpy(absname, L"\\\\?\\", 4 * sizeof *wname);
-	DWORD abslen = GetFullPathNameW(wname+4, abssz, absname+4, 0);
-	free(wname);
-	wname = absname;
-	if (!abslen || abslen >= abssz) goto w32done;
-    }
-    file = CreateFileW(wname, access, share, 0, disposition, 0, 0);
-w32done:
-    free(wname);
+    FILEHANDLE file = openFile(filename, flags);
     if (file == NOTAFILE) return 0;
-    FileStream *self = xmalloc(sizeof *self);
-    self->file = file;
-    self->status = SS_OK;
-#elif defined(USE_POSIX)
-    int openflags = 0;
-    if (flags & FOF_WRITE)
-    {
-	if (flags & FOF_READ) openflags |= O_RDWR;
-	else openflags |= O_WRONLY;
-	openflags |= O_CREAT|O_TRUNC;
-    }
-    else if (flags & FOF_READ) openflags |= O_RDONLY;
-    int fd = open(filename, openflags);
-    if (fd < 0) return 0;
-    FileStream *self = xmalloc(sizeof *self);
-    self->file = fd;
-    self->status = SS_OK;
-#else
-    char mode[4] = {0};
-    char *mptr = mode;
-    if (flags & FOF_WRITE)
-    {
-	*mptr++ = 'w';
-	if (flags & FOF_READ) *mptr++ = '+';
-    }
-    else if (flags & FOF_READ) *mptr++ = 'r';
-    *mptr = 'b';
-    FILE *file = fopen(filename, mode);
-    if (!file) return 0;
-    setvbuf(file, 0, _IONBF, 0);
-    FileStream *self = xmalloc(sizeof *self);
-    self->file = file;
-#endif
-    self->base.size = T_FILESTREAM;
-    self->flags = flags;
-    self->noclose = 0;
-    return (Stream *)self;
+    return Stream_fromFile(file, flags);
 }
 
 Stream *Stream_createReader(StreamReader *reader, const void *magic)
@@ -282,25 +361,10 @@ static size_t MemoryStream_write(MemoryStream *self,
 static size_t FileStream_write(FileStream *self, const void *ptr, size_t sz)
 {
     if (!(self->flags & FOF_WRITE)) return 0;
-#if defined(_WIN32)
     if (self->status != SS_OK) return 0;
-    DWORD written;
-    if (!WriteFile(self->file, ptr, sz, &written, 0)) self->status = SS_ERROR;
-    else if (!written) self->status = SS_EOF;
-    return written;
-#elif defined(USE_POSIX)
-    if (self->status != SS_OK) return 0;
-    ssize_t rc = write(self->file, ptr, sz);
-    if (rc < 0)
-    {
-	self->status = SS_ERROR;
-	return 0;
-    }
-    if (rc == 0) self->status = SS_EOF;
-    return rc;
-#else
-    return fwrite(ptr, 1, sz, self->file);
-#endif
+    size_t nwritten;
+    self->status = writeFile(self->file, &nwritten, ptr, sz);
+    return nwritten;
 }
 
 static size_t WriterStream_write(WriterStream *self,
@@ -336,25 +400,10 @@ static size_t MemoryStream_read(MemoryStream *self, void *ptr, size_t sz)
 static size_t FileStream_read(FileStream *self, void *ptr, size_t sz)
 {
     if (!(self->flags & FOF_READ)) return 0;
-#if defined(_WIN32)
     if (self->status != SS_OK) return 0;
-    DWORD read;
-    if (!ReadFile(self->file, ptr, sz, &read, 0)) self->status = SS_ERROR;
-    else if (!read) self->status = SS_EOF;
-    return read;
-#elif defined(USE_POSIX)
-    if (self->status != SS_OK) return 0;
-    ssize_t rc = read(self->file, ptr, sz);
-    if (rc < 0)
-    {
-	self->status = SS_ERROR;
-	return 0;
-    }
-    if (rc == 0) self->status = SS_EOF;
-    return rc;
-#else
-    return fread(ptr, 1, sz, self->file);
-#endif
+    size_t nread;
+    self->status = readFile(self->file, &nread, ptr, sz);
+    return nread;
 }
 
 static size_t ReaderStream_read(ReaderStream *self, void *ptr, size_t sz)
@@ -379,21 +428,15 @@ size_t Stream_read(Stream *self, void *ptr, size_t sz)
 
 static int FileStream_flush(FileStream *self)
 {
-    if (!(self->flags & FOF_WRITE)) return EOF;
-#if defined(_WIN32)
-    return FlushFileBuffers(self->file) ? 0 : EOF;
-#elif defined(USE_POSIX)
-    return fdatasync(self->file);
-#else
-    return fflush(self->file);
-#endif
+    if (!(self->flags & FOF_WRITE)) return -1;
+    return FLUSHFILE(self->file);
 }
 
 static int WriterStream_flush(WriterStream *self)
 {
     if (self->writer->flush) return self->writer->flush(self->writer);
     else if (self->writer->stream) return Stream_flush(self->writer->stream);
-    else return EOF;
+    else return -1;
 }
 
 int Stream_flush(Stream *self)
@@ -402,39 +445,33 @@ int Stream_flush(Stream *self)
     {
 	case T_FILESTREAM: return FileStream_flush((FileStream *)self);
 	case T_WRITERSTREAM: return WriterStream_flush((WriterStream *)self);
-	default: return EOF;
+	default: return -1;
     }
 }
 
-static int MemoryStream_status(const MemoryStream *self)
+static StreamStatus MemoryStream_status(const MemoryStream *self)
 {
     return self->readpos == self->writepos ? SS_EOF : SS_OK;
 }
 
-static int FileStream_status(const FileStream *self)
+static StreamStatus FileStream_status(const FileStream *self)
 {
-#if defined(_WIN32) || defined(USE_POSIX)
     return self->status;
-#else
-    if (ferror(self->file)) return SS_ERROR;
-    else if (feof(self->file)) return SS_EOF;
-    else return SS_OK;
-#endif
 }
 
-static int ReaderStream_status(const ReaderStream *self)
+static StreamStatus ReaderStream_status(const ReaderStream *self)
 {
     if (self->reader->status) return self->reader->status(self->reader);
     return Stream_status(self->reader->stream);
 }
 
-static int WriterStream_status(const WriterStream *self)
+static StreamStatus WriterStream_status(const WriterStream *self)
 {
     if (self->writer->status) return self->writer->status(self->writer);
     return Stream_status(self->writer->stream);
 }
 
-int Stream_status(const Stream *self)
+StreamStatus Stream_status(const Stream *self)
 {
     switch (self->size)
     {
@@ -456,14 +493,8 @@ static void MemoryStream_destroy(MemoryStream *self)
 
 static void FileStream_destroy(FileStream *self)
 {
-    if (self->noclose) return;
-#if defined(_WIN32)
-    CloseHandle(self->file);
-#elif defined(USE_POSIX)
-    close(self->file);
-#else
-    fclose(self->file);
-#endif
+    if (self->flags & FOF_NOCLOSE) return;
+    CLOSEFILE(self->file);
 }
 
 static void ReaderStream_destroy(ReaderStream *self)

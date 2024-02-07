@@ -25,7 +25,7 @@ static int flush(StreamWriter *self)
 	{
 	    size_t written = Stream_write(self->stream,
 		    writer->buf + flushpos, writer->bufused - flushpos);
-	    if (!written) return EOF;
+	    if (!written) return -1;
 	    flushpos += written;
 	}
 	writer->bufused = 0;
