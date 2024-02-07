@@ -405,7 +405,7 @@ size_t Stream_write(Stream *self, const void *ptr, size_t sz)
 
 size_t Stream_puts(Stream *self, const char *str)
 {
-    size_t sz = strlen(str)+1;
+    size_t sz = strlen(str);
     size_t wr = 0;
     while (wr < sz)
     {
