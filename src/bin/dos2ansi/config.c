@@ -1,10 +1,11 @@
 #include "config.h"
 
+#include "bufferedwriter.h"
 #include "codepage.h"
+#include "stream.h"
 #include "util.h"
 
 #include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,12 +53,37 @@ struct Config
     int nosauce;
 };
 
-static void usage(const char *prgname)
+static void printusage(Stream *out, const char *prgname)
 {
-    fprintf(stderr, "Usage: %s [-BCEPRSTabdeiklprsvxy] [-c codepage]\n"
+    Stream_printf(out,
+	    "Usage: %s -V\n"
+	    "       %s -h\n"
+	    "       %s [-BCEPRSTabdeiklprsvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
-	    prgname);
-    fputs("\n\t-B             Disable writing a BOM\n"
+	    prgname, prgname, prgname);
+}
+
+static void version(void)
+{
+    Stream *out = Stream_createStandard(SST_STDOUT);
+    Stream_puts(out, "\nThis is dos2ansi v" DOS2ANSIVERSTR
+#ifdef OSNAME
+	    ", built for " OSNAME
+#endif
+	    ".\n\n"
+	    "WWW:      https://github.com/Zirias/dos2ansi\n"
+	    "Author:   Felix Palmen <felix@palmen-it.de>\n"
+	    "License:  BSD 2-clause (all rights reserved)\n\n");
+    Stream_destroy(out);
+}
+
+static void help(const char *prgname)
+{
+    Stream *out = Stream_createStandard(SST_STDOUT);
+    out = BufferedWriter_create(out, 4096);
+    printusage(out, prgname);
+    Stream_puts(out, "\n"
+	    "\t-B             Disable writing a BOM\n"
 	    "\t               (default: enabled for UTF16/UTF16LE)\n"
 	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
@@ -71,6 +97,7 @@ static void usage(const char *prgname)
 	    "\t-T             Test mode, do not read any input, instead\n"
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
+	    "\t-V             Print version information and exit.\n"
 	    "\t-a             Force using the generic ANSI color writer.\n"
 	    "\t               When built with curses support on non-Windows,\n"
 	    "\t               a terminfo based writer is used instead,\n"
@@ -96,6 +123,7 @@ static void usage(const char *prgname)
 	    "\t               symbol, use the Euro symbol instead. As\n"
 	    "\t               special cases, replace other characters in\n"
 	    "\t               codepages 850, 857, 864 and 869.\n"
+	    "\t-h             Print this help text and exit.\n"
 	    "\t-i             Attempt to use explicit intense colors.\n"
 	    "\t-k             Use blink for intense background.\n"
 	    "\t               Note that blink is unlikely to work in modern\n"
@@ -131,8 +159,16 @@ static void usage(const char *prgname)
 	    "\t               implies exact colors (-x).\n"
 	    "\n"
 	    "\tinfile         Read input from this file. If not given,\n"
-	    "\t               input is read from the standard input.\n\n",
-	    stderr);
+	    "\t               input is read from the standard input.\n\n"
+	    );
+    Stream_destroy(out);
+}
+
+static void usage(const char *prgname)
+{
+    Stream *out = Stream_createStandard(SST_STDERR);
+    printusage(out, prgname);
+    Stream_destroy(out);
 }
 
 static int addArg(char *args, int *idx, char opt)
@@ -193,6 +229,7 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 }
 
 #ifdef _WIN32
+#define CONFIGEXIT return ((void *)-1)
 static Config *createConfig(int argc, char **argv);
 Config *Config_fromOpts(int argc, char **argv)
 {
@@ -219,7 +256,10 @@ Config *Config_fromOpts(int argc, char **argv)
     }
 
     config = createConfig(argc, argv);
-    if (config) config->argvstore = xrealloc(argvstore, argvstorepos);
+    if (config && config != ((void *)-1))
+    {
+	config->argvstore = xrealloc(argvstore, argvstorepos);
+    }
     else free(argvstore);
     argvstore = 0;
 
@@ -227,11 +267,13 @@ done:
     free(argv);
     free(argvstore);
     if (wargv) LocalFree(wargv);
+    if (config == ((void *)-1)) exit(0);
     return config;
 }
 
 static Config *createConfig(int argc, char **argv)
 #else
+#define CONFIGEXIT exit(0)
 Config *Config_fromOpts(int argc, char **argv)
 #endif
 {
@@ -349,6 +391,11 @@ Config *Config_fromOpts(int argc, char **argv)
 			config->ignoreeof = 1;
 			break;
 
+		    case 'V':
+			free(config);
+			version();
+			CONFIGEXIT;
+
 		    case 'a':
 			config->forceansi = 1;
 			break;
@@ -364,6 +411,11 @@ Config *Config_fromOpts(int argc, char **argv)
 		    case 'e':
 			config->euro = 1;
 			break;
+
+		    case 'h':
+			free(config);
+			help(prgname);
+			CONFIGEXIT;
 
 		    case 'i':
 			config->intcolors = 1;

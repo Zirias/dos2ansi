@@ -24,6 +24,11 @@ endif
 ifeq ($(PLATFORM),win32)
 dos2ansi_MODULES+=	winconsolewriter
 dos2ansi_win32_RES:=	windres
+dos2ansi_DEFINES+=	-DOSNAME=\"Windows\"
+else
+ifeq ($(CROSS_COMPILE),)
+dos2ansi_DEFINES+=	-DOSNAME=\"$(SYSNAME)\"
+endif
 endif
 
 ifeq ($(FORCE_STDIO),1)
