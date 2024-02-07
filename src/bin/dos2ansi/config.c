@@ -477,6 +477,7 @@ Config *Config_fromOpts(int argc, char **argv)
 	    if (!haveinfile)
 	    {
 		config->infile = o;
+		haveinfile = 1;
 	    }
 	    else
 	    {
