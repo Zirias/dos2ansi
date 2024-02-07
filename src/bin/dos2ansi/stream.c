@@ -2,6 +2,8 @@
 
 #include "util.h"
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -150,7 +152,6 @@ static StreamStatus readFile(int file, size_t *nread,
 }
 
 #else /* !USE_WIN32 && !USE_POSIX */
-#  include <stdio.h>
 #  define FLUSHFILE(f) (fflush(f) < 0 ? -1 : 0)
 #  define CLOSEFILE(f) fclose(f)
 #  ifdef _WIN32
@@ -161,6 +162,8 @@ static StreamStatus readFile(int file, size_t *nread,
 #    define BINMODE(f) ((void)(f))
 #  endif
 
+static int streamConfigured[] = {0, 0, 0};
+
 static FILE *getStdStream(StandardStreamType type)
 {
     FILE *file = 0;
@@ -170,10 +173,11 @@ static FILE *getStdStream(StandardStreamType type)
 	case SST_STDOUT: file = stdout; break;
 	case SST_STDERR: file = stderr; break;
     }
-    if (file)
+    if (file && !streamConfigured[type])
     {
 	setvbuf(file, 0, _IONBF, 0);
 	BINMODE(file);
+	streamConfigured[type] = 1;
     }
     return file;
 }
@@ -397,6 +401,39 @@ size_t Stream_write(Stream *self, const void *ptr, size_t sz)
 	default:
 	    return MemoryStream_write((MemoryStream *)self, ptr, sz);
     }
+}
+
+size_t Stream_puts(Stream *self, const char *str)
+{
+    size_t sz = strlen(str)+1;
+    size_t wr = 0;
+    while (wr < sz)
+    {
+	size_t cs = Stream_write(self, str+wr, sz-wr);
+	if (!cs) return -1;
+	wr += cs;
+    }
+    return wr;
+}
+
+size_t Stream_printf(Stream *self, const char *format, ...)
+{
+    char buf[1024];
+    char *xbuf = 0;
+    va_list ap;
+    va_start(ap, format);
+    size_t sz = vsnprintf(buf, sizeof buf, format, ap);
+    va_end(ap);
+    if (sz >= sizeof buf)
+    {
+	xbuf = xmalloc(sz+1);
+	va_start(ap, format);
+	vsnprintf(xbuf, sz+1, format, ap);
+	va_end(ap);
+    }
+    size_t wr = Stream_puts(self, xbuf ? xbuf : buf);
+    free(xbuf);
+    return wr;
 }
 
 static size_t MemoryStream_read(MemoryStream *self, void *ptr, size_t sz)
