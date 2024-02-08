@@ -1,5 +1,6 @@
 #include "codepage.h"
 
+#include "strcicmp.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -468,7 +469,7 @@ CodepageId CodepageId_byName(const char *name)
 
     for (int i = 0; i < (int)(sizeof cpnames / sizeof *cpnames); ++i)
     {
-	if (!strcmp(name, cpnames[i])) return i;
+	if (!strcicmp(name, cpnames[i])) return i;
     }
 
     return -1;

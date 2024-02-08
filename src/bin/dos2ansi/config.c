@@ -2,6 +2,7 @@
 
 #include "bufferedwriter.h"
 #include "codepage.h"
+#include "strcicmp.h"
 #include "stream.h"
 #include "util.h"
 
@@ -13,15 +14,6 @@
 
 #define STR(m) XSTR(m)
 #define XSTR(m) #m
-
-#ifdef _WIN32
-#  include <windows.h>
-#  define strcmplc _stricmp
-#else
-#  define _POSIX_C_SOURCE 200112L
-#  include <strings.h>
-#  define strcmplc strcasecmp
-#endif
 
 struct Config
 {
@@ -210,14 +202,14 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 	    if (intArg(&config->tabwidth, op, 2, 255, 10) < 0) return -1;
 	    break;
 	case 'u':
-	    if (!strcmplc(op, "utf8") || !strcmplc(op, "utf-8"))
+	    if (!strcicmp(op, "utf8") || !strcicmp(op, "utf-8"))
 		config->format = 0;
-	    else if (!strcmplc(op, "utf16") || !strcmplc(op, "utf-16")
-		    || !strcmplc(op, "utf16be") || !strcmplc(op, "utf-16be")
-		    || !strcmplc(op, "utf16-be") || !strcmplc(op, "utf-16-be"))
+	    else if (!strcicmp(op, "utf16") || !strcicmp(op, "utf-16")
+		    || !strcicmp(op, "utf16be") || !strcicmp(op, "utf-16be")
+		    || !strcicmp(op, "utf16-be") || !strcicmp(op, "utf-16-be"))
 		config->format = 1;
-	    else if (!strcmplc(op, "utf16le") || !strcmplc(op, "utf-16le")
-		    || !strcmplc(op, "utf16-le") || !strcmplc(op, "utf-16-le"))
+	    else if (!strcicmp(op, "utf16le") || !strcicmp(op, "utf-16le")
+		    || !strcicmp(op, "utf16-le") || !strcicmp(op, "utf-16-le"))
 		config->format = 2;
 	    else return -1;
 	    break;
