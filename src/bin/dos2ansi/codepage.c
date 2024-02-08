@@ -439,6 +439,7 @@ CodepageId CodepageId_byName(const char *name)
     name = stripCpPrefix(name);
 
     if (!strcmp(name, "858")) name = "850";
+    else if (!strcmp(name, "872")) name ="855";
     else if (!strcmp(name, "667") || !strcmp(name, "790")
 		    || !strcmp(name, "991")) name = "MAZ";
     else if (!strcmp(name, "866")) name = "MIK";
@@ -455,7 +456,7 @@ CodepageFlags CodepageFlags_byName(const char *name)
 {
     name = stripCpPrefix(name);
 
-    if (!strcmp(name, "858")) return CPF_EUROSYM;
+    if (!strcmp(name, "858") || !strcmp(name, "872")) return CPF_EUROSYM;
     return CPF_NONE;
 }
 
