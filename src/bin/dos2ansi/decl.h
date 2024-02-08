@@ -83,6 +83,24 @@
 #endif
 #define DECLEXPORT dos2ansi___cdecl
 
+#if defined(__clang__)
+#  define dos2ansi___compiler clang
+#elif defined(__GNUC__)
+#  define dos2ansi___compiler GCC
+#endif
+#ifdef dos2ansi___compiler
+#  define dos2ansi___pragma(x) _Pragma(#x)
+#  define dos2ansi___diagprag1(x,y) dos2ansi___pragma(x diagnostic y)
+#  define dos2ansi___diagprag(x) dos2ansi___diagprag1(dos2ansi___compiler, x)
+#  define dos2ansi___suppress1(x) dos2ansi___diagprag(ignored x)
+#  define dos2ansi___suppress(x) dos2ansi___suppress1(#x)
+#  define SUPPRESS(x) dos2ansi___diagprag(push) dos2ansi___suppress(-W##x)
+#  define ENDSUPPRESS dos2ansi___diagprag(pop)
+#else
+#  define SUPPRESS(x)
+#  define ENDSUPPRESS
+#endif
+
 #undef USE_POSIX
 #undef USE_WIN32
 

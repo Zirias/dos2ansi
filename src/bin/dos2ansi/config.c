@@ -12,9 +12,6 @@
 
 #define ARGBUFSZ 8
 
-#define STR(m) XSTR(m)
-#define XSTR(m) #m
-
 struct Config
 {
 #ifdef _WIN32
@@ -46,6 +43,50 @@ struct Config
     int nosauce;
 };
 
+#ifdef WITH_CURSES
+#  define OPT_TI "yes (curses)"
+#else
+#  define OPT_TI "no"
+#endif
+#if defined(USE_WIN32)
+#  define OPT_IO "WinAPI (win32)"
+#elif defined(USE_POSIX)
+#  define OPT_IO "POSIX"
+#else
+#  define OPT_IO "C stdio"
+#endif
+#ifdef _WIN32
+#  include <versionhelpers.h>
+#  define printversion Stream_printf
+#else
+#  define printversion Stream_puts
+#endif
+
+static void version(void)
+{
+    Stream *out = Stream_createStandard(SST_STDOUT);
+    printversion(out, "\nThis is dos2ansi v" DOS2ANSIVERSTR
+#ifdef OSNAME
+	    ", built for " OSNAME
+#endif
+	    "\nI/O Backend: " OPT_IO ", "
+#ifdef _WIN32
+	    "console colors: %s\n\n"
+#else
+	    "terminfo output: " OPT_TI "\n\n"
+#endif
+	    "WWW:      https://github.com/Zirias/dos2ansi\n"
+	    "Author:   Felix Palmen <felix@palmen-it.de>\n"
+	    "License:  BSD 2-clause (all rights reserved)\n\n"
+#ifdef _WIN32
+	    , IsWindows10OrGreater()
+		? "256-color ANSI"
+		: "legacy Console"
+#endif
+	    );
+    Stream_destroy(out);
+}
+
 static void printusage(Stream *out, const char *prgname)
 {
     Stream_printf(out,
@@ -56,20 +97,7 @@ static void printusage(Stream *out, const char *prgname)
 	    prgname, prgname, prgname);
 }
 
-static void version(void)
-{
-    Stream *out = Stream_createStandard(SST_STDOUT);
-    Stream_puts(out, "\nThis is dos2ansi v" DOS2ANSIVERSTR
-#ifdef OSNAME
-	    ", built for " OSNAME
-#endif
-	    ".\n\n"
-	    "WWW:      https://github.com/Zirias/dos2ansi\n"
-	    "Author:   Felix Palmen <felix@palmen-it.de>\n"
-	    "License:  BSD 2-clause (all rights reserved)\n\n");
-    Stream_destroy(out);
-}
-
+SUPPRESS(overlength-strings)
 static void help(const char *prgname)
 {
     Stream *out = Stream_createStandard(SST_STDOUT);
@@ -90,7 +118,8 @@ static void help(const char *prgname)
 	    "\t-T             Test mode, do not read any input, instead\n"
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
-	    "\t-V             Print version information and exit.\n"
+	    "\t-V             Print version information including build-time\n"
+	    "\r               and OS-dependent configuration and exit.\n"
 	    "\t-a             Force using the generic ANSI color writer.\n"
 	    "\t               When built with curses support on non-Windows,\n"
 	    "\t               a terminfo based writer is used instead,\n"
@@ -162,6 +191,7 @@ static void help(const char *prgname)
 	    );
     Stream_destroy(out);
 }
+ENDSUPPRESS
 
 static void usage(const char *prgname, const char *error)
 {
