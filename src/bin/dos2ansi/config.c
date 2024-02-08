@@ -35,6 +35,7 @@ struct Config
     int defcolors;
     int ignoreeof;
     int codepage;
+    int cpflags;
     int format;
     int bom;
     int colors;
@@ -200,6 +201,7 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 	    cp = CodepageId_byName(op);
 	    if ((int)cp < 0) return -1;
 	    config->codepage = cp;
+	    config->cpflags = CodepageFlags_byName(op);
 	    break;
 	case 'o':
 	    config->outfile = op;
@@ -294,6 +296,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->defcolors = 0;
     config->ignoreeof = 0;
     config->codepage = CP_437;
+    config->cpflags = CPF_NONE;
     config->format = -1;
     config->bom = -1;
     config->colors = 1;
@@ -534,6 +537,11 @@ int Config_ignoreeof(const Config *self)
 int Config_codepage(const Config *self)
 {
     return self->codepage;
+}
+
+int Config_cpflags(const Config *self)
+{
+    return self->cpflags;
 }
 
 int Config_format(const Config *self)

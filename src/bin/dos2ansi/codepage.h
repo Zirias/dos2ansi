@@ -23,8 +23,9 @@ typedef enum CodepageId {
     CP_863,	/* French Canada */
     CP_864,	/* Arabic (IBM) */
     CP_865,	/* Nordic */
-    CP_866,	/* Russian */
-    CP_869	/* Greek 2 */
+    CP_869,	/* Greek 2 */
+    CP_MAZ,	/* Mazovia */
+    CP_MIK	/* Russian */
 } CodepageId;
 
 typedef enum CodepageFlags {
@@ -34,8 +35,8 @@ typedef enum CodepageFlags {
     CPF_EUROSYM	    = 1 << 2	/* use Euro variant if applicable */
 } CodepageFlags;
 
-CodepageId CodepageId_byName(const char *name)
-    ATTR_NONNULL((1));
+CodepageId CodepageId_byName(const char *name) ATTR_NONNULL((1));
+CodepageFlags CodepageFlags_byName(const char *name) ATTR_NONNULL((1));
 
 Codepage *Codepage_create(CodepageId id, CodepageFlags flags);
 uint16_t Codepage_map(const Codepage *self, uint8_t c) CMETHOD ATTR_PURE;

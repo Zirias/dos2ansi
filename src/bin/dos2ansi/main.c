@@ -270,10 +270,18 @@ int main(int argc, char **argv)
     if (!out) goto done;
 
     int cpid = -1;
-    if (Config_showsauce(config)) cpid = CP_437;
-    if (cpid < 0 && insettings.sauce) cpid = Sauce_cpid(insettings.sauce);
-    if (cpid < 0) cpid = Config_codepage(config);
     CodepageFlags cpflags = CPF_NONE;
+    if (Config_showsauce(config)) cpid = CP_437;
+    if (cpid < 0 && insettings.sauce)
+    {
+	cpid = Sauce_cpid(insettings.sauce);
+	cpflags = Sauce_cpflags(insettings.sauce);
+    }
+    if (cpid < 0)
+    {
+	cpid = Config_codepage(config);
+	cpflags = Config_cpflags(config);
+    }
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
     if (Config_euro(config)) cpflags |= CPF_EUROSYM;

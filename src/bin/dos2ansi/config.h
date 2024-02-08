@@ -13,6 +13,7 @@ int Config_width(const Config *self) CMETHOD ATTR_PURE;
 int Config_defcolors(const Config *self) CMETHOD ATTR_PURE;
 int Config_ignoreeof(const Config *self) CMETHOD ATTR_PURE;
 int Config_codepage(const Config *self) CMETHOD ATTR_PURE;
+int Config_cpflags(const Config *self) CMETHOD ATTR_PURE;
 int Config_format(const Config *self) CMETHOD ATTR_PURE;
 int Config_bom(const Config *self) CMETHOD ATTR_PURE;
 int Config_colors(const Config *self) CMETHOD ATTR_PURE;

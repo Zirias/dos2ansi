@@ -20,6 +20,7 @@ int Sauce_nonblink(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_font(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_codepage(const Sauce *self) CMETHOD ATTR_PURE;
 int Sauce_cpid(const Sauce *self) CMETHOD ATTR_PURE;
+int Sauce_cpflags(const Sauce *self) CMETHOD ATTR_PURE;
 int Sauce_comments(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_comment(const Sauce *self, int lineno) CMETHOD ATTR_PURE;
 void Sauce_destroy(Sauce *self);

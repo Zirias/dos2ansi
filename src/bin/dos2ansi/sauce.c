@@ -290,14 +290,26 @@ const char *Sauce_codepage(const Sauce *self)
     }
 }
 
+static const char *validCpStr(const Sauce *self)
+{
+    if (self->datatype != 1 || self->filetype > 2) return 0;
+    if (self->cp == CP_DEFAULT || self->cp == CP_OTHER) return 0;
+    if (self->cp == CP_IMPLICIT) return "437";
+    return self->cpname;
+}
+
 int Sauce_cpid(const Sauce *self)
 {
-    if (self->datatype != 1 || self->filetype > 2) return -1;
-    if (self->cp == CP_DEFAULT || self->cp == CP_OTHER) return -1;
-    if (self->cp == CP_IMPLICIT) return CP_437;
-    const char *cpname = self->cpname;
-    if (!strcmp(cpname, "MIK")) cpname = "866";
+    const char *cpname = validCpStr(self);
+    if (!cpname) return -1;
     return CodepageId_byName(cpname);
+}
+
+int Sauce_cpflags(const Sauce *self)
+{
+    const char *cpname = validCpStr(self);
+    if (!cpname) return CPF_NONE;
+    return CodepageFlags_byName(cpname);
 }
 
 int Sauce_comments(const Sauce *self)
