@@ -13,6 +13,7 @@ typedef enum CodepageId {
     CP_720,	/* Arabic (Microsoft) */
     CP_737,	/* Greek */
     CP_775,	/* Baltic Rim */
+    CP_819,	/* Latin-1 (ISO 8859-1) */
     CP_850,	/* Latin-1 (western Europe) */
     CP_852,	/* Latin-2 (middle Europe) */
     CP_855,	/* Cyrillic */
