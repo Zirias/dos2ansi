@@ -25,6 +25,7 @@ typedef enum CodepageId {
     CP_864,	/* Arabic (IBM) */
     CP_865,	/* Nordic */
     CP_869,	/* Greek 2 */
+    CP_KAM,	/* Kamenický */
     CP_MAZ,	/* Mazovia */
     CP_MIK	/* Russian */
 } CodepageId;
