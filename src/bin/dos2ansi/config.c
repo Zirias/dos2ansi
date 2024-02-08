@@ -163,10 +163,11 @@ static void help(const char *prgname)
     Stream_destroy(out);
 }
 
-static void usage(const char *prgname)
+static void usage(const char *prgname, const char *error)
 {
     Stream *out = Stream_createStandard(SST_STDERR);
     printusage(out, prgname);
+    if (error) Stream_printf(out, "\nError: %s\n", error);
     Stream_destroy(out);
 }
 
@@ -188,8 +189,10 @@ static int intArg(int *setting, char *op, int min, int max, int base)
     return 0;
 }
 
-static int optArg(Config *config, char *args, int *idx, char *op)
+static int optArg(Config *config, char *args, int *idx, char *op,
+	const char **error)
 {
+    *error = 0;
     if (!*idx) return -1;
     switch (args[--*idx])
     {
@@ -197,7 +200,11 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 
 	case 'c':
 	    cp = CodepageId_byName(op);
-	    if ((int)cp < 0) return -1;
+	    if ((int)cp < 0)
+	    {
+		*error = "Unknown codepage";
+		return -1;
+	    }
 	    config->codepage = cp;
 	    config->cpflags = CodepageFlags_byName(op);
 	    break;
@@ -205,7 +212,11 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 	    config->outfile = op;
 	    break;
 	case 't':
-	    if (intArg(&config->tabwidth, op, 2, 255, 10) < 0) return -1;
+	    if (intArg(&config->tabwidth, op, 2, 255, 10) < 0)
+	    {
+		*error = "Tab width out of valid range";
+		return -1;
+	    }
 	    break;
 	case 'u':
 	    if (!strcicmp(op, "utf8") || !strcicmp(op, "utf-8"))
@@ -217,10 +228,18 @@ static int optArg(Config *config, char *args, int *idx, char *op)
 	    else if (!strcicmp(op, "utf16le") || !strcicmp(op, "utf-16le")
 		    || !strcicmp(op, "utf16-le") || !strcicmp(op, "utf-16-le"))
 		config->format = 2;
-	    else return -1;
+	    else
+	    {
+		*error = "Unknown output format";
+		return -1;
+	    }
 	    break;
 	case 'w':
-	    if (intArg(&config->width, op, 16, 1024, 10) < 0) return -1;
+	    if (intArg(&config->width, op, 16, 1024, 10) < 0)
+	    {
+		*error = "Width out of valid range";
+		return -1;
+	    }
 	    break;
 	default:
 	    return -1;
@@ -319,6 +338,7 @@ Config *Config_fromOpts(int argc, char **argv)
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
 
+    const char *errstr;
     for (arg = 1; arg < argc; ++arg)
     {
 	char *o = argv[arg];
@@ -332,7 +352,7 @@ Config *Config_fromOpts(int argc, char **argv)
 	{
 	    if (naidx)
 	    {
-		usage(prgname);
+		usage(prgname, "Missing argument(s) for given flags");
 		goto error;
 	    }
 
@@ -344,9 +364,9 @@ Config *Config_fromOpts(int argc, char **argv)
 		    int si = (int)(sip - onceflags);
 		    if (seen[si])
 		    {
-			if (optArg(config, needargs, &naidx, o) < 0)
+			if (optArg(config, needargs, &naidx, o, &errstr) < 0)
 			{
-			    usage(prgname);
+			    usage(prgname, errstr);
 			    goto error;
 			}
 			else goto next;
@@ -456,9 +476,9 @@ Config *Config_fromOpts(int argc, char **argv)
 			break;
 
 		    default:
-			if (optArg(config, needargs, &naidx, o) < 0)
+			if (optArg(config, needargs, &naidx, o, &errstr) < 0)
 			{
-			    usage(prgname);
+			    usage(prgname, errstr);
 			    goto error;
 			}
 			goto next;
@@ -467,9 +487,9 @@ Config *Config_fromOpts(int argc, char **argv)
 	}
 	else if (naidx)
 	{
-	    if (optArg(config, needargs, &naidx, o) < 0)
+	    if (optArg(config, needargs, &naidx, o, &errstr) < 0)
 	    {
-		usage(prgname);
+		usage(prgname, errstr);
 		goto error;
 	    }
 	}
@@ -482,7 +502,7 @@ Config *Config_fromOpts(int argc, char **argv)
 	    }
 	    else
 	    {
-		usage(prgname);
+		usage(prgname, "Extra arguments found");
 		goto error;
 	    }
 	    endflags = 1;
@@ -491,7 +511,7 @@ next:	;
     }
     if (naidx)
     {
-	usage(prgname);
+	usage(prgname, "Missing argument(s) for given flags");
 	goto error;
     }
 
