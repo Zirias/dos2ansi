@@ -20,6 +20,15 @@ writing direction) and the font you're using (e.g. on Windows, the "Courier
 New" font sometimes gives better results than "Consolas"). Please check with
 different terminals and fonts before reporting a bug in dos2ansi.
 
+### Install dos2ansi
+
+Releases will contain a `.tar.xz` archive of the source for building yourself
+(which works simply with `make` or `make strip`, see [Building](#building) for
+details) and a `.zip` archive containing dos2ansi compiled for Windows.
+
+Installation is as simple as placing the binary somewhere in your path, it
+doesn't need any other files at runtime.
+
 ## Features
 
 * Renders to a virtual canvas with a fixed width, defaulting to 80 columns
@@ -57,3 +66,58 @@ different terminals and fonts before reporting a bug in dos2ansi.
 ## SAUCE display
 
 ![SAUCE in KDE's konsole](.github/screenshots/dos2ansi_sauce.png?raw=true)
+
+## Building
+
+To build dos2ansi from source, either grab and extract a release tarball or
+clone the repository directly from git to get the latest changes:
+
+    git clone --recurse-submodules https://github.com/Zirias/dos2ansi.git
+
+The following is required for building:
+
+* GNU make
+* A C compiler supporting C11, either GCC or one compatible with GCC's
+  commandline like llvm/clang.
+* On "unixy" systems, a `curses` library (typically `ncurses`). This is
+  optional, but enabled by default.
+
+For Windows, GNU make and appropriate compilers are conveniently available
+from the [MSYS2](https://msys2.org) distribution. If your system has a
+different flavor of `make` by default (e.g. a BSD system), GNU make will
+typically be installed as `gmake`, so type this instead of `make`.
+
+To compile the tool, just type
+
+    make
+
+To get a stripped version, type
+
+    make strip
+
+If you want to build a version with full debugging symbols, you can use
+
+    make BUILDCFG=debug
+
+Installing can be done with
+
+    make install
+
+The binary is installed to `$(prefix)/bin`, with `prefix` defaulting to
+`/usr/local`. So, to install e.g. to `/opt/dos2ansi/bin`, you would type
+
+    make prefix=/opt/dos2ansi install
+
+There are a few build-time configuration options available:
+
+* `STATIC`: When set to a truthy value, the tool is linked statically. This is
+  used for the official Windows binaries. Defaults to `0`.
+* `WITH_CURSES`: Use `curses` to build a terminfo-based output writer that
+  will automatically respect `$TERM`. Only available on non-Windows, defaults
+  to `1`.
+* `FORCE_STDIO`: Always use the standard C `stdio.h` functions for I/O,
+  instead of a platform-specific backend (available are POSIX and win32).
+  Defaults to `0`.
+
+So, `make FORCE_STDIO=1 strip` would build a stripped version using standard C
+I/O, `make WITH_CURSES=no` would build a version not linked to `curses`.
