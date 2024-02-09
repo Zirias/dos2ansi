@@ -11,7 +11,13 @@
 
 #if defined(USE_WIN32)
 #  include <windows.h>
-#  define FLUSHFILE(f) (FlushFileBuffers(f) ? 0 : -1)
+#  define FOF_WINCONSOLE 1 << 31
+#  define GETEXTRAFLAGS(f, fl) do { \
+    DWORD mode; \
+    if (GetConsoleMode(f, &mode)) fl |= FOF_WINCONSOLE; \
+} while (0)
+#  define FLUSHFILE(f, fl) \
+    (fl & FOF_WINCONSOLE ? 0 : (FlushFileBuffers(f) ? 0 : -1))
 #  define CLOSEFILE(f) CloseHandle(f)
 
 static HANDLE getStdStream(StandardStreamType type)
@@ -73,11 +79,13 @@ done:
 }
 
 static StreamStatus writeFile(HANDLE file, size_t *nwritten,
-	const void *ptr, size_t sz)
+	const void *ptr, size_t sz, FileOpenFlags flags)
 {
     StreamStatus status = SS_OK;
     DWORD wsz;
-    if (!WriteFile(file, ptr, sz, &wsz, 0)) status = SS_ERROR;
+    if (!(flags & FOF_WINCONSOLE
+		? WriteConsole(file, ptr, sz, &wsz, 0)
+		: WriteFile(file, ptr, sz, &wsz, 0))) status = SS_ERROR;
     else if (!wsz) status = SS_EOF;
     *nwritten = wsz;
     return status;
@@ -97,7 +105,8 @@ static StreamStatus readFile(HANDLE file, size_t *nread,
 #elif defined(USE_POSIX)
 #  include <fcntl.h>
 #  include <unistd.h>
-#  define FLUSHFILE(f) fdatasync(f)
+#  define GETEXTRAFLAGS(f, fl) (void)(fl);
+#  define FLUSHFILE(f, fl) fdatasync(f)
 #  define CLOSEFILE(f) close(f)
 
 static int getStdStream(StandardStreamType type)
@@ -124,8 +133,10 @@ static int openFile(const char *filename, FileOpenFlags flags)
 }
 
 static StreamStatus writeFile(int file, size_t *nwritten,
-	const void *ptr, size_t sz)
+	const void *ptr, size_t sz, FileOpenFlags flags)
 {
+    (void)flags;
+
     ssize_t rc = write(file, ptr, sz);
     if (rc < 0)
     {
@@ -150,7 +161,8 @@ static StreamStatus readFile(int file, size_t *nread,
 }
 
 #else /* !USE_WIN32 && !USE_POSIX */
-#  define FLUSHFILE(f) (fflush(f) < 0 ? -1 : 0)
+#  define GETEXTRAFLAGS(f, fl) (void)(fl);
+#  define FLUSHFILE(f, fl) (fflush(f) < 0 ? -1 : 0)
 #  define CLOSEFILE(f) fclose(f)
 #  ifdef _WIN32
 #    include <fcntl.h>
@@ -197,8 +209,10 @@ static FILE *openFile(const char *filename, FileOpenFlags flags)
 }
 
 static StreamStatus writeFile(FILE *file, size_t *nwritten,
-	const void *ptr, size_t sz)
+	const void *ptr, size_t sz, FileOpenFlags flags)
 {
+    (void)flags;
+
     *nwritten = fwrite(ptr, 1, sz, file);
     if (!*nwritten)
     {
@@ -272,6 +286,7 @@ Stream *Stream_createMemory(void)
 
 Stream *Stream_fromFile(FILEHANDLE file, FileOpenFlags flags)
 {
+    GETEXTRAFLAGS(file, flags);
     FileStream *self = xmalloc(sizeof *self);
     self->base.size = T_FILESTREAM;
     self->file = file;
@@ -371,7 +386,7 @@ static size_t FileStream_write(FileStream *self, const void *ptr, size_t sz)
     if (!(self->flags & FOF_WRITE)) return 0;
     if (self->status != SS_OK) return 0;
     size_t nwritten;
-    self->status = writeFile(self->file, &nwritten, ptr, sz);
+    self->status = writeFile(self->file, &nwritten, ptr, sz, self->flags);
     return nwritten;
 }
 
@@ -506,7 +521,7 @@ int Stream_getc(Stream *self)
 static int FileStream_flush(FileStream *self)
 {
     if (!(self->flags & FOF_WRITE)) return -1;
-    return FLUSHFILE(self->file);
+    return FLUSHFILE(self->file, self->flags);
 }
 
 static int WriterStream_flush(WriterStream *self)
