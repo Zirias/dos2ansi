@@ -524,19 +524,21 @@ static int FileStream_flush(FileStream *self)
     return FLUSHFILE(self->file, self->flags);
 }
 
-static int WriterStream_flush(WriterStream *self)
+static int WriterStream_flush(WriterStream *self, int sys)
 {
-    if (self->writer->flush) return self->writer->flush(self->writer);
-    else if (self->writer->stream) return Stream_flush(self->writer->stream);
-    else return -1;
+    if (self->writer->flush) return self->writer->flush(self->writer, sys);
+    if (self->writer->stream) return Stream_flush(self->writer->stream, sys);
+    return -1;
 }
 
-int Stream_flush(Stream *self)
+int Stream_flush(Stream *self, int sys)
 {
     switch (self->size)
     {
-	case T_FILESTREAM: return FileStream_flush((FileStream *)self);
-	case T_WRITERSTREAM: return WriterStream_flush((WriterStream *)self);
+	case T_FILESTREAM: return sys ? FileStream_flush(
+				   (FileStream *)self) : 0;
+	case T_WRITERSTREAM: return WriterStream_flush(
+				     (WriterStream *)self, sys);
 	default: return -1;
     }
 }
@@ -606,7 +608,7 @@ static void WriterStream_destroy(WriterStream *self)
     if (self->writer->destroy) self->writer->destroy(self->writer);
     else
     {
-	WriterStream_flush(self);
+	WriterStream_flush(self, 1);
 	Stream_destroy(self->writer->stream);
 	free(self->writer);
     }

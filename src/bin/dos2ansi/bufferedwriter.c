@@ -15,7 +15,7 @@ typedef struct BufferedWriter
 
 static const char *magic = "";
 
-static int flush(StreamWriter *self)
+static int flush(StreamWriter *self, int sys)
 {
     BufferedWriter *writer = (BufferedWriter *)self;
     if (writer->bufused)
@@ -24,7 +24,7 @@ static int flush(StreamWriter *self)
 		    writer->buf, writer->bufused)) return -1;
 	writer->bufused = 0;
     }
-    return Stream_flush(self->stream);
+    return Stream_flush(self->stream, sys);
 }
 
 static size_t write(StreamWriter *self, const void *ptr, size_t size)
@@ -48,7 +48,7 @@ static size_t write(StreamWriter *self, const void *ptr, size_t size)
 	writer->bufused = writer->bufsize;
     }
     else bufavail = 0;
-    if (flush(self) < 0) return 0;
+    if (flush(self, 0) < 0) return 0;
     if (size > writer->bufsize)
     {
 	return bufavail + Stream_write(self->stream, cptr, size);

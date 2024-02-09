@@ -299,7 +299,7 @@ int VgaCanvas_serialize(const VgaCanvas *self,
 
     if ((flags & VSF_LTRO) && !put(out, 0x202cU)) return -1;
 
-    return Stream_flush(out);
+    return Stream_status(out) == SS_OK ? 0 : -1;
 }
 
 void VgaCanvas_destroy(VgaCanvas *self)

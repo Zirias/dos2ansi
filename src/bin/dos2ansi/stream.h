@@ -56,7 +56,7 @@ struct StreamWriter
 {
     size_t  (*write)(StreamWriter *self, const void *ptr, size_t size)
 	    CMETHOD ATTR_NONNULL((2));
-    int	    (*flush)(StreamWriter *self) CMETHOD;
+    int	    (*flush)(StreamWriter *self, int sys) CMETHOD;
     int	    (*status)(const StreamWriter *self) CMETHOD;
     void    (*destroy)(StreamWriter *self);
     Stream  *stream;
@@ -87,7 +87,7 @@ size_t Stream_printf(Stream *self, const char *format, ...)
 size_t Stream_read(Stream *self, void *ptr, size_t sz)
     CMETHOD ATTR_NONNULL((2));
 int Stream_getc(Stream *self) CMETHOD;
-int Stream_flush(Stream *self) CMETHOD;
+int Stream_flush(Stream *self, int sys) CMETHOD;
 StreamStatus Stream_status(const Stream *self) CMETHOD;
 
 void Stream_destroy(Stream *self);
