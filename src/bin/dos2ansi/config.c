@@ -119,7 +119,7 @@ static void help(const char *prgname)
 	    "\t               use some fixed 8bit encoding table.\n"
 	    "\t               Implies -E.\n"
 	    "\t-V             Print version information including build-time\n"
-	    "\r               and OS-dependent configuration and exit.\n"
+	    "\t               and OS-dependent configuration and exit.\n"
 	    "\t-a             Force using the generic ANSI color writer.\n"
 	    "\t               When built with curses support on non-Windows,\n"
 	    "\t               a terminfo based writer is used instead,\n"
