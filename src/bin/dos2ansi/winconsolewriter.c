@@ -69,8 +69,9 @@ done:
     return written * sizeof *str;
 }
 
-static int flush(StreamWriter *self)
+static int flush(StreamWriter *self, int sys)
 {
+    (void)sys;
     return ((WinConsoleWriter *)self)->err ? -1 : 0;
 }
 
