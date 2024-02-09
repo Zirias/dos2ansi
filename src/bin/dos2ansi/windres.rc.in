@@ -1,0 +1,24 @@
+1 24 "dos2ansi.exe.manifest"
+1 VERSIONINFO
+FILEVERSION	%%V_MAJ%%,%%V_MIN%%,%%V_REV%%,0
+PRODUCTVERSION	%%V_MAJ%%,%%V_MIN%%,%%V_REV%%,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Zirias"
+      VALUE "FileDescription", "MS-DOS/ANSI.SYS converter"
+      VALUE "FileVersion", "%%V_MAJ%%.%%V_MIN%%.%%V_REV%%"
+      VALUE "InternalName", "dos2ansi"
+      VALUE "LegalCopyright", "Felix Palmen <felix@palmen-it.de>"
+      VALUE "OriginalFilename", "dos2ansi.exe"
+      VALUE "ProductName", "dos2ansi"
+      VALUE "ProductVersion", "%%V_MAJ%%.%%V_MIN%%.%%V_REV%%"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

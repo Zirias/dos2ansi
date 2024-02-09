@@ -13,6 +13,12 @@ dos2ansi_MODULES:=	ansicolorwriter \
 			util \
 			vgacanvas
 
+dos2ansi_VERSION:=	1.0
+
+dos2ansi_SUB_FILES:=	decl.h \
+			dos2ansi.exe.manifest \
+			windres.rc
+
 ifeq ($(WITH_CURSES),1)
 ifeq ($(PLATFORM),posix)
 dos2ansi_MODULES+=	ticolorwriter

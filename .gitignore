@@ -22,3 +22,6 @@ defaults.mk
 /dist/
 /html/
 html
+src/bin/dos2ansi/decl.h
+src/bin/dos2ansi/dos2ansi.exe.manifest
+src/bin/dos2ansi/windres.rc
