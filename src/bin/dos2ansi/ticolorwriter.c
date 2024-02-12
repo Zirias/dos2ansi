@@ -35,14 +35,13 @@ static const int rgbcols[] = {
 };
 #define RGBBROWN(i) ((i) == 142 ? 130 : (i))
 
+#define tpstr(s) tputs((s), 1, putstream)
+
 typedef struct TiColorWriter
 {
     StreamWriter base;
-    const char *reset;
-    const char *brightfg;
-    const char *brightbg;
-    const char *setaf;
-    const char *setab;
+    char *brightfg;
+    char *brightbg;
     const int *rgbcols;
     ColorFlags flags;
     int fg;
@@ -80,20 +79,18 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     int newfgcol = newfg;
     int newbgcol = newbg;
     if (defcols < 2 && newfg == writer->fg && newbg == writer->bg) return 2;
-    if (tputs(tigetstr(writer->reset), 1, putstream) == ERR) return 0;
+    if (tpstr(exit_attribute_mode) == ERR) return 0;
     if (defcols && newbg == 0 && newfg == 7) goto done;
     if (writer->brightbg && (newbg & 8U))
     {
-	if (*writer->brightbg && tputs(tigetstr(writer->brightbg),
-		    1, putstream) == ERR) return 0;
+	if (*writer->brightbg && tpstr(writer->brightbg) == ERR) return 0;
 	newbgcol &= 7U;
     }
     if (writer->brightfg)
     {
 	if ((newfg & 8U))
 	{
-	    if (*writer->brightfg && tputs(tigetstr(writer->brightfg),
-			1, putstream) == ERR) return 0;
+	    if (*writer->brightfg && tpstr(writer->brightfg) == ERR) return 0;
 	    newfgcol &= 7U;
 	}
 	newbgcol &= 7U;
@@ -108,10 +105,8 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 	    newbgcol = RGBBROWN(newbgcol);
 	}
     }
-    if (tputs(tiparm(tigetstr(writer->setab), newbgcol),
-		1, putstream) == ERR) return 0;
-    if (tputs(tiparm(tigetstr(writer->setaf), newfgcol),
-		1, putstream) == ERR) return 0;
+    if (tpstr(tiparm(set_a_background, newbgcol)) == ERR) return 0;
+    if (tpstr(tiparm(set_a_foreground, newfgcol)) == ERR) return 0;
 done:
     writer->fg = defcols == 2 ? -1 : newfg;
     writer->bg = defcols == 2 ? -1 : newbg;
@@ -140,36 +135,26 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     writer->rgbcols = 0;
     writer->fg = -1;
     writer->bg = -1;
+
     if (flags & CF_STRIP) goto error;
     int err;
     if (setupterm(0, STREAMFILENO(out), &err) == ERR) goto error;
-    int ncols = tigetnum("colors");
-    if (ncols == ERR) ncols = tigetnum("Co");
-    if (ncols == ERR || ncols < 8) goto error;
-    if (tigetstr("sgr0")) writer->reset = "sgr0";
-    else if (tigetstr("me")) writer->reset = "me";
-    else goto error;
-    if (tigetstr("setaf")) writer->setaf = "setaf";
-    else if (tigetstr("AF")) writer->setaf = "AF";
-    else goto error;
-    if (tigetstr("setab")) writer->setab = "setab";
-    else if (tigetstr("AB")) writer->setab = "AB";
-    else goto error;
-    if (ncols < 16)
+    if (max_colors < 8) goto error;
+    if (!exit_attribute_mode) goto error;
+    if (!set_a_foreground) goto error;
+    if (!set_a_background) goto error;
+
+    if (max_colors < 16)
     {
-	if (tigetstr("bold")) writer->brightfg = "bold";
-	else if (tigetstr("md")) writer->brightfg = "md";
-	else writer->brightfg = "";
+	writer->brightfg = enter_bold_mode ? enter_bold_mode : "";
 	if (flags & CF_LBG_REV)
 	{
-	    if (tigetstr("rev")) writer->brightbg = "rev";
-	    else if (tigetstr("mr")) writer->brightbg = "mr";
-	    else writer->brightbg = "";
+	    writer->brightbg = enter_reverse_mode ? enter_reverse_mode : "";
 	}
     }
     else
     {
-	if (ncols >= 256)
+	if (max_colors >= 256)
 	{
 	    writer->rgbcols = rgbcols;
 	}
@@ -177,9 +162,7 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     }
     if (flags & CF_LBG_BLINK)
     {
-	if (tigetstr("blink")) writer->brightbg = "blink";
-	else if (tigetstr("mb")) writer->brightbg = "mb";
-	else writer->brightbg = "";
+	writer->brightbg = enter_blink_mode ? enter_blink_mode : "";
     }
 
     writer->flags = flags;
