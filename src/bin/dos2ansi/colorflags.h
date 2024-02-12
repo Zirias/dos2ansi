@@ -10,7 +10,8 @@ typedef enum ColorFlags
     CF_LBG_BLINK    = 1 << 3,	/* use blink for "light" background */
     CF_BRIGHTCOLS   = 1 << 4,	/* use explicit bright colors */
     CF_RGBCOLS	    = 1 << 5,	/* use explicit RGB colors */
-    CF_RGBNOBROWN   = 1 << 6	/* with RGB, use dark yellow, not brown */
+    CF_RGBNOBROWN   = 1 << 6,	/* with RGB, use dark yellow, not brown */
+    CF_FULLANSI	    = 1 << 7	/* use attribute-disabling sequences */
 } ColorFlags;
 
 #endif
