@@ -71,45 +71,86 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     int defcols = !!(writer->flags & CF_DEFAULT);
     if (c == 0xef00)
     {
-	c = 0xee07;
-	defcols = defcols ? 1 : 2;
+	if (tpstr(exit_attribute_mode) == ERR) return 0;
+	writer->fg = defcols ? 7 : -1;
+	writer->bg = defcols ? 0 : -1;
+	return 2;
     }
     int newfg = c & 0xfU;
     int newbg = (c >> 4) & 0xfU;
-    int newfgcol = newfg;
-    int newbgcol = newbg;
-    if (defcols < 2 && newfg == writer->fg && newbg == writer->bg) return 2;
-    if (tpstr(exit_attribute_mode) == ERR) return 0;
-    if (defcols && newbg == 0 && newfg == 7) goto done;
-    if (writer->brightbg && (newbg & 8U))
+    if (newfg == writer->fg && newbg == writer->bg) return 2;
+    if (defcols && newfg == 7 && newbg == 0)
     {
-	if (*writer->brightbg && tpstr(writer->brightbg) == ERR) return 0;
-	newbgcol &= 7U;
+	if (tpstr(exit_attribute_mode) == ERR) return 0;
+	writer->fg = 7;
+	writer->bg = 0;
+	return 2;
+    }
+    int clearbgattr = writer->brightbg && ((writer->bg & 8U) && !(newbg & 8U));
+    int clearfgattr = writer->brightfg && ((writer->fg & 8U) && !(newfg & 8U));
+    int needbgreset = clearbgattr || (defcols && (newbg & 7U) == 0);
+    int needfgreset = clearfgattr || (defcols && (newfg & 7U) == 7);
+    if (needbgreset || needfgreset)
+    {
+	if (tpstr(exit_attribute_mode) == ERR) return 0;
+	if (defcols)
+	{
+	    writer->fg = 7;
+	    writer->bg = 0;
+	    if (newfg == 7 && newbg == 0) return 2;
+	}
+	else
+	{
+	    writer->fg = -1;
+	    writer->bg = -1;
+	}
+    }
+    int newbgcol = newbg;
+    int newfgcol = newfg;
+    int oldfgcol = writer->fg;
+    int oldbgcol = writer->bg;
+    if (writer->brightbg)
+    {
+	if ((oldbgcol < 0 || !(oldbgcol & 8U)) && (newbgcol & 8U))
+	{
+	    if (*writer->brightbg && tpstr(writer->brightbg) == ERR) return 0;
+	    newbgcol &= 7U;
+	}
+	if (oldbgcol > 7) oldbgcol &= 7U;
     }
     if (writer->brightfg)
     {
-	if ((newfg & 8U))
+	if ((oldfgcol < 0 || !(oldfgcol & 8U)) && (newfgcol & 8U))
 	{
 	    if (*writer->brightfg && tpstr(writer->brightfg) == ERR) return 0;
 	    newfgcol &= 7U;
 	}
 	newbgcol &= 7U;
+	if (oldfgcol > 7) oldfgcol &= 7U;
+	if (newfgcol > 7) newfgcol &= 7U;
     }
-    if (writer->rgbcols)
+    if (oldbgcol < 0 || oldbgcol != newbgcol)
     {
-	newfgcol = writer->rgbcols[newfgcol];
-	newbgcol = writer->rgbcols[newbgcol];
-	if (!(writer->flags & CF_RGBNOBROWN))
+	if (writer->rgbcols)
 	{
-	    newfgcol = RGBBROWN(newfgcol);
-	    newbgcol = RGBBROWN(newbgcol);
+	    newbgcol = writer->rgbcols[newbgcol];
+	    if (!(writer->flags & CF_RGBNOBROWN))
+		newbgcol = RGBBROWN(newbgcol);
 	}
+	if (tpstr(tiparm(set_a_background, newbgcol)) == ERR) return 0;
     }
-    if (tpstr(tiparm(set_a_background, newbgcol)) == ERR) return 0;
-    if (tpstr(tiparm(set_a_foreground, newfgcol)) == ERR) return 0;
-done:
-    writer->fg = defcols == 2 ? -1 : newfg;
-    writer->bg = defcols == 2 ? -1 : newbg;
+    if (oldfgcol < 0 || oldfgcol != newfgcol)
+    {
+	if (writer->rgbcols)
+	{
+	    newfgcol = writer->rgbcols[newfgcol];
+	    if (!(writer->flags & CF_RGBNOBROWN))
+		newfgcol = RGBBROWN(newfgcol);
+	}
+	if (tpstr(tiparm(set_a_foreground, newfgcol)) == ERR) return 0;
+    }
+    writer->fg = newfg;
+    writer->bg = newbg;
     return 2;
 }
 
