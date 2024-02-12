@@ -41,6 +41,7 @@ struct Config
     int forceansi;
     int showsauce;
     int nosauce;
+    int fullansi;
 };
 
 #ifdef WITH_CURSES
@@ -104,11 +105,21 @@ static void help(const char *prgname)
     out = BufferedWriter_create(out, 4096);
     printusage(out, prgname);
     Stream_puts(out, "\n"
+	    "\t-A             Assume full support for ANSI SGR sequences\n"
+	    "\t               including clearing individual attributes.\n"
+	    "\t               This gives the shortest possible output in\n"
+	    "\t               most cases, but might not work correctly with\n"
+	    "\t               some terminals.\n"
+	    "\t               Implies forcing generic ANSI output (-a).\n"
 	    "\t-B             Disable writing a BOM\n"
 	    "\t               (default: enabled for UTF16/UTF16LE)\n"
 	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-I             Using generic ANSI output, don't attempt to\n"
+	    "\t               explicitly select intense colors but rely on\n"
+	    "\t               the bold attribute for the foreground color\n"
+	    "\t               instead. For background colors, see -k and -v.\n"
 	    "\t-P             Force using a normal pipe bar symbol\n"
 	    "\t               (default: replace with a broken bar for\n"
 	    "\t               codepages not having an explicit broken bar)\n"
@@ -152,7 +163,6 @@ static void help(const char *prgname)
 	    "\t               special cases, replace other characters in\n"
 	    "\t               codepages 850, 857, 864 and 869.\n"
 	    "\t-h             Print this help text and exit.\n"
-	    "\t-i             Attempt to use explicit intense colors.\n"
 	    "\t-k             Use blink for intense background.\n"
 	    "\t               Note that blink is unlikely to work in modern\n"
 	    "\t               terminals.\n"
@@ -177,8 +187,8 @@ static void help(const char *prgname)
 	    "\t               UTF8 (default), UTF16, UTF16LE\n"
 #endif
 	    "\t-v             Use reverse for intense background.\n"
-	    "\t               Conflicts with blink (-k) and ignored with\n"
-	    "\t               intense (-i) or exact (-x) colors.\n"
+	    "\t               Implies disabling explicit intense colors (-I)\n"
+	    "\t               and conflicts with blink (-k).\n"
 	    "\t-w width       Width of the (virtual) screen.\n"
 	    "\t               Ignored if the width is available from SAUCE.\n"
 	    "\t               min: 16, default: 80, max: 1024\n"
@@ -332,7 +342,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "BCEPRSTabcdeikloprstuvwxy";
+    const char onceflags[] = "ABCEIPRSTabcdekloprstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -356,7 +366,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->brokenpipe = -1;
     config->markltr = 0;
     config->euro = 0;
-    config->intcolors = 0;
+    config->intcolors = 1;
     config->rgbcolors = 0;
     config->blink = 0;
     config->reverse = 0;
@@ -413,6 +423,11 @@ Config *Config_fromOpts(int argc, char **argv)
 			if (addArg(needargs, &naidx, *o) < 0) goto error;
 			break;
 
+		    case 'A':
+			config->forceansi = 1;
+			config->fullansi = 1;
+			break;
+
 		    case 'B':
 			config->bom = 0;
 			break;
@@ -423,6 +438,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'E':
 			config->ignoreeof = 1;
+			break;
+
+		    case 'I':
+			config->intcolors = 0;
 			break;
 
 		    case 'P':
@@ -468,10 +487,6 @@ Config *Config_fromOpts(int argc, char **argv)
 			help(prgname);
 			CONFIGEXIT;
 
-		    case 'i':
-			config->intcolors = 1;
-			break;
-
 		    case 'k':
 			config->blink = 1;
 			break;
@@ -493,6 +508,7 @@ Config *Config_fromOpts(int argc, char **argv)
 			break;
 
 		    case 'v':
+			config->intcolors = 0;
 			config->reverse = 1;
 			break;
 
@@ -670,6 +686,11 @@ int Config_showsauce(const Config *self)
 int Config_nosauce(const Config *self)
 {
     return self->nosauce;
+}
+
+int Config_fullansi(const Config *self)
+{
+    return self->fullansi;
 }
 
 void Config_destroy(Config *self)

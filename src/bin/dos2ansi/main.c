@@ -222,6 +222,7 @@ static Stream *createOutputStream(const Config *config, const Sauce *sauce,
 		|| Config_blink(config)) cflags |= CF_LBG_BLINK;
 	else if (Config_reverse(config)) cflags |= CF_LBG_REV;
 	if (Config_nobrown(config)) cflags |= CF_RGBNOBROWN;
+	if (Config_fullansi(config)) cflags |= CF_FULLANSI;
 	out = createColorWriter(config, out, cflags);
     }
 
