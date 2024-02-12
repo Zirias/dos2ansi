@@ -65,7 +65,7 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
     uint16_t c = *unichr;
     if (c < 0xee00 || c > 0xef00)
     {
-	return Stream_write(self->stream, ptr, size);
+	return Stream_write(self->stream, ptr, 2);
     }
     if (writer->flags & CF_STRIP) return 2;
     int defcols = !!(writer->flags & CF_DEFAULT);
@@ -86,11 +86,18 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 	writer->bg = 0;
 	return 2;
     }
-    int clearbgattr = writer->brightbg && ((writer->bg & 8U) && !(newbg & 8U));
-    int clearfgattr = writer->brightfg && ((writer->fg & 8U) && !(newfg & 8U));
-    int needbgreset = clearbgattr || (defcols && (newbg & 7U) == 0);
-    int needfgreset = clearfgattr || (defcols && (newfg & 7U) == 7);
-    if (needbgreset || needfgreset)
+    int clearbgattr = writer->brightbg && ((writer->bg > 7) && !(newbg & 8U));
+    int clearfgattr = writer->brightfg && ((writer->fg > 7) && !(newfg & 8U));
+    if (defcols)
+    {
+	if (!writer->brightbg) clearbgattr = (writer->bg != 0 && newbg == 0);
+	else clearbgattr = clearbgattr
+	    || ((writer->bg & 7U) != 0 && (newbg & 7U) == 0);
+	if (!writer->brightfg) clearfgattr = (writer->fg != 7 && newfg == 7);
+	else clearfgattr = clearfgattr
+	    || ((writer->fg & 7U) != 7 && (newfg & 7U) == 7);
+    }
+    if (clearbgattr || clearfgattr)
     {
 	if (tpstr(exit_attribute_mode) == ERR) return 0;
 	if (defcols)
@@ -165,6 +172,7 @@ static void destroyticol(StreamWriter *self)
 Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 {
     if (instance) return 0;
+    int defcols = !!(flags & CF_DEFAULT);
     TiColorWriter *writer = xmalloc(sizeof *writer);
     writer->base.write = writeticol;
     writer->base.flush = 0;
@@ -174,8 +182,8 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
     writer->brightfg = 0;
     writer->brightbg = 0;
     writer->rgbcols = 0;
-    writer->fg = -1;
-    writer->bg = -1;
+    writer->fg = defcols ? 7 : -1;
+    writer->bg = defcols ? 0 : -1;
 
     if (flags & CF_STRIP) goto error;
     int err;
