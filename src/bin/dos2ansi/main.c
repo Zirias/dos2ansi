@@ -258,7 +258,7 @@ int main(int argc, char **argv)
     if (!canvas) goto done;
     if (Config_showsauce(config) && insettings.sauce)
     {
-	SaucePrinter_print(canvas, insettings.sauce);
+	SaucePrinter_print(canvas, insettings.sauce, Config_nowrap(config));
     }
     else
     {

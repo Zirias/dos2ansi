@@ -7,6 +7,142 @@
 #include <string.h>
 #include <time.h>
 
+#define isgfx(c) ((unsigned char)(c) >= 0xb0)
+
+typedef struct SauceWrapper
+{
+    const Sauce *sauce;
+    const char *line;
+    const char *rest;
+    int join;
+    int joinnext;
+    int nowrap;
+    int nowrapnext;
+    int donl;
+    int donlnext;
+    int nextline;
+    int buflen;
+    char linebuf[65];
+} SauceWrapper;
+
+static void SauceWrapper_checkline(SauceWrapper *self)
+{
+    self->joinnext = 0;
+    self->nowrapnext = 0;
+    self->donlnext = 0;
+    if (self->line)
+    {
+	int newlen = strlen(self->line);
+	if (!newlen) self->nowrapnext = 1;
+	else for (int i = 0; i < newlen; ++i)
+	{
+	    if (isgfx(self->line[i]))
+	    {
+		self->nowrapnext = 1;
+		break;
+	    }
+	}
+	if (!self->nowrapnext)
+	{
+	    if (newlen < 62) self->donlnext = 1;
+	    else if (newlen == 64
+		    && self->line[63] != 0x20) self->joinnext = 1;
+	}
+    }
+}
+
+static void SauceWrapper_init(SauceWrapper *self, const Sauce *sauce)
+{
+    memset(self, 0, sizeof *self);
+    self->sauce = sauce;
+    self->line = Sauce_comment(sauce, 0);
+    SauceWrapper_checkline(self);
+}
+
+static int SauceWrapper_fetch(SauceWrapper *self)
+{
+    if (!self->line) return 0;
+    self->rest = self->line;
+    self->line = Sauce_comment(self->sauce, ++self->nextline);
+    self->join = self->joinnext && self->line && *self->line != 0x20;
+    self->nowrap = self->nowrapnext;
+    self->donl = self->donlnext;
+    SauceWrapper_checkline(self);
+    if (self->nowrapnext) self->join = 0;
+    return 1;
+}
+
+static const char *SauceWrapper_line(SauceWrapper *self)
+{
+    if (!self->rest) SauceWrapper_fetch(self);
+    if (self->nowrap)
+    {
+	const char *line = self->rest;
+	self->rest = 0;
+	return line;
+    }
+
+    int haveword = 0;
+    int len = 0;
+    while (self->rest || (SauceWrapper_fetch(self) && !self->nowrap))
+    {
+	int joined = 0;
+	const char *rp = self->rest;
+	while (*rp && *rp == 0x20 && self->buflen + len < 64)
+	{
+	    if (self->buflen) self->linebuf[self->buflen + len++] = *rp++;
+	    else ++rp;
+	}
+	if (self->buflen + len == 64) break;
+	if (!*rp && self->join && !joined && self->line)
+	{
+	    rp = self->line;
+	    joined = 1;
+	    while (*rp && *rp == 0x20 && self->buflen + len < 64)
+	    {
+		self->linebuf[self->buflen + len++] = *rp++;
+	    }
+	}
+	if (self->buflen + len == 64) break;
+	if (len) haveword = 1;
+	while (*rp && *rp != 0x20 && self->buflen + len < 64)
+	{
+	    self->linebuf[self->buflen + len++] = *rp++;
+	}
+	if (!*rp && self->join && !joined && self->line)
+	{
+	    rp = self->line;
+	    joined = 1;
+	    while (*rp && *rp != 0x20 && self->buflen + len < 64)
+	    {
+		self->linebuf[self->buflen + len++] = *rp++;
+	    }
+	}
+	if (haveword && self->buflen + len == 64 &&
+		((self->line && *rp != 0x20) || (!self->line && *rp))) break;
+	self->buflen += len;
+	len = 0;
+	if (joined)
+	{
+	    self->line = rp;
+	    self->rest = 0;
+	}
+	else if (!*rp)
+	{
+	    self->rest = 0;
+	    if (self->donl) break;
+	}
+	else self->rest = rp;
+    }
+    if (self->buflen)
+    {
+	self->linebuf[self->buflen] = 0;
+	self->buflen = 0;
+	return self->linebuf;
+    }
+    return 0;
+}
+
 static void putright(VgaCanvas *canvas,
 	unsigned width, char pad, const char *str)
 {
@@ -50,7 +186,7 @@ static void putpair(VgaCanvas *canvas, int layout,
     VgaCanvas_put(canvas, (char)0xba);
 }
 
-void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
+void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 {
     char buf[32];
 
@@ -119,9 +255,24 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce)
 	for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xc4);
 	VgaCanvas_put(canvas, (char)0xb6);
 
-	for (int i = 0; i < comments; ++i)
+	if (nowrap)
 	{
-	    putpair(canvas, 1, i?"":"Comment", Sauce_comment(sauce, i));
+	    for (int i = 0; i < comments; ++i)
+	    {
+		putpair(canvas, 1, i?"":"Comment", Sauce_comment(sauce, i));
+	    }
+	}
+	else
+	{
+	    SauceWrapper w;
+	    SauceWrapper_init(&w, sauce);
+	    const char *cap = "Comment";
+	    const char *line = 0;
+	    while ((line = SauceWrapper_line(&w)))
+	    {
+		putpair(canvas, 1, cap, line);
+		cap = "";
+	    }
 	}
     }
 

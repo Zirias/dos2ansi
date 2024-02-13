@@ -42,6 +42,7 @@ struct Config
     int showsauce;
     int nosauce;
     int fullansi;
+    int nowrap;
 };
 
 #ifdef WITH_CURSES
@@ -93,7 +94,7 @@ static void printusage(Stream *out, const char *prgname)
     Stream_printf(out,
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
-	    "       %s [-BCEPRSTabdeiklprsvxy] [-c codepage]\n"
+	    "       %s [-BCEPRSTWabdeiklprsvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname, prgname, prgname);
 }
@@ -131,6 +132,8 @@ static void help(const char *prgname)
 	    "\t               Implies -E.\n"
 	    "\t-V             Print version information including build-time\n"
 	    "\t               and OS-dependent configuration and exit.\n"
+	    "\t-W             When showing SAUCE (-s), don't attempt to\n"
+	    "\t               re-wrap the comment but show it as is.\n"
 	    "\t-a             Force using the generic ANSI color writer.\n"
 	    "\t               When built with curses support on non-Windows,\n"
 	    "\t               a terminfo based writer is used instead,\n"
@@ -342,7 +345,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "ABCEIPRSTabcdekloprstuvwxy";
+    const char onceflags[] = "ABCEIPRSTWabcdekloprstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -374,6 +377,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->forceansi = 0;
     config->showsauce = 0;
     config->nosauce = 0;
+    config->nowrap = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -465,6 +469,10 @@ Config *Config_fromOpts(int argc, char **argv)
 			free(config);
 			version();
 			CONFIGEXIT;
+
+		    case 'W':
+			config->nowrap = 1;
+			break;
 
 		    case 'a':
 			config->forceansi = 1;
@@ -691,6 +699,11 @@ int Config_nosauce(const Config *self)
 int Config_fullansi(const Config *self)
 {
     return self->fullansi;
+}
+
+int Config_nowrap(const Config *self)
+{
+    return self->nowrap;
 }
 
 void Config_destroy(Config *self)

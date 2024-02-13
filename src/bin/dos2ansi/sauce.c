@@ -126,6 +126,7 @@ static void getSauceComment(char *dst, RawSauce *raw, int lines, int lineno)
 {
     char *src = raw->bytes + (raw->size - MINSAUCE - 64 * (lines - lineno));
     size_t len = checkSauceStr(src, 64);
+    if (len > 0 && len < 64 && src[len] == 0x20) ++len;
     memcpy(dst, src, len);
     dst[len] = 0;
 }
