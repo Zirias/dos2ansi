@@ -94,7 +94,7 @@ static void printusage(Stream *out, const char *prgname)
     Stream_printf(out,
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
-	    "       %s [-BCEPRSTWabdeiklprsvxy] [-c codepage]\n"
+	    "       %s [-ABCEPRSTWabdeiklprsvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname, prgname, prgname);
 }
