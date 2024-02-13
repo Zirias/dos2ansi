@@ -194,6 +194,10 @@ static void help(const char *prgname)
 	    "\t               UTF8 (default), UTF16, UTF16LE\n"
 #endif
 	    "\t-v             Use reverse for intense background.\n"
+	    "\t               With most terminals, this will actually\n"
+	    "\t               reverse colors. It's only included for exotic\n"
+	    "\t               terminals enabling bright background colors\n"
+	    "\t               instead.\n"
 	    "\t               Implies disabling explicit intense colors (-I)\n"
 	    "\t               and conflicts with blink (-k).\n"
 	    "\t-w width       Width of the (virtual) screen.\n"
