@@ -103,7 +103,7 @@ SUPPRESS(overlength-strings)
 static void help(const char *prgname)
 {
     Stream *out = Stream_createStandard(SST_STDOUT);
-    out = BufferedWriter_create(out, 4096);
+    out = BufferedWriter_create(out, 6*1024);
     printusage(out, prgname);
     Stream_puts(out, "\n"
 	    "\t-A             Assume full support for ANSI SGR sequences\n"
@@ -209,6 +209,7 @@ ENDSUPPRESS
 static void usage(const char *prgname, const char *error)
 {
     Stream *out = Stream_createStandard(SST_STDERR);
+    if (error) out = BufferedWriter_create(out, 512);
     printusage(out, prgname);
     if (error) Stream_printf(out, "\nError: %s\n", error);
     Stream_destroy(out);
