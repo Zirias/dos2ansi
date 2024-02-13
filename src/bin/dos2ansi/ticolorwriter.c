@@ -199,6 +199,7 @@ Stream *TiColorWriter_create(Stream *out, ColorFlags flags)
 	{
 	    writer->brightbg = enter_reverse_mode ? enter_reverse_mode : "";
 	}
+	else writer->brightbg = "";
     }
     else
     {
