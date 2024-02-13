@@ -121,9 +121,9 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 	if ((oldbgcol < 0 || !(oldbgcol & 8U)) && (newbgcol & 8U))
 	{
 	    if (*writer->brightbg && tpstr(writer->brightbg) == ERR) return 0;
-	    newbgcol &= 7U;
 	}
 	if (oldbgcol > 7) oldbgcol &= 7U;
+	newbgcol &= 7U;
     }
     if (writer->brightfg)
     {
@@ -132,9 +132,8 @@ static size_t writeticol(StreamWriter *self, const void *ptr, size_t size)
 	    if (*writer->brightfg && tpstr(writer->brightfg) == ERR) return 0;
 	    newfgcol &= 7U;
 	}
-	newbgcol &= 7U;
-	if (oldfgcol > 7) oldfgcol &= 7U;
 	if (newfgcol > 7) newfgcol &= 7U;
+	newfgcol &= 7U;
     }
     if (oldbgcol < 0 || oldbgcol != newbgcol)
     {
