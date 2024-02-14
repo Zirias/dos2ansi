@@ -286,6 +286,7 @@ int main(int argc, char **argv)
     if (Config_brokenpipe(config) == 0) cpflags |= CPF_SOLIDBAR;
     if (Config_brokenpipe(config) == 1) cpflags |= CPF_BROKENBAR;
     if (Config_euro(config)) cpflags |= CPF_EUROSYM;
+    if (Config_visapprox(config)) cpflags |= CPF_VISAPPROX;
     cp = Codepage_create(cpid, cpflags);
 
     VgaSerFlags vsflags = VSF_NONE;

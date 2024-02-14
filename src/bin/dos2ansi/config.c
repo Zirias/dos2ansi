@@ -43,6 +43,7 @@ struct Config
     int nosauce;
     int fullansi;
     int nowrap;
+    int visapprox;
 };
 
 #ifdef WITH_CURSES
@@ -94,7 +95,7 @@ static void printusage(Stream *out, const char *prgname)
     Stream_printf(out,
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
-	    "       %s [-ABCEPRSTWabdeiklprsvxy] [-c codepage]\n"
+	    "       %s [-ABCEPRSTWXabdeiklprsvxy] [-c codepage]\n"
 	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
 	    prgname, prgname, prgname);
 }
@@ -136,6 +137,9 @@ static void help(const char *prgname)
 	    "\t               and OS-dependent configuration and exit.\n"
 	    "\t-W             When showing SAUCE (-s), don't attempt to\n"
 	    "\t               re-wrap the comment but show it as is.\n"
+	    "\t-X             Don't map to codepoints that try to visually\n"
+	    "\t               approximate VGA, use semantic mapping instead.\n"
+	    "\t               Implies forcing a normal bar (-P).\n"
 	    "\t-a             Force using the generic ANSI color writer.\n"
 	    "\t               When built with curses support on non-Windows,\n"
 	    "\t               a terminfo based writer is used instead,\n"
@@ -354,7 +358,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "ABCEIPRSTWabcdekloprstuvwxy";
+    const char onceflags[] = "ABCEIPRSTWXabcdekloprstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -387,6 +391,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->showsauce = 0;
     config->nosauce = 0;
     config->nowrap = 0;
+    config->visapprox = 1;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -481,6 +486,11 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'W':
 			config->nowrap = 1;
+			break;
+
+		    case 'X':
+			config->brokenpipe = 0;
+			config->visapprox = 0;
 			break;
 
 		    case 'a':
@@ -713,6 +723,11 @@ int Config_fullansi(const Config *self)
 int Config_nowrap(const Config *self)
 {
     return self->nowrap;
+}
+
+int Config_visapprox(const Config *self)
+{
+    return self->visapprox;
 }
 
 void Config_destroy(Config *self)

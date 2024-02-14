@@ -34,7 +34,8 @@ typedef enum CodepageFlags {
     CPF_NONE	    = 0,
     CPF_SOLIDBAR    = 1 << 0,	/* force using solid pipe bar */
     CPF_BROKENBAR   = 1 << 1,	/* force using broken pipe bar */
-    CPF_EUROSYM	    = 1 << 2	/* use Euro variant if applicable */
+    CPF_EUROSYM	    = 1 << 2,	/* use Euro variant if applicable */
+    CPF_VISAPPROX   = 1 << 3	/* use codepoints visually similar to VGA */
 } CodepageFlags;
 
 CodepageId CodepageId_byName(const char *name) ATTR_NONNULL((1));
