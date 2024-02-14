@@ -8,6 +8,7 @@
 
 struct Codepage
 {
+    const uint16_t *low;
     const uint16_t *cp;
     int brokenpipe;
     int visapprox;
@@ -17,6 +18,13 @@ struct Codepage
 static const uint16_t lowascii[] = {
     0x0020,0x263A,0x263B,0x2665,0x2666,0x2663,0x2660,0x2022,
     0x25D8,0x25CB,0x25D9,0x2642,0x2640,0x266A,0x266B,0x263C,
+    0x25BA,0x25C4,0x2195,0x203C,0x00B6,0x00A7,0x25AC,0x21A8,
+    0x2191,0x2193,0x2192,0x2190,0x221F,0x2194,0x25B2,0x25BC
+};
+
+static const uint16_t lowcp864[] = {
+    0x0020,0x263A,0x266A,0x266B,0x263C,0x2550,0x2551,0x256C,
+    0x2563,0x2566,0x2560,0x2569,0x2557,0x2554,0x255A,0x255D,
     0x25BA,0x25C4,0x2195,0x203C,0x00B6,0x00A7,0x25AC,0x21A8,
     0x2191,0x2193,0x2192,0x2190,0x221F,0x2194,0x25B2,0x25BC
 };
@@ -530,6 +538,7 @@ Codepage *Codepage_create(CodepageId id, CodepageFlags flags)
     int scaneuro = 0;
 
     Codepage *self = xmalloc(sizeof *self);
+    self->low = lowascii;
     self->cp = 0;
     if (flags & CPF_VISAPPROX)
     {
@@ -539,6 +548,7 @@ Codepage *Codepage_create(CodepageId id, CodepageFlags flags)
     }
     else self->visapprox = 0;
     if (!self->cp) self->cp = codepages[id];
+    if (id == CP_864) self->low = lowcp864;
     if (flags & CPF_SOLIDBAR) self->brokenpipe = 0;
     else if (flags & CPF_BROKENBAR) self->brokenpipe = 1;
     else
@@ -575,7 +585,7 @@ uint16_t Codepage_map(const Codepage *self, uint8_t c)
 {
     if (c < 0x20U)
     {
-	uint16_t uc = lowascii[c];
+	uint16_t uc = self->low[c];
 	if (self->visapprox && uc == 0x25ac) uc = 0x2582;
 	return uc;
     }
