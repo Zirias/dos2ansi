@@ -1,0 +1,112 @@
+#!/bin/sh
+
+_term=${SHOWANSI_TERM:-xterm}
+_term_args=${SHOWANSI_TERM_ARGS:--tn xterm-256color -fa \"\"}
+_settitle=${SHOWANSI_SETTITLE:--title}
+_setgeom=${SHOWANSI_SETGEOM:--geometry}
+_setfont=${SHOWANSI_SETFONT:--fn}
+_execute=${SHOWANSI_EXECUTE:--e}
+_dos2ansi=${SHOWANSI_DOS2ANSI:-dos2ansi}
+_d2a_args=${SHOWANSI_D2A_ARGS:--X}
+_maxwidth=${SHOWANSI_MAXWIDTH:-200}
+_maxheight=${SHOWANSI_MAXHEIGHT:-60}
+_addlines=${SHOWANSI_ADDLINES:-1}
+_pager=${SHOWANSI_PAGER:-less -r}
+_font_vga9x16=${SHOWANSI_FONT_VGA9X16:--ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1}
+_font_vga8x16=${SHOWANSI_FONT_VGA8X16:--ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1}
+_font_vga9x8=${SHOWANSI_FONT_VGA9X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1}
+_font_vga8x8=${SHOWANSI_FONT_VGA8X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1}
+_font_ega9x14=${SHOWANSI_FONT_EGA9X14:--ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1}
+_font_ega8x14=${SHOWANSI_FONT_EGA8X14:--ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1}
+_font_ega9x8=${SHOWANSI_FONT_EGA9X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1}
+_font_ega8x8=${SHOWANSI_FONT_EGA8X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1}
+
+is_integer()
+{
+	case "${1#[+-]}" in
+		*[!0123456789]* ) return 1;;
+		'' ) return 1;;
+		* ) return 0;;
+	esac
+}
+
+if [ -z "${1}" ]; then
+	echo >&2 Usage: showansi file [dos2ansiflags]
+	exit 1
+fi
+
+if [ ! -r "${1}" ]; then
+	echo >&2 Cannot read from ${1}
+	exit 1
+fi
+
+_file=${1}
+shift
+
+trap 'rm -fr $_tmp_fifodir' EXIT
+_tmp_fifodir=$(mktemp -d)
+mkfifo $_tmp_fifodir/saucepipe
+${_dos2ansi} -q TAGwhsf "${_file}" >${_tmp_fifodir}/saucepipe 2>/dev/null & {
+	read s_title
+	read s_author
+	read s_group
+	read s_width
+	read s_height
+	read s_spacing
+	read s_font
+} <${_tmp_fifodir}/saucepipe
+rm -fr $_tmp_fifodir
+trap - EXIT
+
+test -z "${s_title}" && s_title=showansi
+if [ -n "${s_author}" ]; then
+	s_title="${s_title} | by ${s_author}"
+	test -n "${s_group}" && s_title="${s_title}/${s_group}"
+fi
+is_integer ${s_width} || s_width=80
+is_integer ${s_height} || s_height=25
+is_integer ${s_spacing} || s_spacing=0
+
+s_height=$((${s_height} + ${_addlines}))
+test ${s_width} -gt ${_maxwidth} && s_width=${_maxwidth}
+test ${s_height} -gt ${_maxheight} && s_height=${_maxheight}
+
+case "${s_font}" in
+	"IBM VGA50" )
+		if [ $s_spacing -eq 1 ]; then
+			s_font=${_font_vga9x8}
+		else
+			s_font=${_font_vga8x8}
+		fi
+		;;
+	"IBM EGA" )
+		if [ $s_spacing -eq 1 ]; then
+			s_font=${_font_ega9x14}
+		else
+			s_font=${_font_ega8x14}
+		fi
+		;;
+	"IBM EGA43" )
+		if [ $s_spacing -eq 1 ]; then
+			s_font=${_font_ega9x8}
+		else
+			s_font=${_font_ega8x8}
+		fi
+		;;
+	* )
+		if [ $s_spacing -eq 1 ]; then
+			s_font=${_font_vga9x16}
+		else
+			s_font=${_font_vga8x16}
+		fi
+		;;
+esac
+
+_dos2ansicmd="${_dos2ansi} ${_d2a_args} $@ \"$_file\" | ${_pager}"
+test -n ${_setgeom} && _term_args="${_term_args} ${_setgeom} ${s_width}x${s_height}"
+test -n ${_setfont} && _term_args="${_term_args} ${_setfont} ${s_font}"
+test -n ${_settitle} && _term_args="${_term_args} ${_settitle} '${s_title}'"
+_term_args="${_term_args} ${_execute} '${_dos2ansicmd}'"
+
+test -n "${SHOWANSI_DEBUG}" && echo Executing: ${_term} ${_term_args}
+eval exec ${_term} ${_term_args}
