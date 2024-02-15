@@ -57,7 +57,8 @@ doesn't need any other files at runtime.
   and the color palette to verify appearance on your terminal
 * Parses a subset of [SAUCE](https://github.com/radman1/sauce) metadata useful
   for MS-DOS text files, which is used to set some defaults (screen width,
-  blinking mode and codepage) and can also be displayed
+  blinking mode and codepage) and can also be displayed or individual fields
+  queried in a machine-readable format
 
 ## Test mode
 
@@ -66,6 +67,66 @@ doesn't need any other files at runtime.
 ## SAUCE display
 
 ![SAUCE in KDE's konsole](.github/screenshots/dos2ansi_sauce.png?raw=true)
+
+## The showansi script
+
+dos2ansi can optionally install a POSIX shell script (only on non-Windows) to
+directly display some ANSI art file in some X terminal emulator, using fonts
+and other settings from SAUCE metadata. The script is pre-configured to use
+`xterm`, `less` as the pager and
+[IBM bitmap fonts](https://github.com/farsil/ibmfonts). Unfortunately, these
+fonts currently need a patch to play well with `xterm`, you can find it in
+[my fork](https://github.com/Zirias/ibmfonts/tree/novt100).
+
+The behavior of the script can be adjusted to your needs using environment
+variables:
+
+* `SHOWANSI_TERM`: The X terminal emulator to run.
+  Default: `xterm`
+* `SHOWANSI_TERM_ARGS`: Arguments to always pass to the X terminal emulator.
+  Default: `-tn xterm-256color -fa ""` (disables freetype usage)
+* `SHOWANSI_SETTITLE`: Flag used to set a custom window title, no title will
+  be set if empty.
+  Default: `-title`
+* `SHOWANSI_SETGEOM`: Flag used to set the window geometry, won't be set if
+  empty.
+  Default: `-geometry`
+* `SHOWANSI_SETFONT`: Flag used to set the terminal font, no font will be set
+  if empty.
+  Default: `-fn`
+* `SHOWANSI_EXECUTE`: Flag needed to tell the X terminal emulator what to
+  execute, can be empty.
+  Default: `-e`
+* `SHOWANSI_DOS2ANSI`: Command to invoke dos2ansi.
+  Default: `dos2ansi`
+* `SHOWANSI_D2A_ARGS`: Arguments to always pass to dos2ansi.
+  Default: `-X` (disables attempting to match visuals, leave it to the font)
+* `SHOWANSI_MAXWIDTH`: Maximum width for the terminal window when setting
+  geometry.
+  Default: `200`
+* `SHOWANSI_MAXHEIGHT`: Maximum height for the terminal window when setting
+  geometry.
+  Default: `60`
+* `SHOWANSI_ADDLINES`: Number of lines to add to the height from SAUCE
+  metadata to make room for the pager.
+  Default: `1`
+* `SHOWANSI_PAGER`: The pager to pipe dos2ansi output to.
+  Default: `less -r` (raw escape sequences mode)
+* `SHOWANSI_FONT_<type>`: The font to use in the terminal emulator for font
+  `<type>` wanted according to SAUCE metadata. Type can be one of `VGA9X16`,
+  `VGA8X16`, `VGA9X8`, `VGA8X8`, `EGA9X14`, `EGA8X14`, `EGA9X8` or `EGA8X8`.
+  Default: A font name for the ibmfonts mentioned above, e.g.
+  `-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1` for `VGA9X16`.
+* `SHOWANSI_FONT_R_<type>`: Same as above, but used when aspect ratio should
+  be corrected for traditional slightly rectangular pixels.
+  Default: The same fonts as above, because "ibmfonts" doesn't have
+  aspect-corrected variants.
+
+Usage: `showansi ansifile [dos2ansiargs ...]`
+
+Here is what it looks like in default configuration:
+
+![showansi](.github/screenshots/showansi.png?raw=true)
 
 ## Building
 
