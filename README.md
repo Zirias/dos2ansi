@@ -7,13 +7,17 @@ background colors, intensity and blinking attribute. The input is expected to
 use CP-437 or one of the other supported DOS codepages.
 
 The builtin translation tables attempt to match the appearance on VGA as close
-as possible. For example, unused codepoints are mapped to U+25AE (Black
-Vertical Rectangle), because scans of old Microsoft documents show a glyph
-resembling this. This is also relevant for e.g. arabic letters that have many
-different forms; they are translated to unicode codepoints denoting the
+as possible by default. For example, unused codepoints are mapped to U+25AE
+(Black Vertical Rectangle), because scans of old Microsoft documents show a
+glyph resembling this. This is also relevant for e.g. arabic letters that have
+many different forms; they are translated to unicode codepoints denoting the
 "isolated" form, because this was the only way they could be displayed in text
-mode. As a consequence, this tool isn't well-suited for converting arabic
-*text*.
+mode.
+
+As a consequence, this default mode isn't well-suited for converting arabic
+*text*. There's a flag (`-X`) to disable this behavior and use canonic
+mappings instead, which is also a good idea when using a font reproducing the
+original IBM character set glyphs.
 
 Results depend on both your terminal (there are interesting issues with e.g.
 writing direction) and the font you're using (e.g. on Windows, the "Courier
