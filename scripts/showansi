@@ -12,14 +12,22 @@ _maxwidth=${SHOWANSI_MAXWIDTH:-200}
 _maxheight=${SHOWANSI_MAXHEIGHT:-60}
 _addlines=${SHOWANSI_ADDLINES:-1}
 _pager=${SHOWANSI_PAGER:-less -r}
-_font_vga9x16=${SHOWANSI_FONT_VGA9X16:--ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1}
-_font_vga8x16=${SHOWANSI_FONT_VGA8X16:--ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1}
-_font_vga9x8=${SHOWANSI_FONT_VGA9X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1}
-_font_vga8x8=${SHOWANSI_FONT_VGA8X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1}
-_font_ega9x14=${SHOWANSI_FONT_EGA9X14:--ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1}
-_font_ega8x14=${SHOWANSI_FONT_EGA8X14:--ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1}
-_font_ega9x8=${SHOWANSI_FONT_EGA9X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1}
-_font_ega8x8=${SHOWANSI_FONT_EGA8X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1}
+_font_vga_1_1=${SHOWANSI_FONT_VGA9X16:--ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1}
+_font_vga_0_1=${SHOWANSI_FONT_VGA8X16:--ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1}
+_font_vgaw_1_1=${SHOWANSI_FONT_VGA9X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1}
+_font_vgaw_0_1=${SHOWANSI_FONT_VGA8X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1}
+_font_ega_1_1=${SHOWANSI_FONT_EGA9X14:--ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1}
+_font_ega_0_1=${SHOWANSI_FONT_EGA8X14:--ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1}
+_font_egaw_1_1=${SHOWANSI_FONT_EGA9X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1}
+_font_egaw_0_1=${SHOWANSI_FONT_EGA8X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1}
+_font_vga_1_0=${SHOWANSI_FONT_R_VGA9X16:--ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1}
+_font_vga_0_0=${SHOWANSI_FONT_R_VGA8X16:--ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1}
+_font_vgaw_1_0=${SHOWANSI_FONT_R_VGA9X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1}
+_font_vgaw_0_0=${SHOWANSI_FONT_R_VGA8X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1}
+_font_ega_1_0=${SHOWANSI_FONT_R_EGA9X14:--ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1}
+_font_ega_0_0=${SHOWANSI_FONT_R_EGA8X14:--ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1}
+_font_egaw_1_0=${SHOWANSI_FONT_R_EGA9X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1}
+_font_egaw_0_0=${SHOWANSI_FONT_R_EGA8X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1}
 
 is_integer()
 {
@@ -46,13 +54,14 @@ shift
 trap 'rm -fr $_tmp_fifodir' EXIT
 _tmp_fifodir=$(mktemp -d)
 mkfifo $_tmp_fifodir/saucepipe
-${_dos2ansi} -q TAGwhsf "${_file}" >${_tmp_fifodir}/saucepipe 2>/dev/null & {
+${_dos2ansi} -q TAGwhsaf "${_file}" >${_tmp_fifodir}/saucepipe 2>/dev/null & {
 	read s_title
 	read s_author
 	read s_group
 	read s_width
 	read s_height
 	read s_spacing
+	read s_aspect
 	read s_font
 } <${_tmp_fifodir}/saucepipe
 rm -fr $_tmp_fifodir
@@ -66,47 +75,42 @@ fi
 is_integer ${s_width} || s_width=80
 is_integer ${s_height} || s_height=25
 is_integer ${s_spacing} || s_spacing=0
+is_integer ${s_aspect} || s_aspect=1
 
-s_height=$((${s_height} + ${_addlines}))
-test ${s_width} -gt ${_maxwidth} && s_width=${_maxwidth}
-test ${s_height} -gt ${_maxheight} && s_height=${_maxheight}
+_width=${s_width}
+_height=$((${s_height} + ${_addlines}))
+test ${_width} -gt ${_maxwidth} && _width=${_maxwidth}
+test ${_height} -gt ${_maxheight} && _height=${_maxheight}
 
 case "${s_font}" in
 	"IBM VGA50" )
-		if [ $s_spacing -eq 1 ]; then
-			s_font=${_font_vga9x8}
-		else
-			s_font=${_font_vga8x8}
-		fi
+		_fontbase=vgaw
 		;;
 	"IBM EGA" )
-		if [ $s_spacing -eq 1 ]; then
-			s_font=${_font_ega9x14}
-		else
-			s_font=${_font_ega8x14}
-		fi
+		_fontbase=ega
 		;;
 	"IBM EGA43" )
-		if [ $s_spacing -eq 1 ]; then
-			s_font=${_font_ega9x8}
-		else
-			s_font=${_font_ega8x8}
-		fi
+		_fontbase=egaw
 		;;
 	* )
-		if [ $s_spacing -eq 1 ]; then
-			s_font=${_font_vga9x16}
-		else
-			s_font=${_font_vga8x16}
-		fi
+		_fontbase=vga
 		;;
 esac
+_fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
+eval _font=\${${_fontname}}
 
 _dos2ansicmd="${_dos2ansi} ${_d2a_args} $@ \"$_file\" | ${_pager}"
-test -n ${_setgeom} && _term_args="${_term_args} ${_setgeom} ${s_width}x${s_height}"
-test -n ${_setfont} && _term_args="${_term_args} ${_setfont} ${s_font}"
+test -n ${_setgeom} && _term_args="${_term_args} ${_setgeom} ${_width}x${_height}"
+test -n ${_setfont} && _term_args="${_term_args} ${_setfont} ${_font}"
 test -n ${_settitle} && _term_args="${_term_args} ${_settitle} '${s_title}'"
 _term_args="${_term_args} ${_execute} '${_dos2ansicmd}'"
 
-test -n "${SHOWANSI_DEBUG}" && echo Executing: ${_term} ${_term_args}
+if [ -n "${SHOWANSI_DEBUG}" ]; then
+	echo size: ${s_width}x${s_height}
+	echo font: ${s_font}
+	echo letter spacing: ${s_spacing}
+	echo square pixels: ${s_aspect}
+	echo
+	echo Executing: ${_term} ${_term_args}
+fi
 eval exec ${_term} ${_term_args}
