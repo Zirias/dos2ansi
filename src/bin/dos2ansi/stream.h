@@ -82,7 +82,11 @@ size_t Stream_write(Stream *self, const void *ptr, size_t sz)
 int Stream_putc(Stream *self, int c) CMETHOD;
 size_t Stream_puts(Stream *self, const char *str)
     CMETHOD ATTR_NONNULL((2));
-size_t Stream_printf(Stream *self, const char *format, ...)
+#ifdef va_start
+int Stream_vprintf(Stream *self, const char *format, va_list ap)
+    CMETHOD ATTR_NONNULL((2)) ATTR_NONNULL((3));
+#endif
+int Stream_printf(Stream *self, const char *format, ...)
     CMETHOD ATTR_NONNULL((2)) ATTR_FORMAT((printf, 2, 3));
 size_t Stream_read(Stream *self, void *ptr, size_t sz)
     CMETHOD ATTR_NONNULL((2));

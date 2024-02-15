@@ -2,6 +2,8 @@
 
 #include "util.h"
 
+#include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -438,24 +440,40 @@ size_t Stream_puts(Stream *self, const char *str)
     return Stream_write(self, str, strlen(str));
 }
 
-size_t Stream_printf(Stream *self, const char *format, ...)
+int Stream_vprintf(Stream *self, const char *format, va_list ap)
 {
     char buf[1024];
     char *xbuf = 0;
+    va_list ap2;
+    va_copy(ap2, ap);
+    int rc = vsnprintf(buf, sizeof buf, format, ap);
+    if (rc < 0) goto done;
+    if (rc == INT_MAX)
+    {
+	rc = -1;
+	errno = EOVERFLOW;
+	goto done;
+    }
+    if ((size_t)rc >= sizeof buf)
+    {
+	xbuf = xmalloc(rc+1);
+	rc = vsnprintf(xbuf, rc+1, format, ap2);
+	if (rc < 0) goto done;
+    }
+    rc = Stream_write(self, xbuf ? xbuf : buf, rc);
+done:
+    free(xbuf);
+    va_end(ap2);
+    return rc;
+}
+
+int Stream_printf(Stream *self, const char *format, ...)
+{
     va_list ap;
     va_start(ap, format);
-    size_t sz = vsnprintf(buf, sizeof buf, format, ap);
+    int rc = Stream_vprintf(self, format, ap);
     va_end(ap);
-    if (sz >= sizeof buf)
-    {
-	xbuf = xmalloc(sz+1);
-	va_start(ap, format);
-	vsnprintf(xbuf, sz+1, format, ap);
-	va_end(ap);
-    }
-    size_t wr = Stream_write(self, xbuf ? xbuf : buf, sz);
-    free(xbuf);
-    return wr;
+    return rc;
 }
 
 static size_t MemoryStream_read(MemoryStream *self, void *ptr, size_t sz)
