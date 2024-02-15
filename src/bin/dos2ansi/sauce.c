@@ -238,7 +238,7 @@ const char *Sauce_type(const Sauce *self)
 {
     switch (self->datatype)
     {
-	case 0: return "Unspecified";
+	case 0: return "<Unspecified>";
 	case 1: switch (self->filetype)
 		{
 		    case 0: return "ASCII text";
@@ -269,6 +269,24 @@ int Sauce_nonblink(const Sauce *self)
     if (self->datatype != 1
 	    || self->filetype < 1 || self->filetype > 2) return -1;
     return self->tflags & 1;
+}
+
+int Sauce_letterspacing(const Sauce *self)
+{
+    if (self->datatype != 1
+	    || self->filetype < 1 || self->filetype > 2) return -1;
+    int lsval = ((self->tflags >> 1) & 3) - 1;
+    if (lsval > 1) lsval = -1;
+    return lsval;
+}
+
+int Sauce_squarepixels(const Sauce *self)
+{
+    if (self->datatype != 1
+	    || self->filetype < 1 || self->filetype > 2) return -1;
+    int spval = ((self->tflags >> 3) & 3) - 1;
+    if (spval > 1) spval = -1;
+    return spval;
 }
 
 const char *Sauce_font(const Sauce *self)

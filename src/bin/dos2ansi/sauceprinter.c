@@ -243,6 +243,12 @@ void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
     int nonblink = Sauce_nonblink(sauce);
     if (nonblink >= 0) putpair(canvas, 0, "Background mode", nonblink ?
 	    "bright colors" : "blinking (default)");
+    int letterspacing = Sauce_letterspacing(sauce);
+    if (letterspacing >= 0) putpair(canvas, 0, "Letter spacing",
+	    letterspacing ? "spaced (9px VGA)" : "unspaced (8px VGA)");
+    int squarepixels = Sauce_squarepixels(sauce);
+    if (squarepixels >= 0) putpair(canvas, 0, "Pixel aspect", squarepixels ?
+	    "square pixels" : "rectangular pixels");
     const char *font = Sauce_font(sauce);
     if (font) putpair(canvas, 0, "Font", font);
     const char *codepage = Sauce_codepage(sauce);

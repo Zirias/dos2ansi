@@ -17,6 +17,8 @@ const char *Sauce_type(const Sauce *self) CMETHOD ATTR_RETNONNULL ATTR_PURE;
 int Sauce_width(const Sauce *self) CMETHOD ATTR_PURE;
 int Sauce_height(const Sauce *self) CMETHOD ATTR_PURE;
 int Sauce_nonblink(const Sauce *self) CMETHOD ATTR_PURE;
+int Sauce_letterspacing(const Sauce *self) CMETHOD ATTR_PURE;
+int Sauce_squarepixels(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_font(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_codepage(const Sauce *self) CMETHOD ATTR_PURE;
 int Sauce_cpid(const Sauce *self) CMETHOD ATTR_PURE;
