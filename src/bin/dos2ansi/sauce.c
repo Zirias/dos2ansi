@@ -292,7 +292,7 @@ int Sauce_squarepixels(const Sauce *self)
 const char *Sauce_font(const Sauce *self)
 {
     if (self->datatype != 1 || self->filetype > 2) return 0;
-    if (!self->tinfos) return "IBM VGA (default)";
+    if (!self->tinfos) return "<IBM VGA (default)>";
     return self->tinfos;
 }
 
@@ -301,10 +301,10 @@ const char *Sauce_codepage(const Sauce *self)
     if (self->datatype != 1 || self->filetype > 2) return 0;
     switch (self->cp)
     {
-	case CP_DEFAULT: return "437 (default)";
-	case CP_IMPLICIT: return "437 (implicit)";
+	case CP_DEFAULT: return "<437 (default)>";
+	case CP_IMPLICIT: return "<437 (implicit)>";
 	case CP_NAMED: return self->cpname;
-	case CP_OTHER: return "Other (unknown)";
+	case CP_OTHER: return "<Other (unknown)>";
 	default: return 0;
     }
 }

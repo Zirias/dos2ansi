@@ -6,6 +6,7 @@
 #include "dosreader.h"
 #include "sauce.h"
 #include "sauceprinter.h"
+#include "saucequery.h"
 #include "stream.h"
 #include "testwriter.h"
 #include "unicodewriter.h"
@@ -245,6 +246,14 @@ int main(int argc, char **argv)
 
     in = createInputStream(config, &insettings);
     if (!in) goto done;
+
+    if (Config_query(config))
+    {
+	if (!insettings.sauce) goto done;
+	if (SauceQuery_print(insettings.sauce, Config_query(config),
+		    Config_crlf(config)) >= 0) rc = EXIT_SUCCESS;
+	goto done;
+    }
 
     int width = insettings.forcedwidth;
     if (width < 0 && insettings.sauce) width = Sauce_width(insettings.sauce);

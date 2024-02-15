@@ -2,6 +2,7 @@
 
 #include "bufferedwriter.h"
 #include "codepage.h"
+#include "saucequery.h"
 #include "strcicmp.h"
 #include "stream.h"
 #include "util.h"
@@ -19,6 +20,7 @@ struct Config
 #endif
     const char *infile;
     const char *outfile;
+    const char *query;
     int tabwidth;
     int width;
     int defcolors;
@@ -96,7 +98,8 @@ static void printusage(Stream *out, const char *prgname)
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
 	    "       %s [-ABCEPRSTWXabdeiklprsvxy] [-c codepage]\n"
-	    "\t\t[-o outfile] [-t tabwidth] [-u format] [-w width] [infile]\n",
+	    "\t\t[-o outfile] [-q saucequery] [-t tabwidth] [-u format]\n"
+	    "\t\t[-w width] [infile]\n",
 	    prgname, prgname, prgname);
 }
 
@@ -104,7 +107,7 @@ SUPPRESS(overlength-strings)
 static void help(const char *prgname)
 {
     Stream *out = Stream_createStandard(SST_STDOUT);
-    out = BufferedWriter_create(out, 6*1024);
+    out = BufferedWriter_create(out, 8*1024);
     printusage(out, prgname);
     Stream_puts(out, "\n"
 	    "\t-A             Assume full support for ANSI SGR sequences\n"
@@ -184,6 +187,22 @@ static void help(const char *prgname)
 	    "\t-p             Force replacing the pipe bar with a broken bar\n"
 	    "\t               matching the appearance of most VGA fonts\n"
 	    "\t               (default: see -P above)\n"
+	    "\t-q saucequery  Query individual SAUCE metadata fields, each\n"
+	    "\t               field is requested by a single letter in the\n"
+	    "\t               query and printed on a single line to standard\n"
+	    "\t               output. Valid query letters are:\n"
+	    "\t               T  title\n"
+	    "\t               A  author\n"
+	    "\t               G  group\n"
+	    "\t               D  date (YYYYMMDD)\n"
+	    "\t               t  file and data type\n"
+	    "\t               w  width (characters)\n"
+	    "\t               h  height (characters)\n"
+	    "\t               b  background mode (0: blink, 1: bright)\n"
+	    "\t               s  spacing (0: 8px, 1: 9px)\n"
+	    "\t               a  aspect (0: rectangular, 1: square)\n"
+	    "\t               f  font name\n"
+	    "\t               c  codepage\n"
 	    "\t-r             Line endings with CR (DOS format,\n"
 	    "\t               default on Windows)\n"
 	    "\t-s             Show SAUCE metadata if available.\n"
@@ -266,6 +285,15 @@ static int optArg(Config *config, char *args, int *idx, char *op,
 	    break;
 	case 'o':
 	    config->outfile = op;
+	    break;
+	case 'q':
+	    if (SauceQuery_check(op))
+	    {
+		*error = "Invalid SAUCE query";
+		return -1;
+	    }
+	    config->query = op;
+	    config->showsauce = 1;
 	    break;
 	case 't':
 	    if (intArg(&config->tabwidth, op, 2, 255, 10) < 0)
@@ -358,12 +386,13 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "ABCEIPRSTWXabcdekloprstuvwxy";
+    const char onceflags[] = "ABCEIPRSTWXabcdeklopqrstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
     config->infile = 0;
     config->outfile = 0;
+    config->query = 0;
     config->tabwidth = -1;
     config->width = -1;
     config->defcolors = 0;
@@ -435,6 +464,7 @@ Config *Config_fromOpts(int argc, char **argv)
 		{
 		    case 'c':
 		    case 'o':
+		    case 'q':
 		    case 't':
 		    case 'u':
 		    case 'w':
@@ -603,6 +633,11 @@ const char *Config_infile(const Config *self)
 const char *Config_outfile(const Config *self)
 {
     return self->outfile;
+}
+
+const char *Config_query(const Config *self)
+{
+    return self->query;
 }
 
 int Config_tabwidth(const Config *self)

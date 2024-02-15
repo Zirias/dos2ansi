@@ -8,6 +8,7 @@ C_CLASS_DECL(Config);
 Config *Config_fromOpts(int argc, char **argv) ATTR_NONNULL((2));
 const char *Config_infile(const Config *self) CMETHOD ATTR_PURE;
 const char *Config_outfile(const Config *self) CMETHOD ATTR_PURE;
+const char *Config_query(const Config *self) CMETHOD ATTR_PURE;
 int Config_tabwidth(const Config *self) CMETHOD ATTR_PURE;
 int Config_width(const Config *self) CMETHOD ATTR_PURE;
 int Config_defcolors(const Config *self) CMETHOD ATTR_PURE;
