@@ -101,7 +101,7 @@ eval _font=\${${_fontname}}
 
 _dos2ansicmd="${_dos2ansi} ${_d2a_args} $@ \"$_file\" | ${_pager}"
 test -n ${_setgeom} && _term_args="${_term_args} ${_setgeom} ${_width}x${_height}"
-test -n ${_setfont} && _term_args="${_term_args} ${_setfont} ${_font}"
+test -n ${_setfont} && _term_args="${_term_args} ${_setfont} '${_font}'"
 test -n ${_settitle} && _term_args="${_term_args} ${_settitle} '${s_title}'"
 _term_args="${_term_args} ${_execute} '${_dos2ansicmd}'"
 
