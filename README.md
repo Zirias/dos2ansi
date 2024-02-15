@@ -84,7 +84,8 @@ variables:
 * `SHOWANSI_TERM`: The X terminal emulator to run.
   Default: `xterm`
 * `SHOWANSI_TERM_ARGS`: Arguments to always pass to the X terminal emulator.
-  Default: `-tn xterm-256color -fa ""` (disables freetype usage)
+  Default: `-tn xterm-256color -fa "" -bg black -fg lightgray` (disables
+  freetype usage and sets default colors matching VGA)
 * `SHOWANSI_SETTITLE`: Flag used to set a custom window title, no title will
   be set if empty.
   Default: `-title`
