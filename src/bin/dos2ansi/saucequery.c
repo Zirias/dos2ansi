@@ -1,14 +1,55 @@
 #include "saucequery.h"
 
 #include "bufferedwriter.h"
+#include "codepage.h"
 #include "sauce.h"
 #include "stream.h"
+#include "unicodewriter.h"
 #include "util.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 static const char *fields = "TAGDtwhbsafc";
+
+typedef struct CP437Writer
+{
+    StreamWriter base;
+    Codepage *cp;
+} CP437Writer;
+
+static size_t writecp437(StreamWriter *self, const void *ptr, size_t sz)
+{
+    if (!sz) return 0;
+    CP437Writer *writer = (CP437Writer *)self;
+    uint8_t c = (uint8_t)*((char *)ptr);
+    uint16_t uc;
+    if (c == U'\r' || c == U'\n') uc = c;
+    else uc = Codepage_map(writer->cp, c);
+    return Stream_write(self->stream, &uc, 2) / 2;
+}
+
+static void destroycp437(StreamWriter *self)
+{
+    if (!self) return;
+    CP437Writer *writer = (CP437Writer *)self;
+    Stream_destroy(self->stream);
+    Codepage_destroy(writer->cp);
+    free(writer);
+}
+
+static Stream *CP437Writer_create(Stream *out)
+{
+    CP437Writer *writer = xmalloc(sizeof *writer);
+    writer->base.write = writecp437;
+    writer->base.flush = 0;
+    writer->base.status = 0;
+    writer->base.destroy = destroycp437;
+    writer->base.stream = out;
+    writer->cp = Codepage_create(CP_437, CPF_SOLIDBAR);
+    return Stream_createWriter((StreamWriter *)writer, fields);
+}
 
 const char *SauceQuery_check(const char *query)
 {
@@ -24,6 +65,8 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
     if (SauceQuery_check(query)) return -1;
     Stream *out = Stream_createStandard(SST_STDOUT);
     out = BufferedWriter_create(out, 1024);
+    out = UnicodeWriter_create(out, UF_UTF8);
+    out = CP437Writer_create(out);
     for (const char *f = query; *f; ++f)
     {
 	switch (*f)
