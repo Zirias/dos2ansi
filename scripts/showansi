@@ -39,17 +39,18 @@ is_integer()
 }
 
 if [ -z "${1}" ]; then
-	echo >&2 Usage: showansi file [dos2ansiflags]
+	echo >&2 Usage: showansi [dos2ansiflags] file
 	exit 1
 fi
 
-if [ ! -r "${1}" ]; then
-	echo >&2 Cannot read from ${1}
-	exit 1
-fi
+while true; do
+	case "${2}" in
+		'') _file="${1}"; break;;
+		*) _d2a_args="${_d2a_args} \"${1}\""; shift;;
+	esac
+done
 
-_file=${1}
-shift
+eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 
 trap 'rm -fr $_tmp_fifodir' EXIT
 _tmp_fifodir=$(mktemp -d)
@@ -99,7 +100,7 @@ esac
 _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
 
-_dos2ansicmd="${_dos2ansi} ${_d2a_args} $@ \"$_file\" | ${_pager}"
+_dos2ansicmd="${_dos2ansi} ${_d2a_args} \"$_file\" | ${_pager}"
 test -n ${_setgeom} && _term_args="${_term_args} ${_setgeom} ${_width}x${_height}"
 test -n ${_setfont} && _term_args="${_term_args} ${_setfont} '${_font}'"
 test -n ${_settitle} && _term_args="${_term_args} ${_settitle} '${s_title}'"
