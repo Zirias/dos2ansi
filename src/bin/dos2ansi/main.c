@@ -55,7 +55,7 @@ static Stream *createInputStream(const Config *config,
     if (infile)
     {
 	in = Stream_openFile(infile, FOF_READ);
-	if (!in) fprintf(stderr, "Error opening `%s' for reading.", infile);
+	if (!in) fprintf(stderr, "Error opening `%s' for reading.\n", infile);
     }
     else in = Stream_createStandard(SST_STDIN);
     if (!in) return 0;
@@ -196,7 +196,8 @@ static Stream *createOutputStream(const Config *config, const Sauce *sauce,
     if (outfile)
     {
 	out = Stream_openFile(outfile, FOF_WRITE);
-	if (!out) fprintf(stderr, "Error opening `%s' for writing.", outfile);
+	if (!out) fprintf(stderr,
+		"Error opening `%s' for writing.\n", outfile);
 	initOutFlags(&cflags, &defformat, &settings->forcedbom);
     }
     else out = createStdoutStream(config, &cflags, &defformat,
