@@ -38,6 +38,11 @@ is_integer()
 	esac
 }
 
+if ! command -v sed >/dev/null; then
+	echo >&2 showansi requires a sed command
+	exit 1
+fi
+
 if [ -z "${1}" ]; then
 	echo >&2 Usage: showansi [dos2ansiflags] file
 	exit 1
@@ -52,24 +57,16 @@ done
 
 eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 
-trap 'rm -fr $_tmp_fifodir' EXIT
-_tmp_fifodir=$(mktemp -d)
-mkfifo $_tmp_fifodir/saucepipe
-${_dos2ansi} -q TAGwhsaf "${_file}" >${_tmp_fifodir}/saucepipe 2>/dev/null &
-exec 3<&0
-exec < ${_tmp_fifodir}/saucepipe
-read s_title
-read s_author
-read s_group
-read s_width
-read s_height
-read s_spacing
-read s_aspect
-read s_font
-exec 0<&3
-exec 3<&-
-rm -fr $_tmp_fifodir
-trap - EXIT
+eval set -- $(${_dos2ansi} -q TAGwhsaf "${_file}" \
+	| sed -e "s:':\\\\':" -e "s:.*:'&':")
+s_title=${1}
+s_author=${2}
+s_group=${3}
+s_width=${4}
+s_height=${5}
+s_spacing=${6}
+s_aspect=${7}
+s_font=${8}
 
 test -z "${s_title}" && s_title=showansi
 if [ -n "${s_author}" ]; then
@@ -109,4 +106,5 @@ if [ -n "${SHOWANSI_DEBUG}" ]; then
 	echo
 	echo Executing: ${_term} ${_term_args}
 fi
+
 eval exec ${_term} ${_term_args}
