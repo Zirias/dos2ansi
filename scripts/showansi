@@ -55,16 +55,19 @@ eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 trap 'rm -fr $_tmp_fifodir' EXIT
 _tmp_fifodir=$(mktemp -d)
 mkfifo $_tmp_fifodir/saucepipe
-${_dos2ansi} -q TAGwhsaf "${_file}" >${_tmp_fifodir}/saucepipe 2>/dev/null & {
-	read s_title
-	read s_author
-	read s_group
-	read s_width
-	read s_height
-	read s_spacing
-	read s_aspect
-	read s_font
-} <${_tmp_fifodir}/saucepipe
+${_dos2ansi} -q TAGwhsaf "${_file}" >${_tmp_fifodir}/saucepipe 2>/dev/null &
+exec 3<&0
+exec < ${_tmp_fifodir}/saucepipe
+read s_title
+read s_author
+read s_group
+read s_width
+read s_height
+read s_spacing
+read s_aspect
+read s_font
+exec 0<&3
+exec 3<&-
 rm -fr $_tmp_fifodir
 trap - EXIT
 
@@ -84,18 +87,10 @@ test ${_width} -gt ${_maxwidth} && _width=${_maxwidth}
 test ${_height} -gt ${_maxheight} && _height=${_maxheight}
 
 case "${s_font}" in
-	"IBM VGA50" )
-		_fontbase=vgaw
-		;;
-	"IBM EGA" )
-		_fontbase=ega
-		;;
-	"IBM EGA43" )
-		_fontbase=egaw
-		;;
-	* )
-		_fontbase=vga
-		;;
+	"IBM VGA50" ) _fontbase=vgaw ;;
+	"IBM EGA" ) _fontbase=ega ;;
+	"IBM EGA43" ) _fontbase=egaw ;;
+	* ) _fontbase=vga ;;
 esac
 _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
