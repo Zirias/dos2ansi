@@ -75,7 +75,7 @@ eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 $(${_dos2ansi} -q :TAGwhsaf "${_file}")
 SAUCE
 
-test -z "${s_title}" && s_title=showansi
+test -z "${s_title}" && s_title="showansi: <Unnamed>"
 if [ -n "${s_author}" ]; then
 	s_title="${s_title} | by ${s_author}"
 	test -n "${s_group}" && s_title="${s_title}/${s_group}"
