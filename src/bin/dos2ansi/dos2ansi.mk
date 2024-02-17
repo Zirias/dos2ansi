@@ -26,9 +26,6 @@ dos2ansi_MODULES+=	ticolorwriter
 dos2ansi_LIBS+=		curses
 dos2ansi_DEFINES+=	-DWITH_CURSES
 endif
-ifeq ($(WITH_SHOWANSI),1)
-install:: install_showansi
-endif
 endif
 
 ifeq ($(PLATFORM),win32)
@@ -46,10 +43,3 @@ dos2ansi_DEFINES+=	-DFORCE_STDIO
 endif
 
 $(call binrules, dos2ansi)
-
-_ZIMK_0:=$(DESTDIR)$(bindir)$(PSEP)showansi
-install_showansi: scripts$(PSEP)showansi
-	$(VINST)
-	$(VR)$(call instfile,$<,$(DESTDIR)$(bindir),755)
-
-.PHONY: install_showansi
