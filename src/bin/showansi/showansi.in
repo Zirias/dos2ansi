@@ -39,12 +39,21 @@ is_integer()
 	esac
 }
 
-if [ -z "${1}" ]; then
-	echo >&2 Usage: showansi [dos2ansiflags] file
+usage()
+{
+	echo >&2 Usage: showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file
 	exit 1
-fi
+}
 
+test -z "${1}" && usage
 while true; do
+	if [ "${1}" = "--" ]; then
+		test -z "${2}" && usage
+		test -z "${3}" && usage
+		_dos2ansi="${2}"
+		_file="${3}"
+		break
+	fi
 	case "${2}" in
 		'') _file="${1}"; break;;
 		*) _d2a_args="${_d2a_args} \"${1}\""; shift;;
