@@ -41,7 +41,12 @@ is_integer()
 
 usage()
 {
+	echo >&2
+	echo >&2 This is showansi from dos2ansi v%%VERSION%%
+	echo >&2 For verbose help, run dos2ansi -h
+	echo >&2
 	echo >&2 Usage: showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file
+	echo >&2
 	exit 1
 }
 
