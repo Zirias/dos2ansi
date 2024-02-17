@@ -1,12 +1,13 @@
 #!/bin/sh
 
+_dos2ansi="%%DOS2ANSI%%"
+
 _term=${SHOWANSI_TERM:-xterm}
 _term_args=${SHOWANSI_TERM_ARGS:--tn xterm-256color -fa \"\" -bg black -fg lightgray}
 _settitle=${SHOWANSI_SETTITLE:--title}
 _setgeom=${SHOWANSI_SETGEOM:--geometry}
 _setfont=${SHOWANSI_SETFONT:--fn}
 _execute=${SHOWANSI_EXECUTE:--e}
-_dos2ansi=${SHOWANSI_DOS2ANSI:-dos2ansi}
 _d2a_args=${SHOWANSI_D2A_ARGS:--X}
 _maxwidth=${SHOWANSI_MAXWIDTH:-200}
 _maxheight=${SHOWANSI_MAXHEIGHT:-60}
