@@ -11,22 +11,55 @@
 #include <string.h>
 #include <time.h>
 
-static const char *fields = "TAGDtwhbsafc";
+static const char *fields = ":TAGDtwhbsafc";
 
 typedef struct CP437Writer
 {
     StreamWriter base;
     Codepage *cp;
+    int quote;
+    int crlf;
+    int eol;
 } CP437Writer;
 
 static size_t writecp437(StreamWriter *self, const void *ptr, size_t sz)
 {
     if (!sz) return 0;
     CP437Writer *writer = (CP437Writer *)self;
-    uint8_t c = (uint8_t)*((char *)ptr);
     uint16_t uc;
-    if (c == U'\r' || c == U'\n') uc = c;
-    else uc = Codepage_map(writer->cp, c);
+    if (writer->eol)
+    {
+	writer->eol = 0;
+	if (writer->quote)
+	{
+	    uc = U'\'';
+	    Stream_write(self->stream, &uc, 2);
+	}
+    }
+    uint8_t c = (uint8_t)*((char *)ptr);
+    if (c == U'\r') return 1;
+    if (c == U'\n')
+    {
+	writer->eol = 1;
+	if (writer->quote)
+	{
+	    uc = U'\'';
+	    Stream_write(self->stream, &uc, 2);
+	}
+	if (writer->crlf)
+	{
+	    uc = U'\r';
+	    Stream_write(self->stream, &uc, 2);
+	}
+	uc = U'\n';
+	return Stream_write(self->stream, &uc, 2) / 2;
+    }
+    if (writer->quote && c == U'\'')
+    {
+	uc = U'\\';
+	Stream_write(self->stream, &uc, 2);
+    }
+    uc = Codepage_map(writer->cp, c);
     return Stream_write(self->stream, &uc, 2) / 2;
 }
 
@@ -39,7 +72,7 @@ static void destroycp437(StreamWriter *self)
     free(writer);
 }
 
-static Stream *CP437Writer_create(Stream *out)
+static Stream *CP437Writer_create(Stream *out, int crlf)
 {
     CP437Writer *writer = xmalloc(sizeof *writer);
     writer->base.write = writecp437;
@@ -48,7 +81,17 @@ static Stream *CP437Writer_create(Stream *out)
     writer->base.destroy = destroycp437;
     writer->base.stream = out;
     writer->cp = Codepage_create(CP_437, CPF_SOLIDBAR);
+    writer->quote = 0;
+    writer->crlf = !!crlf;
+    writer->eol = 1;
     return Stream_createWriter((StreamWriter *)writer, fields);
+}
+
+static void CP437Writer_setQuote(Stream *stream, int quote)
+{
+    StreamWriter *self = Stream_writer(stream, fields);
+    if (!self) return;
+    ((CP437Writer *)self)->quote = !!quote;
 }
 
 const char *SauceQuery_check(const char *query)
@@ -66,7 +109,8 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
     Stream *out = Stream_createStandard(SST_STDOUT);
     out = BufferedWriter_create(out, 1024);
     out = UnicodeWriter_create(out, UF_UTF8);
-    out = CP437Writer_create(out);
+    out = CP437Writer_create(out, crlf);
+    int quote = 0;
     for (const char *f = query; *f; ++f)
     {
 	switch (*f)
@@ -75,6 +119,11 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
 	    char dv[10];
 	    time_t tv;
 	    int iv;
+
+	    case ':':
+		quote = !quote;
+		CP437Writer_setQuote(out, quote);
+		break;
 
 	    case 'T':
 		sv = Sauce_title(sauce);
@@ -137,12 +186,12 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
 	    stringorempty:
 		if (!sv) sv = "";
 	    string:
-		Stream_printf(out, crlf ? "%s\r\n" : "%s\n", sv);
+		Stream_printf(out, "%s\n", sv);
 		break;
 
 	    numorempty:
-		if (iv < 0) Stream_puts(out, crlf ? "\r\n" : "\n");
-		else Stream_printf(out, crlf ? "%d\r\n" : "%d\n", iv);
+		if (iv < 0) Stream_puts(out, "\n");
+		else Stream_printf(out, "%d\n", iv);
 		break;
 	}
     }

@@ -192,6 +192,8 @@ static void help(const char *prgname)
 	    "\t               query and printed on a single line to standard\n"
 	    "\t               output, converted from CP-437 to UTF-8.\n"
 	    "\t               Valid query letters are:\n"
+	    "\t               :  toggle quoting all subsequent fields in\n"
+	    "\t                  single quotes\n"
 	    "\t               T  title\n"
 	    "\t               A  author\n"
 	    "\t               G  group\n"
