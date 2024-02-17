@@ -102,8 +102,6 @@ variables:
 * `SHOWANSI_EXECUTE`: Flag needed to tell the X terminal emulator what to
   execute, can be empty.
   Default: `-e`
-* `SHOWANSI_DOS2ANSI`: Command to invoke dos2ansi.
-  Default: `dos2ansi`
 * `SHOWANSI_D2A_ARGS`: Arguments to always pass to dos2ansi.
   Default: `-X` (disables attempting to match visuals, leave it to the font)
 * `SHOWANSI_MAXWIDTH`: Maximum width for the terminal window when setting
@@ -126,8 +124,23 @@ variables:
   be corrected for traditional slightly rectangular pixels.
   Default: The same fonts as above, because "ibmfonts" doesn't have
   aspect-corrected variants.
+* `SHOWANSI_DEBUG`: When set to something non-empty, print some debugging
+  information before executing the terminal.
+  Default: empty.
 
-Usage: `showansi ansifile [dos2ansiargs ...]`
+Usage: `showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file`
+
+> [!CAUTION]
+>
+> This script works by constructing a complex command to run and finally run
+> it using `eval`. As some of the input for the constructed command comes from
+> the environment variables documented above, it is possible to trick the
+> script into executing arbitrary commands by manipulating the environment.
+>
+> If you are unsure about your environment, check it first before running this
+> script:
+>
+> `set | grep SHOWANSI_`
 
 Here is what it looks like in default configuration:
 
