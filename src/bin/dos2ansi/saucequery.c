@@ -11,7 +11,7 @@
 #include <string.h>
 #include <time.h>
 
-static const char *fields = ":TAGDtwhbsafc";
+static const char *fields = ":TAGDCtwhbsafc";
 
 typedef struct CP437Writer
 {
@@ -144,6 +144,15 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
 		if (tv != (time_t)(-1)) strftime(dv, sizeof dv,
 			"%Y%m%d", localtime(&tv));
 		goto string;
+
+	    case 'C':
+		iv = Sauce_comments(sauce);
+		Stream_printf(out, "%d\n", iv);
+		for (int i = 0; i < iv; ++i)
+		{
+		    Stream_printf(out, "%s\n", Sauce_comment(sauce, i));
+		}
+		break;
 
 	    case 't':
 		sv = Sauce_type(sauce);
