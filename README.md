@@ -95,10 +95,9 @@ variable `SHOWANSI_DEBUG` to `1`.
 
 > [!WARNING]
 >
-> This script constructs a complex commandline and then executes it using
-> eval. Be sure to read the comments in the configuration file about
-> allowing per-user configuration, which is disabled by default, but enabled
-> in the sample configuration.
+> This script just sources configuration files. Be sure to read the comments
+> in the configuration file about allowing per-user configuration, which is
+> disabled by default, but enabled in the sample configuration.
 
 Here is what it looks like in default configuration:
 

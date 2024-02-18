@@ -94,13 +94,10 @@
 # Finally, specify where to read per-user configuration from.
 #
 # *** CAUTION ***
-# showansi works by constructing a complex commandline and finally executing
-# it using eval. This means it could be tricked into executing arbitrary
-# shell script by smuggling it into some of its configuration variables.
-# 
-# showansi will refuse to run as root, but if you're paranoid enough, you
-# might still want to additionally comment this setting, which will disable
-# reading any user configuration.
+# showansi just sources configuration files, so any shell script there will
+# be executed. It will refuse to run as root, but if you're paranoid enough,
+# you might still want to additionally comment this setting, which will
+# disable reading any user configuration.
 # ***************
 # ---------------------------------------------------------------------------
 
