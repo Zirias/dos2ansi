@@ -194,6 +194,8 @@ There are a few build-time configuration options available:
 * `WITH_CURSES`: Use `curses` to build a terminfo-based output writer that
   will automatically respect `$TERM`. Only available on non-Windows, defaults
   to `1`.
+* `WITH_SHOWANSI`: Also install the `showansi` script, see above. Only
+  available on non-Windows, defaults to `1`.
 * `FORCE_STDIO`: Always use the standard C `stdio.h` functions for I/O,
   instead of a platform-specific backend (available are POSIX and win32).
   Defaults to `0`.
