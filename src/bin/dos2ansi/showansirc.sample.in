@@ -1,0 +1,107 @@
+# ===========================================================================
+# showansi example configuration file
+# for showansi from dos2ansi v%%VERSION%%
+# ===========================================================================
+
+
+# The X terminal emulator program to run
+#TERMINAL=xterm
+
+# Arguments to always pass to the X terminal emulator
+# The default args will set the TERM name to xterm-256color, disable Xft
+# usage by passing an empty string for -fa, and set default colors to match
+# VGA.
+#TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray"
+
+# Arguments to always pass to dos2ansi
+# The default -X disables attempting to match visuals by replacing some
+# characters for others looking "most similar" to EGA/VGA in most fonts.
+# We want to use "original" fonts instead.
+#D2A_ARGS=-X
+
+# Maximum width for the terminal window (in characters)
+#MAXWIDTH=200
+
+# Maximum height for the terminal window (in characters)
+#MAXHEIGHT=60
+
+# Pager to pipe dos2ansi output to
+# The default setting runs less in "raw control sequences" mode (-r)
+#PAGER="less -r"
+
+# Number of lines to reserve for the pager
+# The default of 1 matches the bottom line less always displays
+#ADDLINES=1
+
+
+# ---------------------------------------------------------------------------
+# The following settings contain commandline flags to use with the selected
+# TERMINAL to make it do things we will need
+# ---------------------------------------------------------------------------
+
+# How to set a window title
+#SETTITLE=-title
+
+# How to set a window geometry (<w>x<h> in characters)
+#SETGEOM=-geometry
+
+# How to set a font
+#SETFONT=-fn
+
+# How to execute a command (instead of the interactive shell)
+#EXECUTE=-e
+
+
+# ---------------------------------------------------------------------------
+# The fonts to use in the X terminal emulator to match what is requested
+# according to SAUCE metadata.
+# The default settings select bitmap fonts from ibmfonts found here:
+# https://github.com/farsil/ibmfonts
+# ---------------------------------------------------------------------------
+
+#FONT_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
+#FONT_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
+#FONT_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
+#FONT_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
+#FONT_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
+#FONT_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
+#FONT_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
+#FONT_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
+
+# ---------------------------------------------------------------------------
+# The fonts to use instead when aspect correction is requested in SAUCE
+# metadata.
+# The default is just using the same fonts (therefore ignoring aspect
+# correction). Aspect correction with plain bitmap font rendering is
+# impossible, it can be achieved with scalable fonts using antialiasing
+# subpixel rendering though, but quality will suffer of course.
+# You might want to try it using fonts from
+# https://int10h.org/oldschool-pc-fonts/
+# With xterm, this would mean setting the font must be done with -fa instead
+# of -fn.
+# ---------------------------------------------------------------------------
+
+#FONT_AC_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
+#FONT_AC_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
+#FONT_AC_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
+#FONT_AC_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
+#FONT_AC_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
+#FONT_AC_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
+#FONT_AC_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
+#FONT_AC_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
+
+# ---------------------------------------------------------------------------
+# Finally, specify where to read per-user configuration from.
+#
+# *** CAUTION ***
+# showansi works by constructing a complex commandline and finally executing
+# it using eval. This means it could be tricked into executing arbitrary
+# shell script by smuggling it into some of its configuration variables.
+# 
+# showansi will refuse to run as root, but if you're paranoid enough, you
+# might still want to additionally comment this setting, which will disable
+# reading any user configuration.
+# ***************
+# ---------------------------------------------------------------------------
+
+USERRC=~/.config/showansirc

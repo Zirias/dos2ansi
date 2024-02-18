@@ -1,122 +1,156 @@
 #!/bin/sh
 
-_dos2ansi="%%DOS2ANSI%%"
-
-_term=${SHOWANSI_TERM:-xterm}
-_term_args=${SHOWANSI_TERM_ARGS:--tn xterm-256color -fa \"\" -bg black -fg lightgray}
-_settitle=${SHOWANSI_SETTITLE:--title}
-_setgeom=${SHOWANSI_SETGEOM:--geometry}
-_setfont=${SHOWANSI_SETFONT:--fn}
-_execute=${SHOWANSI_EXECUTE:--e}
-_d2a_args=${SHOWANSI_D2A_ARGS:--X}
-_maxwidth=${SHOWANSI_MAXWIDTH:-200}
-_maxheight=${SHOWANSI_MAXHEIGHT:-60}
-_addlines=${SHOWANSI_ADDLINES:-1}
-_pager=${SHOWANSI_PAGER:-less -r}
-_font_vga_1_1=${SHOWANSI_FONT_VGA9X16:--ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1}
-_font_vga_0_1=${SHOWANSI_FONT_VGA8X16:--ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1}
-_font_vgaw_1_1=${SHOWANSI_FONT_VGA9X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1}
-_font_vgaw_0_1=${SHOWANSI_FONT_VGA8X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1}
-_font_ega_1_1=${SHOWANSI_FONT_EGA9X14:--ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1}
-_font_ega_0_1=${SHOWANSI_FONT_EGA8X14:--ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1}
-_font_egaw_1_1=${SHOWANSI_FONT_EGA9X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1}
-_font_egaw_0_1=${SHOWANSI_FONT_EGA8X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1}
-_font_vga_1_0=${SHOWANSI_FONT_R_VGA9X16:--ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1}
-_font_vga_0_0=${SHOWANSI_FONT_R_VGA8X16:--ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1}
-_font_vgaw_1_0=${SHOWANSI_FONT_R_VGA9X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1}
-_font_vgaw_0_0=${SHOWANSI_FONT_R_VGA8X8:--ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1}
-_font_ega_1_0=${SHOWANSI_FONT_R_EGA9X14:--ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1}
-_font_ega_0_0=${SHOWANSI_FONT_R_EGA8X14:--ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1}
-_font_egaw_1_0=${SHOWANSI_FONT_R_EGA9X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1}
-_font_egaw_0_0=${SHOWANSI_FONT_R_EGA8X8:--ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1}
-
 is_integer()
 {
-	case "${1#[+-]}" in
-		*[!0123456789]* ) return 1;;
-		'' ) return 1;;
-		* ) return 0;;
-	esac
+    case "${1#[+-]}" in
+	*[!0123456789]*)    return 1;;
+	'')		    return 1;;
+	*)		    return 0;;
+    esac
 }
 
 usage()
 {
-	echo >&2
-	echo >&2 This is showansi from dos2ansi v%%VERSION%%
-	echo >&2 For verbose help, run dos2ansi -h
-	echo >&2
-	echo >&2 Usage: showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file
-	echo >&2
-	exit 1
+    echo >&2
+    echo >&2 This is showansi from dos2ansi v%%VERSION%%
+    echo >&2 For verbose help, run dos2ansi -h
+    echo >&2
+    echo >&2 Usage: showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file
+    echo >&2
+    exit 1
 }
 
+# default configuration
+TERMINAL=xterm
+TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray"
+D2A_ARGS=-X
+MAXWIDTH=200
+MAXHEIGHT=60
+PAGER="less -r"
+ADDLINES=1
+SETTITLE=-title
+SETGEOM=-geometry
+SETFONT=-fn
+EXECUTE=-e
+FONT_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
+FONT_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
+FONT_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
+FONT_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
+FONT_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
+FONT_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
+FONT_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
+FONT_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
+FONT_AC_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
+FONT_AC_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
+FONT_AC_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
+FONT_AC_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
+FONT_AC_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
+FONT_AC_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
+FONT_AC_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
+FONT_AC_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
+USERRC=
+
+# read system-wide configuration
+test -r "%%SYSCONFDIR%%/showansirc" && . "%%SYSCONFDIR%%/showansirc"
+
+# read per-user configuration (if enabled in system-wide configuration)
+test -n "${USERRC}" && test -r "${USERRC}" && . "${USERRC}"
+
+# create "mapping table" to map SAUCE metadata to fonts easily
+_font_vga_1_1=${FONT_VGA9X16}
+_font_vga_0_1=${FONT_VGA8X16}
+_font_vgaw_1_1=${FONT_VGA9X8}
+_font_vgaw_0_1=${FONT_VGA8X8}
+_font_ega_1_1=${FONT_EGA9X14}
+_font_ega_0_1=${FONT_EGA8X14}
+_font_egaw_1_1=${FONT_EGA9X8}
+_font_egaw_0_1=${FONT_EGA8X8}
+_font_vga_1_0=${FONT_AC_VGA9X16}
+_font_vga_0_0=${FONT_AC_VGA8X16}
+_font_vgaw_1_0=${FONT_AC_VGA9X8}
+_font_vgaw_0_0=${FONT_AC_VGA8X8}
+_font_ega_1_0=${FONT_AC_EGA9X14}
+_font_ega_0_0=${FONT_AC_EGA8X14}
+_font_egaw_1_0=${FONT_AC_EGA9X8}
+_font_egaw_0_0=${FONT_AC_EGA8X8}
+
+# parse commandline
+_dos2ansi="%%DOS2ANSI%%"
 test -z "${1}" && usage
 while true; do
-	if [ "${1}" = "--" ]; then
-		test -z "${2}" && usage
-		test -z "${3}" && usage
-		_dos2ansi="${2}"
-		_file="${3}"
-		break
-	fi
-	case "${2}" in
-		'') _file="${1}"; break;;
-		*) _d2a_args="${_d2a_args} \"${1}\""; shift;;
-	esac
+    if [ "${1}" = "--" ]; then
+	test -z "${2}" && usage
+	test -z "${3}" && usage
+	_dos2ansi="${2}"
+	_file="${3}"
+	break
+    fi
+    case "${2}" in
+	'') _file="${1}"; break;;
+	*)  D2A_ARGS="${D2A_ARGS} \"${1}\""; shift;;
+    esac
 done
 
-eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
+# validate dos2ansi works with given flags and input file
+eval "${_dos2ansi} ${D2A_ARGS} ${_file} >/dev/null" || exit 1
 
+# read SAUCE metadata
 {
-	read -r _f; eval s_title=${_f}
-	read -r _f; eval s_author=${_f}
-	read -r _f; eval s_group=${_f}
-	read -r _f; eval s_width=${_f}
-	read -r _f; eval s_height=${_f}
-	read -r _f; eval s_spacing=${_f}
-	read -r _f; eval s_aspect=${_f}
-	read -r _f; eval s_font=${_f}
+    read -r _f; eval s_title=${_f}
+    read -r _f; eval s_author=${_f}
+    read -r _f; eval s_group=${_f}
+    read -r _f; eval s_width=${_f}
+    read -r _f; eval s_height=${_f}
+    read -r _f; eval s_spacing=${_f}
+    read -r _f; eval s_aspect=${_f}
+    read -r _f; eval s_font=${_f}
 } <<SAUCE
 $(${_dos2ansi} -q :TAGwhsaf "${_file}")
 SAUCE
 
+# sanitize SAUCE metadata, construct full title and set defaults
 test -z "${s_title}" && s_title="showansi: <Unnamed>"
 if [ -n "${s_author}" ]; then
-	s_title="${s_title} | by ${s_author}"
-	test -n "${s_group}" && s_title="${s_title}/${s_group}"
+    s_title="${s_title} | by ${s_author}"
+    test -n "${s_group}" && s_title="${s_title}/${s_group}"
 fi
-is_integer ${s_width} || s_width=80
-is_integer ${s_height} || s_height=25
-is_integer ${s_spacing} || s_spacing=0
-is_integer ${s_aspect} || s_aspect=1
+is_integer ${s_width}	|| s_width=80
+is_integer ${s_height}	|| s_height=25
+is_integer ${s_spacing}	|| s_spacing=0
+is_integer ${s_aspect}	|| s_aspect=1
 
+# calculate terminal window geometry
 _width=${s_width}
-_height=$((${s_height} + ${_addlines}))
-test ${_width} -gt ${_maxwidth} && _width=${_maxwidth}
-test ${_height} -gt ${_maxheight} && _height=${_maxheight}
+_height=$((${s_height} + ${ADDLINES}))
+test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
+test ${_height} -gt ${MAXHEIGHT} && _height=${MAXHEIGHT}
 
+# map metadata to font to use
 case "${s_font}" in
-	"IBM VGA50" ) _fontbase=vgaw ;;
-	"IBM EGA" ) _fontbase=ega ;;
-	"IBM EGA43" ) _fontbase=egaw ;;
-	* ) _fontbase=vga ;;
+    "IBM VGA50")    _fontbase=vgaw;;
+    "IBM EGA")	    _fontbase=ega;;
+    "IBM EGA43")    _fontbase=egaw;;
+    *)		    _fontbase=vga;;
 esac
 _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
 
-_dos2ansicmd="${_dos2ansi} ${_d2a_args} \"$_file\" | ${_pager}"
-test -n ${_setgeom} && _term_args="${_term_args} ${_setgeom} ${_width}x${_height}"
-test -n ${_setfont} && _term_args="${_term_args} ${_setfont} '${_font}'"
-test -n ${_settitle} && _term_args="${_term_args} ${_settitle} '${s_title}'"
-_term_args="${_term_args} ${_execute} '${_dos2ansicmd}'"
+# construct commandline to execute
+_dos2ansicmd="${_dos2ansi} ${D2A_ARGS} \"$_file\" | ${PAGER}"
+test -n ${SETGEOM} && TERM_ARGS="${TERM_ARGS} ${SETGEOM} ${_width}x${_height}"
+test -n ${SETFONT} && TERM_ARGS="${TERM_ARGS} ${SETFONT} '${_font}'"
+test -n ${SETTITLE} && TERM_ARGS="${TERM_ARGS} ${SETTITLE} '${s_title}'"
+TERM_ARGS="${TERM_ARGS} ${EXECUTE} '${_dos2ansicmd}'"
 
+# debugging output
 if [ -n "${SHOWANSI_DEBUG}" ]; then
-	echo size: ${s_width}x${s_height}
-	echo font: ${s_font}
-	echo letter spacing: ${s_spacing}
-	echo square pixels: ${s_aspect}
-	echo
-	echo Executing: ${_term} ${_term_args}
+    echo size: ${s_width}x${s_height}
+    echo font: ${s_font}
+    echo letter spacing: ${s_spacing}
+    echo square pixels: ${s_aspect}
+    echo
+    echo Executing: ${TERMINAL} ${TERM_ARGS}
 fi
 
-eval exec ${_term} ${_term_args}
+# execute
+eval exec ${TERMINAL} ${TERM_ARGS}

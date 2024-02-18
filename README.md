@@ -82,65 +82,23 @@ and other settings from SAUCE metadata. The script is pre-configured to use
 fonts currently need a patch to play well with `xterm`, you can find it in
 [my fork](https://github.com/Zirias/ibmfonts/tree/novt100).
 
-The behavior of the script can be adjusted to your needs using environment
-variables:
-
-* `SHOWANSI_TERM`: The X terminal emulator to run.
-  Default: `xterm`
-* `SHOWANSI_TERM_ARGS`: Arguments to always pass to the X terminal emulator.
-  Default: `-tn xterm-256color -fa "" -bg black -fg lightgray` (disables
-  freetype usage and sets default colors matching VGA)
-* `SHOWANSI_SETTITLE`: Flag used to set a custom window title, no title will
-  be set if empty.
-  Default: `-title`
-* `SHOWANSI_SETGEOM`: Flag used to set the window geometry, won't be set if
-  empty.
-  Default: `-geometry`
-* `SHOWANSI_SETFONT`: Flag used to set the terminal font, no font will be set
-  if empty.
-  Default: `-fn`
-* `SHOWANSI_EXECUTE`: Flag needed to tell the X terminal emulator what to
-  execute, can be empty.
-  Default: `-e`
-* `SHOWANSI_D2A_ARGS`: Arguments to always pass to dos2ansi.
-  Default: `-X` (disables attempting to match visuals, leave it to the font)
-* `SHOWANSI_MAXWIDTH`: Maximum width for the terminal window when setting
-  geometry.
-  Default: `200`
-* `SHOWANSI_MAXHEIGHT`: Maximum height for the terminal window when setting
-  geometry.
-  Default: `60`
-* `SHOWANSI_ADDLINES`: Number of lines to add to the height from SAUCE
-  metadata to make room for the pager.
-  Default: `1`
-* `SHOWANSI_PAGER`: The pager to pipe dos2ansi output to.
-  Default: `less -r` (raw escape sequences mode)
-* `SHOWANSI_FONT_<type>`: The font to use in the terminal emulator for font
-  `<type>` wanted according to SAUCE metadata. Type can be one of `VGA9X16`,
-  `VGA8X16`, `VGA9X8`, `VGA8X8`, `EGA9X14`, `EGA8X14`, `EGA9X8` or `EGA8X8`.
-  Default: A font name for the ibmfonts mentioned above, e.g.
-  `-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1` for `VGA9X16`.
-* `SHOWANSI_FONT_R_<type>`: Same as above, but used when aspect ratio should
-  be corrected for traditional slightly rectangular pixels.
-  Default: The same fonts as above, because "ibmfonts" doesn't have
-  aspect-corrected variants.
-* `SHOWANSI_DEBUG`: When set to something non-empty, print some debugging
-  information before executing the terminal.
-  Default: empty.
-
 Usage: `showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file`
 
-> [!CAUTION]
+The behavior of the script can be adjusted to your needs using configuration
+files. A sample configuration file is installed to
+`$(prefix)/etc/showansirc.sample`, to actually use it, copy it to
+`$(prefix)/etc/showansirc`. All the configuration options are documented in
+the comments there.
+
+The script can output debugging information by setting the environment
+variable `SHOWANSI_DEBUG` to `1`.
+
+> [!WARNING]
 >
-> This script works by constructing a complex command to run and finally run
-> it using `eval`. As some of the input for the constructed command comes from
-> the environment variables documented above, it is possible to trick the
-> script into executing arbitrary commands by manipulating the environment.
->
-> If you are unsure about your environment, check it first before running this
-> script:
->
-> `set | grep SHOWANSI_`
+> This script constructs a complex commandline and then executes it using
+> eval. Be sure to read the comments in the configuration file about
+> allowing per-user configuration, which is disabled by default, but enabled
+> in the sample configuration.
 
 Here is what it looks like in default configuration:
 

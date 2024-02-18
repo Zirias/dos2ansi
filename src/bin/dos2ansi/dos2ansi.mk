@@ -49,8 +49,10 @@ ifeq ($(WITH_SHOWANSI),1)
 
 showansi_NOBUILD:=	1
 showansi_VERSION:=	$(dos2ansi_VERSION)
-showansi_SUB_FILES:=	showansi
-showansi_SUB_LIST:=	"DOS2ANSI=$(bindir)/dos2ansi"
+showansi_SUB_FILES:=	showansi showansirc.sample
+showansi_SUB_LIST:=	"DOS2ANSI=$(bindir)/dos2ansi" \
+			"SYSCONFDIR=$(sysconfdir)"
+showansi_SYSCONF:=	showansirc.sample
 
 $(call binrules, showansi)
 
