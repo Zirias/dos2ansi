@@ -19,6 +19,10 @@ version()
     echo
     echo "This is showansi from dos2ansi v%%VERSION%%"
     echo
+    echo "WWW:      https://github.com/Zirias/dos2ansi"
+    echo "Author:   Felix Palmen <felix@palmen-it.de>"
+    echo "License:  BSD 2-clause (all rights reserved)"
+    echo
 }
 
 usage()
