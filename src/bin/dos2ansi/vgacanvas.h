@@ -30,6 +30,16 @@ void VgaCanvas_up(VgaCanvas *self, unsigned n) CMETHOD;
 void VgaCanvas_down(VgaCanvas *self, unsigned n) CMETHOD;
 void VgaCanvas_left(VgaCanvas *self, unsigned n) CMETHOD;
 void VgaCanvas_right(VgaCanvas *self, unsigned n) CMETHOD;
+void VgaCanvas_gotoxy(VgaCanvas *self, unsigned x, unsigned y) CMETHOD;
+void VgaCanvas_clearLineAfter(VgaCanvas *self) CMETHOD;
+void VgaCanvas_clearLineBefore(VgaCanvas *self) CMETHOD;
+void VgaCanvas_clearLine(VgaCanvas *self) CMETHOD;
+void VgaCanvas_clearAfter(VgaCanvas *self) CMETHOD;
+void VgaCanvas_clearBefore(VgaCanvas *self) CMETHOD;
+void VgaCanvas_clearAll(VgaCanvas *self) CMETHOD;
+
+void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
+    CMETHOD ATTR_NONNULL((2)) ATTR_NONNULL((3));
 
 /* Serialize the canvas contents as a stream of uint16_t values containing
  * characters of the Unicode BMP in machine byte order, using a supplied

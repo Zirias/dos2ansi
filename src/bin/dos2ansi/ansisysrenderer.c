@@ -11,6 +11,8 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
     int escargs[8];
     int esc = 0;
     int c;
+    unsigned x = 0;
+    unsigned y = 0;
 
     while ((c = Stream_getc(stream)) >= 0)
     {
@@ -32,7 +34,7 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
 		    escargs[esc-1] *= 10;
 		    escargs[esc-1] += (c - '0');
 		}
-		else if (c == ';')
+		else if (c == ';' || c == ',')
 		{
 		    if (esc == sizeof escargs / sizeof *escargs) return -1;
 		    ++esc;
@@ -96,30 +98,65 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
 		    }
 		    esc = 0;
 		}
+		else if (c == '?' || c == '=' || c == '>')
+		{
+		    ; // ignore "set screen mode" sequences
+		}
+		else if (c == 'h' || c == 'l')
+		{
+		    esc = 0;
+		}
 		else
 		{
-		    if (!escargs[0]) escargs[0] = 1;
+		    int n = escargs[0];
+		    if (!n) n = 1;
+		    int m = escargs[1];
+		    if (!m) m = 1;
+
 		    if (c == 'A')
 		    {
-			VgaCanvas_up(canvas, escargs[0]);
-			esc = 0;
+			VgaCanvas_up(canvas, n);
 		    }
 		    else if (c == 'B')
 		    {
-			VgaCanvas_down(canvas, escargs[0]);
-			esc = 0;
+			VgaCanvas_down(canvas, n);
 		    }
 		    else if (c == 'C')
 		    {
-			VgaCanvas_right(canvas, escargs[0]);
-			esc = 0;
+			VgaCanvas_right(canvas, n);
 		    }
 		    else if (c == 'D')
 		    {
-			VgaCanvas_left(canvas, escargs[0]);
-			esc = 0;
+			VgaCanvas_left(canvas, n);
 		    }
-		    else esc = 0;
+		    else if (c == 'H' || c == 'f')
+		    {
+			VgaCanvas_gotoxy(canvas, m-1, n-1);
+		    }
+		    else if (c == 's')
+		    {
+			VgaCanvas_xy(canvas, &x, &y);
+		    }
+		    else if (c == 'u')
+		    {
+			VgaCanvas_gotoxy(canvas, x, y);
+		    }
+		    else if (c == 'J') switch (escargs[0])
+		    {
+			case 0: VgaCanvas_clearAfter(canvas); break;
+			case 1: VgaCanvas_clearBefore(canvas); break;
+			default:
+				VgaCanvas_gotoxy(canvas, 0, 0);
+				VgaCanvas_clearAll(canvas);
+				break;
+		    }
+		    else if (c == 'K') switch (escargs[0])
+		    {
+			case 0: VgaCanvas_clearLineAfter(canvas); break;
+			case 1: VgaCanvas_clearLineBefore(canvas); break;
+			default: VgaCanvas_clearLine(canvas); break;
+		    }
+		    esc = 0;
 		}
 	    }
 	}

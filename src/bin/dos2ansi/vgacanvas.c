@@ -241,6 +241,77 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
     else self->x += n;
 }
 
+void VgaCanvas_gotoxy(VgaCanvas *self, unsigned x, unsigned y)
+{
+    if (x >= self->width) x = self->width;
+    self->x = x;
+    self->y = y;
+    expand(self);
+}
+
+static void clearInLine(VgaLine *l, size_t from, size_t to)
+{
+    for (size_t i = from; i < to; ++i)
+    {
+	l->chars[i].chr = 0x20U;
+	l->chars[i].att = 0x07U;
+    }
+}
+
+void VgaCanvas_clearLineAfter(VgaCanvas *self)
+{
+    clearInLine(self->lines[self->y], self->x, self->width);
+}
+
+void VgaCanvas_clearLineBefore(VgaCanvas *self)
+{
+    clearInLine(self->lines[self->y], 0, self->x);
+}
+
+void VgaCanvas_clearLine(VgaCanvas *self)
+{
+    clearInLine(self->lines[self->y], 0, self->width);
+}
+
+static void clearLines(VgaCanvas *self, size_t from, size_t to)
+{
+    for (size_t i = from; i < to; ++i)
+    {
+	clearInLine(self->lines[i], 0, self->width);
+    }
+}
+
+void VgaCanvas_clearAfter(VgaCanvas *self)
+{
+    VgaCanvas_clearLineAfter(self);
+    if (self->y < self->height) clearLines(self, self->y+1, self->height);
+}
+
+void VgaCanvas_clearBefore(VgaCanvas *self)
+{
+    VgaCanvas_clearLineBefore(self);
+    if (self->y > 0) clearLines(self, 0, self->y-1);
+}
+
+void VgaCanvas_clearAll(VgaCanvas *self)
+{
+    clearLines(self, 0, self->height);
+}
+
+void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
+{
+    if (self->x == self->width)
+    {
+	*x = 0;
+	*y = self->y + 1;
+    }
+    else
+    {
+	*x = self->x;
+	*y = self->y;
+    }
+}
+
 static int put(Stream *stream, uint16_t c)
 {
     return Stream_write(stream, &c, sizeof c);
