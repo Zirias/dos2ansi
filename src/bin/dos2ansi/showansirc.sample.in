@@ -26,8 +26,8 @@
 #MAXHEIGHT=60
 
 # Pager to pipe dos2ansi output to
-# The default setting runs less in "raw control sequences" mode (-r)
-#PAGER="less -r"
+# Flags for less should contain -R to allow ANSI color sequences
+#PAGER="less -~QRcPs"
 
 # Number of lines to reserve for the pager
 # The default of 1 matches the bottom line less always displays
