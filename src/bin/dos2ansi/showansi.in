@@ -194,7 +194,10 @@ if [ -n "${s_author}" ]; then
     s_title="${s_title} | by ${s_author}"
     test -n "${s_group}" && s_title="${s_title}/${s_group}"
 fi
-is_integer ${s_width}	|| s_width=${_def_width}
+if ! is_integer ${s_width}; then
+    _d2a_args="${_d2a_args} -w${_def_width}"
+    s_width=${_def_width}
+fi
 is_integer ${s_height}	|| s_height=${_def_height}
 is_integer ${s_spacing}	|| s_spacing=${_def_spacing}
 is_integer ${s_aspect}	|| s_aspect=${_def_aspect}
