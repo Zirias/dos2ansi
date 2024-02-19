@@ -14,16 +14,102 @@ is_integer()
     esac
 }
 
+version()
+{
+    echo
+    echo "This is showansi from dos2ansi v%%VERSION%%"
+    echo
+}
+
 usage()
 {
-    echo >&2
-    echo >&2 This is showansi from dos2ansi v%%VERSION%%
-    echo >&2 For verbose help, run dos2ansi -h
-    echo >&2
-    echo >&2 Usage: showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file
-    echo >&2
+    echo
+    echo "Usage: showansi -H"
+    echo "       showansi -V"
+    echo "       showansi [-ens] [-d dos2ansi] [-h height] [-w width]"
+    echo "                [-- [args ...]] file"
+    echo
+}
+
+err()
+{
+    usage >&2
     exit 1
 }
+
+help()
+{
+    usage
+    echo "         -H            Print this help and exit"
+    echo "         -V            Print version information and exit"
+    echo "         -d dos2ansi   Run 'dos2ansi' instead of %%DOS2ANSI%%"
+    echo "         -e            Use an EGA font by default instead of VGA"
+    echo "         -h height     Default height instead of 25"
+    echo "         -n            Disable letter spacing by default"
+    echo "         -s            Assume square pixels by default"
+    echo "         -w width      Default width instead of 80"
+    echo
+    echo "         args          Extra arguments for dos2ansi"
+    echo "                       Run 'dos2ansi -h' for help"
+    echo "         file          MS-DOS/ANSI.SYS file to display"
+    echo
+}
+
+fetcharg()
+{
+    case "${_needarg}" in
+	d*) _dos2ansi="${1}"; _needarg="${_needarg#d}";;
+	h*) is_integer "${1}" || err
+	    _def_height="${1}"; _needarg="${_needarg#h}";;
+	w*) is_integer "${1}" || err
+	    _def_width="${1}"; _needarg="${_needarg#w}";;
+	*)  err
+    esac
+}
+
+_dos2ansi="%%DOS2ANSI%%"
+_d2a_args=""
+_def_width=80
+_def_height=25
+_def_spacing=1
+_def_aspect=0
+_def_fontbase=vga
+_needarg=""
+
+while true; do
+    case "${1}" in
+	--) shift; break;;
+	-*) _flags="${1#-}"
+	    while true; do
+		case "${_flags}" in
+		    H*) help; exit 0;;
+		    V*) version; exit 0;;
+		    d*) _needarg="${_needarg}d"; _flags="${_flags#d}";;
+		    e*) _def_fontbase=ega; _flags="${_flags#e}";;
+		    h*) _needarg="${_needarg}h"; _flags="${_flags#h}";;
+		    n*) _def_spacing=0; _flags="${_flags#n}";;
+		    s*) _def_aspect=1; _flags="${_flags#s}";;
+		    w*) _needarg="${_needarg}w"; _flags="${_flags#w}";;
+		    '')	break;;
+		    *) fetcharg "${_flags}"; break;;
+		esac
+	    done
+	    shift;;
+	*)  test -z "${_needarg}" && break
+	    fetcharg "${1}"
+	    shift;;
+    esac
+done
+test -z "${1}" && err
+while true; do
+    if [ -z "${2}" ]; then _file="${1}"; break
+    else
+	if [ -n "${_needarg}" ]; then fetcharg "${1}"
+	else _d2a_args="${_d2a_args} \"${1}\""; fi
+	shift
+    fi
+done
+test -n "${_needarg}" && err
 
 # default configuration
 TERMINAL=xterm
@@ -61,6 +147,11 @@ test -r "%%SYSCONFDIR%%/showansirc" && . "%%SYSCONFDIR%%/showansirc"
 # read per-user configuration (if enabled in system-wide configuration)
 test -n "${USERRC}" && test -r "${USERRC}" && . "${USERRC}"
 
+# sanitize numeric values
+is_integer "${MAXWIDTH}"    || MAXWIDTH=200
+is_integer "${MAXHEIGHT}"   || MAXHEIGHT=60
+is_integer "${ADDLINES}"    || ADDLINES=1
+
 # create "mapping table" to map SAUCE metadata to fonts easily
 _font_vga_1_1=${FONT_VGA9X16}
 _font_vga_0_1=${FONT_VGA8X16}
@@ -79,25 +170,9 @@ _font_ega_0_0=${FONT_AC_EGA8X14}
 _font_egaw_1_0=${FONT_AC_EGA9X8}
 _font_egaw_0_0=${FONT_AC_EGA8X8}
 
-# parse commandline
-_dos2ansi="%%DOS2ANSI%%"
-test -z "${1}" && usage
-while true; do
-    if [ "${1}" = "--" ]; then
-	test -z "${2}" && usage
-	test -z "${3}" && usage
-	_dos2ansi="${2}"
-	_file="${3}"
-	break
-    fi
-    case "${2}" in
-	'') _file="${1}"; break;;
-	*)  D2A_ARGS="${D2A_ARGS} \"${1}\""; shift;;
-    esac
-done
-
 # validate dos2ansi works with given flags and input file
-eval "${_dos2ansi} ${D2A_ARGS} ${_file} >/dev/null" || exit 1
+test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
+eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 
 # read SAUCE metadata
 {
@@ -119,29 +194,32 @@ if [ -n "${s_author}" ]; then
     s_title="${s_title} | by ${s_author}"
     test -n "${s_group}" && s_title="${s_title}/${s_group}"
 fi
-is_integer ${s_width}	|| s_width=80
-is_integer ${s_height}	|| s_height=25
-is_integer ${s_spacing}	|| s_spacing=0
-is_integer ${s_aspect}	|| s_aspect=1
+is_integer ${s_width}	|| s_width=${_def_width}
+is_integer ${s_height}	|| s_height=${_def_height}
+is_integer ${s_spacing}	|| s_spacing=${_def_spacing}
+is_integer ${s_aspect}	|| s_aspect=${_def_aspect}
 
 # calculate terminal window geometry
 _width=${s_width}
 _height=$((${s_height} + ${ADDLINES}))
 test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
+test ${_width} -lt 20 && _width=20
 test ${_height} -gt ${MAXHEIGHT} && _height=${MAXHEIGHT}
+test ${_height} -lt $((${ADDLINES} + 2)) && _height=$((${ADDLINES} + 2))
 
 # map metadata to font to use
 case "${s_font}" in
+    "IBM VGA")	    _fontbase=vga;;
     "IBM VGA50")    _fontbase=vgaw;;
     "IBM EGA")	    _fontbase=ega;;
     "IBM EGA43")    _fontbase=egaw;;
-    *)		    _fontbase=vga;;
+    *)		    _fontbase=${_def_fontbase};;
 esac
 _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
 
 # construct commandline to execute
-_dos2ansicmd="${_dos2ansi} ${D2A_ARGS} \"$_file\" | ${PAGER}"
+_dos2ansicmd="${_dos2ansi} ${_d2a_args} \"$_file\" | ${PAGER}"
 test -n ${SETGEOM} && TERM_ARGS="${TERM_ARGS} ${SETGEOM} ${_width}x${_height}"
 test -n ${SETFONT} && TERM_ARGS="${TERM_ARGS} ${SETFONT} '${_font}'"
 test -n ${SETTITLE} && TERM_ARGS="${TERM_ARGS} ${SETTITLE} '${s_title}'"
