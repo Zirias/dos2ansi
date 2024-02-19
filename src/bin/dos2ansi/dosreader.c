@@ -101,8 +101,7 @@ int DosReader_readUntilEof(Stream *stream, Stream *out)
     reader->out = out;
     while (read(self, 0, reader->bufsize)) ;
     reader->out = 0;
-    if (!reader->doseof) return -1;
-    return 0;
+    return -(Stream_status(self->stream) == SS_ERROR);
 }
 
 int DosReader_seekAfterEof(Stream *stream)
