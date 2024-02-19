@@ -82,7 +82,10 @@ and other settings from SAUCE metadata. The script is pre-configured to use
 fonts currently need a patch to play well with `xterm`, you can find it in
 [my fork](https://github.com/Zirias/ibmfonts/tree/novt100).
 
-Usage: `showansi [dos2ansiflags ...] [-- /path/to/dos2ansi] file`
+    Usage: showansi -H
+           showansi -V
+           showansi [-ens] [-d dos2ansi] [-h height] [-w width]
+                    [-- [args ...]] file
 
 The behavior of the script can be adjusted to your needs using configuration
 files. A sample configuration file is installed to
