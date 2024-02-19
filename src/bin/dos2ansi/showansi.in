@@ -23,23 +23,26 @@ version()
 
 usage()
 {
-    echo
     echo "Usage: showansi -H"
     echo "       showansi -V"
     echo "       showansi [-ens] [-d dos2ansi] [-h height] [-w width]"
     echo "                [-- [args ...]] file"
-    echo
 }
 
 err()
 {
     usage >&2
+    if [ -n "$1" ]; then
+	echo >&2
+	echo >&2 Error: $1
+    fi
     exit 1
 }
 
 help()
 {
     usage
+    echo
     echo "         -H            Print this help and exit"
     echo "         -V            Print version information and exit"
     echo "         -d dos2ansi   Run 'dos2ansi' instead of %%DOS2ANSI%%"
@@ -59,11 +62,11 @@ fetcharg()
 {
     case "${_needarg}" in
 	d*) _dos2ansi="${1}"; _needarg="${_needarg#d}";;
-	h*) is_integer "${1}" || err
+	h*) is_integer "${1}" || err "Invalid height"
 	    _def_height="${1}"; _needarg="${_needarg#h}";;
-	w*) is_integer "${1}" || err
+	w*) is_integer "${1}" || err "Invalid width"
 	    _def_width="${1}"; _needarg="${_needarg#w}";;
-	*)  err
+	*)  err "Unknown flag"
     esac
 }
 
@@ -100,7 +103,7 @@ while true; do
 	    shift;;
     esac
 done
-test -z "${1}" && err
+test -z "${1}" && err "No file to display"
 while true; do
     if [ -z "${2}" ]; then _file="${1}"; break
     else
@@ -109,7 +112,7 @@ while true; do
 	shift
     fi
 done
-test -n "${_needarg}" && err
+test -n "${_needarg}" && err "Missing arguments for given flags"
 
 # default configuration
 TERMINAL=xterm
