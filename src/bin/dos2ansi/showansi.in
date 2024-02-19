@@ -110,7 +110,7 @@ eval "${_dos2ansi} ${D2A_ARGS} ${_file} >/dev/null" || exit 1
     read -r _f; eval s_aspect=${_f}
     read -r _f; eval s_font=${_f}
 } <<SAUCE
-$(${_dos2ansi} -q :TAGwhsaf "${_file}")
+$(${_dos2ansi} -q :TAGwhsaf "${_file}" 2>/dev/null)
 SAUCE
 
 # sanitize SAUCE metadata, construct full title and set defaults
