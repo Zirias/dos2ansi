@@ -110,13 +110,13 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *meta, Stream *stream)
 			case 1:
 			    VgaCanvas_reset(canvas, 40, 25);
 			    if (meta) Stream_puts(meta,
-				    "m_fwidth=40\nm_height=25\n");
+				    "m_resetwidth=40\nm_resetheight=25\n");
 			    break;
 			case 2:
 			case 3:
 			    VgaCanvas_reset(canvas, 80, 25);
 			    if (meta) Stream_puts(meta,
-				    "m_fwidth=80\nm_height=25\n");
+				    "m_resetwidth=80\nm_resetheight=25\n");
 			    break;
 			case 7:
 			    VgaCanvas_setWrap(canvas, c == 'h');

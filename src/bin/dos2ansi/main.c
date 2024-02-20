@@ -29,7 +29,6 @@
 typedef struct InputStreamSettings {
     Sauce *sauce;
     int forcedwidth;
-    int forcedheight;
 } InputStreamSettings;
 
 typedef struct OutputStreamSettings
@@ -42,7 +41,6 @@ static Stream *createInputStream(const Config *config,
 	InputStreamSettings *settings)
 {
     settings->forcedwidth = -1;
-    settings->forcedheight = -1;
     Stream *in = 0;
 
     if (Config_test(config))
@@ -50,7 +48,6 @@ static Stream *createInputStream(const Config *config,
 	in = Stream_createMemory();
 	TestWriter_write(in);
 	settings->forcedwidth = 70;
-	settings->forcedheight = 26;
 	return in;
     }
 
@@ -267,12 +264,10 @@ int main(int argc, char **argv)
     }
 
     int width = insettings.forcedwidth;
-    if (meta && width >= 0) Stream_printf(meta, "m_fwidth=%d\n", width);
     if (width < 0 && insettings.sauce) width = Sauce_width(insettings.sauce);
     if (width < 0) width = Config_width(config);
     if (width < 0) width = 80;
-    int height = insettings.forcedheight;
-    if (meta && height >= 0) Stream_printf(meta, "m_fheight=%d\n", height);
+    int height = -1;
     if (insettings.sauce) height = Sauce_scrheight(insettings.sauce);
     if (height < 0) height = Config_scrheight(config);
     if (height < 0) height = 25;
@@ -282,16 +277,14 @@ int main(int argc, char **argv)
 
     if (meta)
     {
-	Stream_printf(meta, "m_width=%d\n", width);
-	Stream_printf(meta, "m_height=%d\n", height);
+	Stream_printf(meta, "m_setwidth=%d\n", width);
+	Stream_printf(meta, "m_setheight=%d\n", height);
     }
     canvas = VgaCanvas_create(width, height, tabwidth);
     if (!canvas) goto done;
     if (Config_showsauce(config) && insettings.sauce)
     {
-	height = SaucePrinter_print(canvas,
-		insettings.sauce, Config_nowrap(config));
-	if (meta) Stream_printf(meta, "m_fheight=%d\n", height);
+	SaucePrinter_print(canvas, insettings.sauce, Config_nowrap(config));
     }
     else
     {
@@ -330,9 +323,11 @@ int main(int argc, char **argv)
     if (Config_crlf(config)) vsflags |= VSF_CRLF;
     if (Config_markltr(config)) vsflags |= VSF_LTRO;
     if (Config_defcolors(config)) vsflags |= VSF_CHOP;
-    if (VgaCanvas_serialize(canvas, out, cp, vsflags) != 0) goto done;
-
-    rc = EXIT_SUCCESS;
+    if ((height = VgaCanvas_serialize(canvas, out, cp, vsflags)) > 0)
+    {
+	if (meta) Stream_printf(meta, "m_height=%d\n", height);
+	rc = EXIT_SUCCESS;
+    }
 
 done:
     Codepage_destroy(cp);

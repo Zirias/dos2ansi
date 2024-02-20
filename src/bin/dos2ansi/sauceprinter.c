@@ -186,10 +186,9 @@ static void putpair(VgaCanvas *canvas, int layout,
     VgaCanvas_put(canvas, (char)0xba);
 }
 
-int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
+void SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 {
     char buf[32];
-    int lines = 0;
 
     VgaCanvas_setBg(canvas, 4);
     VgaCanvas_setFg(canvas, 7);
@@ -197,18 +196,15 @@ int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 
     putleft(canvas, 79, (char)0xcd, "\xc9\xcd\xcd\xcd\xcd\xb5 SAUCE \xc6");
     VgaCanvas_put(canvas, (char)0xbb);
-    ++lines;
 
     const char *title = Sauce_title(sauce);
     if (!title) title = "<Unnamed>";
     putpair(canvas, 0, "Title", title);
-    ++lines;
     const char *author = Sauce_author(sauce);
     if (!author) author = "<Unknown>";
     putpair(canvas, 0, "Author", author);
-    ++lines;
     const char *group = Sauce_group(sauce);
-    if (group) putpair(canvas, 0, "Group", group), ++lines;
+    if (group) putpair(canvas, 0, "Group", group);
 
     time_t date = Sauce_date(sauce);
     const char *datestr = "<Unknown>";
@@ -218,15 +214,12 @@ int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 	datestr = buf;
     }
     putpair(canvas, 0, "Date", datestr);
-    ++lines;
 
     VgaCanvas_put(canvas, (char)0xc7);
     for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xc4);
     VgaCanvas_put(canvas, (char)0xb6);
-    ++lines;
 
     putpair(canvas, 0, "File type", Sauce_type(sauce));
-    ++lines;
     int width = Sauce_width(sauce);
     int height = Sauce_height(sauce);
     if (width >= 0)
@@ -241,27 +234,25 @@ int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 	    sprintf(buf, "%d", width);
 	    putpair(canvas, 0, "Width", buf);
 	}
-	++lines;
     }
     else if (height >= 0)
     {
 	sprintf(buf, "%d", height);
 	putpair(canvas, 0, "Height", buf);
-	++lines;
     }
     int nonblink = Sauce_nonblink(sauce);
     if (nonblink >= 0) putpair(canvas, 0, "Background mode", nonblink ?
-	    "bright colors" : "blinking (default)"), ++lines;
+	    "bright colors" : "blinking (default)");
     int letterspacing = Sauce_letterspacing(sauce);
     if (letterspacing >= 0) putpair(canvas, 0, "Letter spacing",
-	    letterspacing ? "spaced (9px VGA)" : "unspaced (8px VGA)"), ++lines;
+	    letterspacing ? "spaced (9px VGA)" : "unspaced (8px VGA)");
     int squarepixels = Sauce_squarepixels(sauce);
     if (squarepixels >= 0) putpair(canvas, 0, "Pixel aspect", squarepixels ?
-	    "square pixels" : "rectangular pixels"), ++lines;
+	    "square pixels" : "rectangular pixels");
     const char *font = Sauce_font(sauce);
-    if (font) putpair(canvas, 0, "Font", font), ++lines;
+    if (font) putpair(canvas, 0, "Font", font);
     const char *codepage = Sauce_codepage(sauce);
-    if (codepage) putpair(canvas, 0, "Codepage", codepage), ++lines;
+    if (codepage) putpair(canvas, 0, "Codepage", codepage);
 
     int comments = Sauce_comments(sauce);
     if (comments)
@@ -269,14 +260,12 @@ int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 	VgaCanvas_put(canvas, (char)0xc7);
 	for (int i = 0; i < 78; ++i) VgaCanvas_put(canvas, (char)0xc4);
 	VgaCanvas_put(canvas, (char)0xb6);
-	++lines;
 
 	if (nowrap)
 	{
 	    for (int i = 0; i < comments; ++i)
 	    {
 		putpair(canvas, 1, i?"":"Comment", Sauce_comment(sauce, i));
-		++lines;
 	    }
 	}
 	else
@@ -289,7 +278,6 @@ int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
 	    {
 		putpair(canvas, 1, cap, line);
 		cap = "";
-		++lines;
 	    }
 	}
     }
@@ -297,6 +285,5 @@ int SaucePrinter_print(VgaCanvas *canvas, const Sauce *sauce, int nowrap)
     VgaCanvas_put(canvas, (char)0xc8);
     putright(canvas, 79, (char)0xcd, "\xb5 \3  dos2ansi v"
 	    DOS2ANSIVERSTR "  \16 \xc6\xcd\xcd\xcd\xcd\xbc");
-    return ++lines;
 }
 
