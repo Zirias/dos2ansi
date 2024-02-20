@@ -129,11 +129,11 @@ test -n "${_needarg}" && err "Missing arguments for given flags"
 
 # default configuration
 TERMINAL=xterm
-TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray"
+TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray -sl 0"
 D2A_ARGS=-X
 MAXWIDTH=200
 MAXHEIGHT=60
-PAGER="less -~QRcPs"
+PAGER="less --mouse --wheel-lines 3 -~QRScPs"
 ADDLINES=1
 SETTITLE=-title
 SETGEOM=-geometry

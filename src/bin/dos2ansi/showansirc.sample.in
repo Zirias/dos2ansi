@@ -9,9 +9,9 @@
 
 # Arguments to always pass to the X terminal emulator
 # The default args will set the TERM name to xterm-256color, disable Xft
-# usage by passing an empty string for -fa, and set default colors to match
-# VGA.
-#TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray"
+# usage by passing an empty string for -fa, set default colors to match
+# VGA and disable the scrollback buffer.
+#TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray -sl 0"
 
 # The shell to use in the X terminal emulator
 # This will just be exported, terminal emulators *should* use it to execute
@@ -32,8 +32,10 @@
 #MAXHEIGHT=60
 
 # Pager to pipe dos2ansi output to
-# Flags for less should contain -R to allow ANSI color sequences
-#PAGER="less -~QRcPs"
+# Flags for less should contain -R to allow ANSI color sequences.
+# The default allows mouse scrolling, minimizes disturbing display and
+# disables the terminal bell.
+#PAGER="less --mouse --wheel-lines 3 -~QRScPs"
 
 # Number of lines to reserve for the pager
 # The default of 1 matches the bottom line less always displays
