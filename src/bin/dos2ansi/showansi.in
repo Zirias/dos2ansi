@@ -16,8 +16,8 @@ is_integer()
 
 mktmpdir()
 {
-    if _mktemp="$(command -v mktemp)"; then
-	_tmpdir="$("${_mktemp}" -d)"
+    if command -v mktemp >/dev/null 2>&1; then
+	_tmpdir="$(mktemp -d)"
     else
 	_tmpdir="${TMPDIR:-/tmp}/tmp.showansi.$$"
 	mkdir -m 700 "${_tmpdir}" >/dev/null 2>&1
