@@ -35,6 +35,8 @@ struct VgaCanvas
     size_t x;
     size_t y;
     VgaLine **lines;
+    uint8_t screenheight;
+    uint8_t screenrow;
     uint8_t tab;
     uint8_t fg;
     uint8_t bg;
@@ -81,6 +83,8 @@ VgaCanvas *VgaCanvas_create(int width, int tabwidth)
     self->x = 0;
     self->y = 0;
     self->lines = 0;
+    self->screenheight = 25;
+    self->screenrow = 0;
     self->tab = tabwidth;
     self->fg = 7U;
     self->bg = 0;
@@ -206,20 +210,28 @@ void VgaCanvas_resetAttr(VgaCanvas *self)
 
 void VgaCanvas_up(VgaCanvas *self, unsigned n)
 {
+    if (n > self->screenrow) n = self->screenrow;
     if (!n) return;
-    if (n >= self->y) self->y = 0;
-    else self->y -= n;
+    self->y -= n;
+    self->screenrow -= n;
 }
 
 void VgaCanvas_down(VgaCanvas *self, unsigned n)
 {
     if (!n) return;
     self->y += n;
+    if (self->screenrow + n >= self->screenheight)
+    {
+	self->screenrow = self->screenheight - 1;
+    }
+    else self->screenrow += n;
     expand(self);
 }
 
 void VgaCanvas_left(VgaCanvas *self, unsigned n)
 {
+    unsigned maxleft = self->x + self->screenrow * self->width;
+    if (n > maxleft) n = maxleft;
     if (!n) return;
     if (self->x == self->width)
     {
@@ -253,9 +265,12 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
 
 void VgaCanvas_gotoxy(VgaCanvas *self, unsigned x, unsigned y)
 {
-    if (x >= self->width) x = self->width;
+    if (x >= self->width) x = self->width - 1;
+    if (y >= self->screenheight) y = self->screenheight - 1;
+    int ydiff = y - self->screenrow;
     self->x = x;
-    self->y = y;
+    self->y += ydiff;
+    self->screenrow = y;
     expand(self);
 }
 
@@ -294,18 +309,21 @@ static void clearLines(VgaCanvas *self, size_t from, size_t to)
 void VgaCanvas_clearAfter(VgaCanvas *self)
 {
     VgaCanvas_clearLineAfter(self);
-    if (self->y < self->height) clearLines(self, self->y+1, self->height);
+    if (self->y < self->height) clearLines(self, self->y + 1, self->height);
 }
 
 void VgaCanvas_clearBefore(VgaCanvas *self)
 {
     VgaCanvas_clearLineBefore(self);
-    if (self->y > 0) clearLines(self, 0, self->y-1);
+    if (self->screenrow > 0)
+    {
+	clearLines(self, self->y - self->screenrow, self->y - 1);
+    }
 }
 
 void VgaCanvas_clearAll(VgaCanvas *self)
 {
-    clearLines(self, 0, self->height);
+    clearLines(self, self->y - self->screenrow, self->height);
 }
 
 void VgaCanvas_reset(VgaCanvas *self, int newwidth)
@@ -333,18 +351,22 @@ void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
 	if (self->flags & FL_WRAP)
 	{
 	    *x = 0;
-	    *y = self->y + 1;
+	    if (self->screenrow < self->screenheight - 1)
+	    {
+		*y = self->screenrow + 1;
+	    }
+	    else *y = self->screenrow;
 	}
 	else
 	{
 	    *x = self->x - 1;
-	    *y = self->y;
+	    *y = self->screenrow;
 	}
     }
     else
     {
 	*x = self->x;
-	*y = self->y;
+	*y = self->screenrow;
     }
 }
 
