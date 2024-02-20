@@ -13,6 +13,12 @@
 # VGA.
 #TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray"
 
+# The shell to use in the X terminal emulator
+# This will just be exported, terminal emulators *should* use it to execute
+# the dos2ansi pipeline (xterm does) and there should rarely be a need to
+# change it.
+#SHELL=/bin/sh
+
 # Arguments to always pass to dos2ansi
 # The default -X disables attempting to match visuals by replacing some
 # characters for others looking "most similar" to EGA/VGA in most fonts.

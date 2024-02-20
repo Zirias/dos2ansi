@@ -130,6 +130,7 @@ SETTITLE=-title
 SETGEOM=-geometry
 SETFONT=-fn
 EXECUTE=-e
+SHELL=/bin/sh
 FONT_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
 FONT_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
 FONT_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
@@ -230,10 +231,13 @@ eval _font=\${${_fontname}}
 
 # construct commandline to execute
 _dos2ansicmd="${_dos2ansi} ${_d2a_args} \"$_file\" | ${PAGER}"
-test -n ${SETGEOM} && TERM_ARGS="${TERM_ARGS} ${SETGEOM} ${_width}x${_height}"
-test -n ${SETFONT} && TERM_ARGS="${TERM_ARGS} ${SETFONT} '${_font}'"
-test -n ${SETTITLE} && TERM_ARGS="${TERM_ARGS} ${SETTITLE} '${s_title}'"
-TERM_ARGS="${TERM_ARGS} ${EXECUTE} '${_dos2ansicmd}'"
+test -n "${SETGEOM}" && \
+	TERM_ARGS="${TERM_ARGS} '${SETGEOM}' ${_width}x${_height}"
+test -n "${SETFONT}" && \
+	TERM_ARGS="${TERM_ARGS} '${SETFONT}' '${_font}'"
+test -n "${SETTITLE}" && \
+	TERM_ARGS="${TERM_ARGS} '${SETTITLE}' '${s_title}'"
+TERM_ARGS="${TERM_ARGS} '${EXECUTE}' '${_dos2ansicmd}'"
 
 # debugging output
 if [ -n "${SHOWANSI_DEBUG}" ]; then
@@ -246,4 +250,5 @@ if [ -n "${SHOWANSI_DEBUG}" ]; then
 fi
 
 # execute
+export SHELL
 eval exec ${TERMINAL} ${TERM_ARGS}
