@@ -34,6 +34,7 @@ int Config_nosauce(const Config *self) CMETHOD ATTR_PURE;
 int Config_fullansi(const Config *self) CMETHOD ATTR_PURE;
 int Config_nowrap(const Config *self) CMETHOD ATTR_PURE;
 int Config_visapprox(const Config *self) CMETHOD ATTR_PURE;
+int Config_scrheight(const Config *self) CMETHOD ATTR_PURE;
 void Config_destroy(Config *self);
 
 #endif

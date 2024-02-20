@@ -46,6 +46,7 @@ struct Config
     int fullansi;
     int nowrap;
     int visapprox;
+    int scrheight;
 };
 
 #ifdef WITH_CURSES
@@ -97,9 +98,9 @@ static void printusage(Stream *out, const char *prgname)
     Stream_printf(out,
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
-	    "       %s [-ABCEPRSTWXabdeiklprsvxy] [-c codepage]\n"
-	    "\t\t[-o outfile] [-q saucequery] [-t tabwidth] [-u format]\n"
-	    "\t\t[-w width] [infile]\n",
+	    "       %s [-ABCEPRSTWXabdeiklprsvxy] [-H scrheight]\n"
+	    "\t\t[-c codepage] [-o outfile] [-q saucequery] [-t tabwidth]\n"
+	    "\t\t[-u format] [-w width] [infile]\n",
 	    prgname, prgname, prgname);
 }
 
@@ -121,6 +122,11 @@ static void help(const char *prgname)
 	    "\t-C             Disable colors in output\n"
 	    "\t-E             Ignore the DOS EOF character (0x1a) and\n"
 	    "\t               just continue reading when found.\n"
+	    "\t-H scrheight   Set a default screen height. This is relevant\n"
+	    "\t               when ANSI.SYS sequences for cursor positioning\n"
+	    "\t               or erasing are used.\n"
+	    "\t               Ignored if it can be deduced from SAUCE.\n"
+	    "\t               min: 1, default: 25, max: 255\n"
 	    "\t-I             Using generic ANSI output, don't attempt to\n"
 	    "\t               explicitly select intense colors but rely on\n"
 	    "\t               the bold attribute for the foreground color\n"
@@ -279,6 +285,13 @@ static int optArg(Config *config, char *args, int *idx, char *op,
     {
 	CodepageId cp;
 
+	case 'H':
+	    if (intArg(&config->scrheight, op, 1, 255, 10) < 0)
+	    {
+		*error = "Screen height out of valid range";
+		return -1;
+	    }
+	    break;
 	case 'c':
 	    cp = CodepageId_byName(op);
 	    if ((int)cp < 0)
@@ -392,7 +405,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "ABCEIPRSTWXabcdeklopqrstuvwxy";
+    const char onceflags[] = "ABCEHIPRSTWXabcdeklopqrstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -427,6 +440,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->nosauce = 0;
     config->nowrap = 0;
     config->visapprox = 1;
+    config->scrheight = -1;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -468,6 +482,7 @@ Config *Config_fromOpts(int argc, char **argv)
 		}
 		switch (*o)
 		{
+		    case 'H':
 		    case 'c':
 		    case 'o':
 		    case 'q':
@@ -769,6 +784,11 @@ int Config_nowrap(const Config *self)
 int Config_visapprox(const Config *self)
 {
     return self->visapprox;
+}
+
+int Config_scrheight(const Config *self)
+{
+    return self->scrheight;
 }
 
 void Config_destroy(Config *self)
