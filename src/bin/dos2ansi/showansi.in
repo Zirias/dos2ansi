@@ -14,6 +14,16 @@ is_integer()
     esac
 }
 
+mktmpdir()
+{
+    if _mktemp="$(command -v mktemp)"; then
+	_tmpdir="$("${_mktemp}" -d)"
+    else
+	_tmpdir="${TMPDIR:-/tmp}/tmp.showansi.$$"
+	mkdir -m 700 "${_tmpdir}" >/dev/null 2>&1
+    fi
+}
+
 version()
 {
     echo
@@ -30,7 +40,7 @@ usage()
     echo "Usage: showansi -V"
     echo "       showansi -h"
     echo "       showansi [-ensw] [-c columns] [-d dos2ansi] [-r rows]"
-    echo "                [-- [args ...]] file"
+    echo "                [[--] [args ...]] [--] [file]"
 }
 
 err()
@@ -63,7 +73,8 @@ help()
     echo
     echo "         args          Extra arguments for dos2ansi"
     echo "                       Run 'dos2ansi -h' for help"
-    echo "         file          MS-DOS/ANSI.SYS file to display"
+    echo "         file          MS-DOS/ANSI.SYS file to display or '-' to"
+    echo "                       read from standard input"
     echo
 }
 
@@ -87,7 +98,9 @@ _def_spacing=1
 _def_aspect=0
 _def_fontbase=vga
 _def_fontvariant=""
+_file=""
 _nosauce=0
+_noinput=0
 _needarg=""
 
 while true; do
@@ -116,16 +129,38 @@ while true; do
 	    shift;;
     esac
 done
-test -z "${1}" && err "No file to display"
-while true; do
-    if [ -z "${2}" ]; then _file="${1}"; break
-    else
-	if [ -n "${_needarg}" ]; then fetcharg "${1}"
-	else _d2a_args="${_d2a_args} \"${1}\""; fi
-	shift
+_d2a_endflags=0
+while test -n "${1}"; do
+    if [ ! "${1}" = "--" ]; then
+	_file="${1}"
+	if [ ${_d2a_endflags} -eq 1 -o -n "${1#-}" ]; then
+	    _d2a_args="${_d2a_args} \"${1}\""
+	fi
     fi
+    case "${1}" in
+	--) _d2a_endflags=1;;
+	-*T*) test ${_d2a_endflags} -eq 0 && _noinput=1 && _nosauce=1;;
+	-*s*) test ${_d2a_endflags} -eq 0 && _nosauce=1;;
+    esac
+    shift
 done
 test -n "${_needarg}" && err "Missing arguments for given flags"
+if [ ${_noinput} -eq 1 ]; then
+    _file=""
+elif [ -z "${_file#-}" ]; then
+    if ! mktmpdir; then
+	echo >&2 "Error creating temporary directory"
+	test -n "${TMPDIR}" && echo >&2 "Check TMPDIR variable."
+	exit 1
+    fi
+    trap "rm -fr '${_tmpdir}'" EXIT HUP INT TERM
+    _file="${_tmpdir}/dosinput"
+    cat >"${_file}"
+    _d2a_args="${_d2a_args} \"${_file}\""
+    _exec=""
+else
+    _exec=exec
+fi
 
 # default configuration
 TERMINAL=xterm
@@ -189,8 +224,7 @@ _font_egaw_0_0=${FONT_AC_EGA8X8}
 
 # validate dos2ansi works with given flags and input file and collect metadata
 test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
-if ! _d2a_stderr=$(eval \
-    "${_dos2ansi} ${_d2a_args} -m ${_file} 2>&1 >/dev/null");
+if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null");
 then
     printf >&2 "${_d2a_stderr}\n"
     exit 1;
@@ -200,7 +234,7 @@ ${_d2a_stderr}
 META
 
 # read SAUCE metadata
-{
+if [ ${_noinput} -eq 0 ]; then {
     read -r _f; eval s_title=${_f}
     read -r _f; eval s_author=${_f}
     read -r _f; eval s_group=${_f}
@@ -212,13 +246,19 @@ META
 } <<SAUCE
 $(${_dos2ansi} -q :TAGwhsaf "${_file}" 2>/dev/null)
 SAUCE
+fi
 if [ ${_nosauce} -eq 1 ]; then
+    if [ ${_noinput} -eq 1 ]; then
+	s_title="dos2ansi test mode"
+	s_author=""
+	s_group=""
+    fi
     s_width=""
     s_height=""
     s_spacing=""
     s_aspect=""
     s_font=""
-    _d2a_args="${_d2a_args} -S"
+    _d2a_args="-S ${_d2a_args}"
 fi
 
 # sanitize SAUCE metadata, construct full title and set defaults
@@ -228,14 +268,12 @@ if [ -n "${s_author}" ]; then
     test -n "${s_group}" && s_title="${s_title}/${s_group}"
 fi
 if ! is_integer ${s_width}; then
-    _d2a_args="${_d2a_args} -w${_def_width}"
+    _d2a_args="-w${_def_width} ${_d2a_args}"
     s_width=${_def_width}
 fi
 is_integer ${s_height}	|| s_height=${_def_height}
 is_integer ${s_spacing}	|| s_spacing=${_def_spacing}
 is_integer ${s_aspect}	|| s_aspect=${_def_aspect}
-is_integer ${m_height} && [ ${s_height} -lt ${m_height} ] \
-    && s_height=${m_height}
 
 # calculate terminal window geometry
 _width=${s_width}
@@ -267,7 +305,7 @@ _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
 
 # construct commandline to execute
-_dos2ansicmd="${_dos2ansi} ${_d2a_args} \"$_file\" | ${PAGER}"
+_dos2ansicmd="${_dos2ansi} ${_d2a_args} | ${PAGER}"
 test -n "${SETGEOM}" && \
 	TERM_ARGS="${TERM_ARGS} '${SETGEOM}' ${_width}x${_height}"
 test -n "${SETFONT}" && \
@@ -288,4 +326,5 @@ fi
 
 # execute
 export SHELL
-eval exec ${TERMINAL} ${TERM_ARGS}
+unset LESS
+eval ${_exec} ${TERMINAL} ${TERM_ARGS}
