@@ -16,7 +16,7 @@ typedef enum VgaSerFlags
     VSF_CHOP	= 1 << 3,   /* attempt to shorten lines */
 } VgaSerFlags;
 
-VgaCanvas *VgaCanvas_create(int width, int tabwidth);
+VgaCanvas *VgaCanvas_create(int width, int height, int tabwidth);
 
 void VgaCanvas_put(VgaCanvas *self, char c) CMETHOD;
 void VgaCanvas_setFg(VgaCanvas *self, char fg) CMETHOD;
@@ -38,7 +38,7 @@ void VgaCanvas_clearLine(VgaCanvas *self) CMETHOD;
 void VgaCanvas_clearAfter(VgaCanvas *self) CMETHOD;
 void VgaCanvas_clearBefore(VgaCanvas *self) CMETHOD;
 void VgaCanvas_clearAll(VgaCanvas *self) CMETHOD;
-void VgaCanvas_reset(VgaCanvas *self, int newwidth) CMETHOD;
+void VgaCanvas_reset(VgaCanvas *self, int newwidth, int newheight) CMETHOD;
 
 void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
     CMETHOD ATTR_NONNULL((2)) ATTR_NONNULL((3));

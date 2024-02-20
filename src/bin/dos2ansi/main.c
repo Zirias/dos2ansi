@@ -264,7 +264,7 @@ int main(int argc, char **argv)
     if (tabwidth < 0) tabwidth = 8;
     if (tabwidth > width) tabwidth = width;
 
-    canvas = VgaCanvas_create(width, tabwidth);
+    canvas = VgaCanvas_create(width, 25, tabwidth);
     if (!canvas) goto done;
     if (Config_showsauce(config) && insettings.sauce)
     {

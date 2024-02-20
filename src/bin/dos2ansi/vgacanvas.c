@@ -72,9 +72,9 @@ static void expand(VgaCanvas *self)
     }
 }
 
-VgaCanvas *VgaCanvas_create(int width, int tabwidth)
+VgaCanvas *VgaCanvas_create(int width, int height, int tabwidth)
 {
-    if (width < 0 || tabwidth < 0
+    if (width < 0 || height < 1 || height > 0xff || tabwidth < 0
 	    || tabwidth > 0xff || tabwidth > width) return 0;
     VgaCanvas *self = xmalloc(sizeof *self);
     self->width = width;
@@ -83,7 +83,7 @@ VgaCanvas *VgaCanvas_create(int width, int tabwidth)
     self->x = 0;
     self->y = 0;
     self->lines = 0;
-    self->screenheight = 25;
+    self->screenheight = height;
     self->screenrow = 0;
     self->tab = tabwidth;
     self->fg = 7U;
@@ -326,8 +326,18 @@ void VgaCanvas_clearAll(VgaCanvas *self)
     clearLines(self, self->y - self->screenrow, self->height);
 }
 
-void VgaCanvas_reset(VgaCanvas *self, int newwidth)
+void VgaCanvas_reset(VgaCanvas *self, int newwidth, int newheight)
 {
+    if (newheight > 0xff) newheight = 0xff;
+    if (newheight < 1) newheight = 1;
+    if ((uint8_t)newheight != self->screenheight)
+    {
+	self->screenheight = newheight;
+	if (self->screenrow >= self->screenheight)
+	{
+	    self->screenrow = self->screenheight - 1;
+	}
+    }
     if (newwidth < 0 || (size_t)newwidth == self->width) return;
     for (size_t i = 0; i < self->linecapa; ++i)
     {
