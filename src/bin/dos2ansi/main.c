@@ -323,7 +323,7 @@ int main(int argc, char **argv)
     if (Config_crlf(config)) vsflags |= VSF_CRLF;
     if (Config_markltr(config)) vsflags |= VSF_LTRO;
     if (Config_defcolors(config)) vsflags |= VSF_CHOP;
-    if ((height = VgaCanvas_serialize(canvas, out, cp, vsflags)) > 0)
+    if ((height = VgaCanvas_serialize(canvas, out, cp, vsflags)) >= 0)
     {
 	if (meta) Stream_printf(meta, "m_height=%d\n", height);
 	rc = EXIT_SUCCESS;

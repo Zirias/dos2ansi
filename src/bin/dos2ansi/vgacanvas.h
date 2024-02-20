@@ -55,6 +55,8 @@ void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
  *
  * An output stream is expected to interpret these codepoints. It only needs
  * to accept a single uint16_t at a time.
+ *
+ * Returns the number of lines written, or -1 on error.
  */
 int VgaCanvas_serialize(const VgaCanvas *self,
 	Stream *out, const Codepage *cp, VgaSerFlags flags)

@@ -4,6 +4,7 @@
 #include "stream.h"
 #include "util.h"
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -390,8 +391,8 @@ int VgaCanvas_serialize(const VgaCanvas *self,
 {
     if (!self->height) return 0;
 
-    if ((flags & VSF_BOM) && !put(out, 0xfeffU)) return -1;
-    if ((flags & VSF_LTRO) && !put(out, 0x202dU)) return -1;
+    if (flags & VSF_BOM) put(out, 0xfeffU);
+    if (flags & VSF_LTRO) put(out, 0x202dU);
 
     int hascolor = 0;
     for (size_t i = 0; i < self->height; ++i)
@@ -425,20 +426,22 @@ int VgaCanvas_serialize(const VgaCanvas *self,
 		unsigned char newatt = line->chars[j].att;
 		if (newatt != att)
 		{
-		    if (!put(out, 0xee00U | newatt)) return -1;
+		    put(out, 0xee00U | newatt);
 		    att = newatt;
 		}
 	    }
-	    if (!put(out, Codepage_map(cp, line->chars[j].chr))) return -1;
+	    put(out, Codepage_map(cp, line->chars[j].chr));
 	}
-	if (hascolor && !put(out, 0xef00U)) return -1;
-	if ((flags & VSF_CRLF) && !put(out, '\r')) return -1;
-	if (!put(out, '\n')) return -1;
+	if (hascolor) put(out, 0xef00U);
+	if (flags & VSF_CRLF) put(out, '\r');
+	put(out, '\n');
     }
 
-    if ((flags & VSF_LTRO) && !put(out, 0x202cU)) return -1;
+    if (flags & VSF_LTRO) put(out, 0x202cU);
 
-    return Stream_status(out) == SS_OK ? self->height : -1;
+    return Stream_status(out) == SS_OK
+	? (self->height > INT_MAX ? INT_MAX : (int)self->height)
+	: -1;
 }
 
 void VgaCanvas_destroy(VgaCanvas *self)
