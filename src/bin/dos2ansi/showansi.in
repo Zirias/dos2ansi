@@ -307,7 +307,10 @@ case "${s_font}" in
 	_fontbase=${_def_fontbase}${_def_fontvariant}
 	if [ ${_nometa} -eq 0 ]; then
 	    if is_integer ${m_resetheight}; then
-		test ${m_resetheight} -eq 25 && _fontbase=vga
+		if ${m_resetheight} -eq 25; then
+		    if is_integer ${m_resetwidth} && ${m_resetwidth} -eq 40
+		    then _fontbase=vgaw; else _fontbase=vga; fi
+		fi
 	    elif is_integer ${m_height}; then
 		test ${m_height} -eq 43 && _fontbase=egaw
 		test ${m_height} -eq 50 && _fontbase=vgaw
