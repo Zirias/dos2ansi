@@ -147,6 +147,7 @@ done
 test -n "${_needarg}" && err "Missing arguments for given flags"
 if [ ${_noinput} -eq 1 ]; then
     _file=""
+    _exec=exec
 elif [ -z "${_file#-}" ]; then
     if ! mktmpdir; then
 	echo >&2 "Error creating temporary directory"
