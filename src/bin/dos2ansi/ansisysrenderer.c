@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
+int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *meta, Stream *stream)
 {
     int escargs[8];
     int esc = 0;
@@ -109,10 +109,14 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
 			case 0:
 			case 1:
 			    VgaCanvas_reset(canvas, 40, 25);
+			    if (meta) Stream_puts(meta,
+				    "m_fwidth=40\nm_height=25\n");
 			    break;
 			case 2:
 			case 3:
 			    VgaCanvas_reset(canvas, 80, 25);
+			    if (meta) Stream_puts(meta,
+				    "m_fwidth=80\nm_height=25\n");
 			    break;
 			case 7:
 			    VgaCanvas_setWrap(canvas, c == 'h');

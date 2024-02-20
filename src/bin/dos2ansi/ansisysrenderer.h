@@ -6,7 +6,7 @@
 C_CLASS_DECL(Stream);
 C_CLASS_DECL(VgaCanvas);
 
-int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
-    ATTR_NONNULL((1)) ATTR_NONNULL((2));
+int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *meta, Stream *stream)
+    ATTR_NONNULL((1)) ATTR_NONNULL((3));
 
 #endif

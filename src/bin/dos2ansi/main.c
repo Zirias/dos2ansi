@@ -29,6 +29,7 @@
 typedef struct InputStreamSettings {
     Sauce *sauce;
     int forcedwidth;
+    int forcedheight;
 } InputStreamSettings;
 
 typedef struct OutputStreamSettings
@@ -41,6 +42,7 @@ static Stream *createInputStream(const Config *config,
 	InputStreamSettings *settings)
 {
     settings->forcedwidth = -1;
+    settings->forcedheight = -1;
     Stream *in = 0;
 
     if (Config_test(config))
@@ -48,6 +50,7 @@ static Stream *createInputStream(const Config *config,
 	in = Stream_createMemory();
 	TestWriter_write(in);
 	settings->forcedwidth = 70;
+	settings->forcedheight = 26;
 	return in;
     }
 
@@ -237,6 +240,7 @@ int main(int argc, char **argv)
     Config *config = 0;
     Stream *in = 0;
     Stream *out = 0;
+    Stream *meta = 0;
     VgaCanvas *canvas = 0;
     Codepage *cp = 0;
     InputStreamSettings insettings = {0};
@@ -256,11 +260,19 @@ int main(int argc, char **argv)
 	goto done;
     }
 
+    if (Config_meta(config))
+    {
+	meta = Stream_createStandard(SST_STDERR);
+	meta = BufferedWriter_create(meta, 1024);
+    }
+
     int width = insettings.forcedwidth;
+    if (meta && width >= 0) Stream_printf(meta, "m_fwidth=%d\n", width);
     if (width < 0 && insettings.sauce) width = Sauce_width(insettings.sauce);
     if (width < 0) width = Config_width(config);
     if (width < 0) width = 80;
-    int height = -1;
+    int height = insettings.forcedheight;
+    if (meta && height >= 0) Stream_printf(meta, "m_fheight=%d\n", height);
     if (insettings.sauce) height = Sauce_scrheight(insettings.sauce);
     if (height < 0) height = Config_scrheight(config);
     if (height < 0) height = 25;
@@ -268,15 +280,22 @@ int main(int argc, char **argv)
     if (tabwidth < 0) tabwidth = 8;
     if (tabwidth > width) tabwidth = width;
 
+    if (meta)
+    {
+	Stream_printf(meta, "m_width=%d\n", width);
+	Stream_printf(meta, "m_height=%d\n", height);
+    }
     canvas = VgaCanvas_create(width, height, tabwidth);
     if (!canvas) goto done;
     if (Config_showsauce(config) && insettings.sauce)
     {
-	SaucePrinter_print(canvas, insettings.sauce, Config_nowrap(config));
+	height = SaucePrinter_print(canvas,
+		insettings.sauce, Config_nowrap(config));
+	if (meta) Stream_printf(meta, "m_fheight=%d\n", height);
     }
     else
     {
-	if (AnsiSysRenderer_render(canvas, in) < 0) goto done;
+	if (AnsiSysRenderer_render(canvas, meta, in) < 0) goto done;
     }
     Stream_destroy(in);
     in = 0;
@@ -318,6 +337,7 @@ int main(int argc, char **argv)
 done:
     Codepage_destroy(cp);
     Sauce_destroy(insettings.sauce);
+    Stream_destroy(meta);
     Stream_destroy(in);
     Stream_destroy(out);
     VgaCanvas_destroy(canvas);

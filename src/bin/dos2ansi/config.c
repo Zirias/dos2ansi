@@ -47,6 +47,7 @@ struct Config
     int nowrap;
     int visapprox;
     int scrheight;
+    int meta;
 };
 
 #ifdef WITH_CURSES
@@ -98,7 +99,7 @@ static void printusage(Stream *out, const char *prgname)
     Stream_printf(out,
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
-	    "       %s [-ABCEPRSTWXabdeiklprsvxy] [-H scrheight]\n"
+	    "       %s [-ABCEPRSTWXabdeiklmprsvxy] [-H scrheight]\n"
 	    "\t\t[-c codepage] [-o outfile] [-q saucequery] [-t tabwidth]\n"
 	    "\t\t[-u format] [-w width] [infile]\n",
 	    prgname, prgname, prgname);
@@ -188,6 +189,9 @@ static void help(const char *prgname)
 	    "\t               Ignored if SAUCE is available.\n"
 	    "\t-l             Attempt to enforce left-to-right direction by\n"
 	    "\t               wrapping output in a Unicode LTR override\n"
+	    "\t-m             Write some metadata to stderr while rendering.\n"
+	    "\t               Output format is 'key=value', this can be used\n"
+	    "\t               from scripts or for debugging purposes.\n"
 	    "\t-o outfile     Write output to this file. If not given,\n"
 	    "\t               output goes to the standard output.\n"
 	    "\t-p             Force replacing the pipe bar with a broken bar\n"
@@ -405,7 +409,7 @@ Config *Config_fromOpts(int argc, char **argv)
     int naidx = 0;
     int haveinfile = 0;
     char needargs[ARGBUFSZ];
-    const char onceflags[] = "ABCEHIPRSTWXabcdeklopqrstuvwxy";
+    const char onceflags[] = "ABCEHIPRSTWXabcdeklmopqrstuvwxy";
     char seen[sizeof onceflags - 1] = {0};
 
     Config *config = xmalloc(sizeof *config);
@@ -441,6 +445,7 @@ Config *Config_fromOpts(int argc, char **argv)
     config->nowrap = 0;
     config->visapprox = 1;
     config->scrheight = -1;
+    config->meta = 0;
 
     const char *prgname = "dos2ansi";
     if (argc > 0) prgname = argv[0];
@@ -571,6 +576,10 @@ Config *Config_fromOpts(int argc, char **argv)
 
 		    case 'l':
 			config->markltr = 1;
+			break;
+
+		    case 'm':
+			config->meta = 1;
 			break;
 
 		    case 'p':
@@ -789,6 +798,11 @@ int Config_visapprox(const Config *self)
 int Config_scrheight(const Config *self)
 {
     return self->scrheight;
+}
+
+int Config_meta(const Config *self)
+{
+    return self->meta;
 }
 
 void Config_destroy(Config *self)
