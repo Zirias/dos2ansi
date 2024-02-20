@@ -187,9 +187,17 @@ _font_ega_0_0=${FONT_AC_EGA8X14}
 _font_egaw_1_0=${FONT_AC_EGA9X8}
 _font_egaw_0_0=${FONT_AC_EGA8X8}
 
-# validate dos2ansi works with given flags and input file
+# validate dos2ansi works with given flags and input file and collect metadata
 test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
-eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
+if ! _d2a_stderr=$(eval \
+    "${_dos2ansi} ${_d2a_args} -m ${_file} 2>&1 >/dev/null");
+then
+    printf >&2 "${_d2a_stderr}\n"
+    exit 1;
+fi
+while read -r _m; do eval ${_m}; done <<META
+${_d2a_stderr}
+META
 
 # read SAUCE metadata
 {
@@ -226,10 +234,14 @@ fi
 is_integer ${s_height}	|| s_height=${_def_height}
 is_integer ${s_spacing}	|| s_spacing=${_def_spacing}
 is_integer ${s_aspect}	|| s_aspect=${_def_aspect}
+is_integer ${m_height} && [ ${s_height} -lt ${m_height} ] \
+    && s_height=${m_height}
 
 # calculate terminal window geometry
 _width=${s_width}
 _height=$((${s_height} + ${ADDLINES}))
+is_integer ${m_fwidth} && _width=${m_fwidth}
+is_integer ${m_fheight} && _height=$((${m_fheight} + ${ADDLINES}))
 test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
 test ${_width} -lt 20 && _width=20
 test ${_height} -gt ${MAXHEIGHT} && _height=${MAXHEIGHT}
@@ -241,7 +253,15 @@ case "${s_font}" in
     "IBM VGA50")    _fontbase=vgaw;;
     "IBM EGA")	    _fontbase=ega;;
     "IBM EGA43")    _fontbase=egaw;;
-    *)		    _fontbase=${_def_fontbase}${_def_fontvariant};;
+    *)
+	_fontbase=${_def_fontbase}${_def_fontvariant}
+	if [ ${_nosauce} -eq 0 ] && is_integer ${m_height}; then
+	    if [ ${m_height} -eq 25 ]; then _fontbase=vga
+	    elif [ ${m_height} -eq 43 ]; then _fontbase=egaw
+	    elif [ ${m_height} -eq 50 ]; then _fontbase=vgaw
+	    fi
+	fi
+	;;
 esac
 _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
