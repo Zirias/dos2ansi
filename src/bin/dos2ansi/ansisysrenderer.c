@@ -104,7 +104,22 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
 		}
 		else if (c == 'h' || c == 'l')
 		{
-		    if (escargs[0] == 7) VgaCanvas_setWrap(canvas, c == 'h');
+		    switch (escargs[0])
+		    {
+			case 0:
+			case 1:
+			    VgaCanvas_reset(canvas, 40);
+			    break;
+			case 2:
+			case 3:
+			    VgaCanvas_reset(canvas, 80);
+			    break;
+			case 7:
+			    VgaCanvas_setWrap(canvas, c == 'h');
+			    break;
+			default:
+			    break;
+		    }
 		    esc = 0;
 		}
 		else
