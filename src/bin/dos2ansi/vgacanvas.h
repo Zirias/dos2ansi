@@ -25,6 +25,7 @@ void VgaCanvas_setBold(VgaCanvas *self, int bold) CMETHOD;
 void VgaCanvas_setBlink(VgaCanvas *self, int blink) CMETHOD;
 void VgaCanvas_setReverse(VgaCanvas *self, int reverse) CMETHOD;
 void VgaCanvas_setHidden(VgaCanvas *self, int hidden) CMETHOD;
+void VgaCanvas_setWrap(VgaCanvas *self, int wrap) CMETHOD;
 void VgaCanvas_resetAttr(VgaCanvas *self) CMETHOD;
 void VgaCanvas_up(VgaCanvas *self, unsigned n) CMETHOD;
 void VgaCanvas_down(VgaCanvas *self, unsigned n) CMETHOD;

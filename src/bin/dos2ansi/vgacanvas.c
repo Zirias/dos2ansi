@@ -9,10 +9,11 @@
 
 #define LINESCHUNK 32
 
-#define FL_BOLD 1
-#define FL_BLINK 2
-#define FL_REVERSE 4
-#define FL_HIDDEN 8
+#define FL_BOLD	    (1 << 0)
+#define FL_BLINK    (1 << 1)
+#define FL_REVERSE  (1 << 2)
+#define FL_HIDDEN   (1 << 3)
+#define FL_WRAP	    (1 << 4)
 
 typedef struct VgaChar
 {
@@ -83,7 +84,7 @@ VgaCanvas *VgaCanvas_create(int width, int tabwidth)
     self->tab = tabwidth;
     self->fg = 7U;
     self->bg = 0;
-    self->flags = 0;
+    self->flags = FL_WRAP;
     expand(self);
     return self;
 }
@@ -127,6 +128,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
     {
 	if (self->x == self->width)
 	{
+	    if (!(self->flags & FL_WRAP)) return;
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
@@ -144,6 +146,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
     {
 	if (self->x == self->width)
 	{
+	    if (!(self->flags & FL_WRAP)) return;
 	    self->x = 0;
 	    VgaCanvas_down(self, 1);
 	}
@@ -170,22 +173,28 @@ void VgaCanvas_setBold(VgaCanvas *self, int bold)
     else self->flags &= ~(uint8_t)FL_BOLD;
 }
 
-void VgaCanvas_setBlink(VgaCanvas *self, int bold)
+void VgaCanvas_setBlink(VgaCanvas *self, int blink)
 {
-    if (bold) self->flags |= FL_BLINK;
+    if (blink) self->flags |= FL_BLINK;
     else self->flags &= ~(uint8_t)FL_BLINK;
 }
 
-void VgaCanvas_setReverse(VgaCanvas *self, int bold)
+void VgaCanvas_setReverse(VgaCanvas *self, int reverse)
 {
-    if (bold) self->flags |= FL_REVERSE;
+    if (reverse) self->flags |= FL_REVERSE;
     else self->flags &= ~(uint8_t)FL_REVERSE;
 }
 
-void VgaCanvas_setHidden(VgaCanvas *self, int bold)
+void VgaCanvas_setHidden(VgaCanvas *self, int hidden)
 {
-    if (bold) self->flags |= FL_HIDDEN;
+    if (hidden) self->flags |= FL_HIDDEN;
     else self->flags &= ~(uint8_t)FL_HIDDEN;
+}
+
+void VgaCanvas_setWrap(VgaCanvas *self, int wrap)
+{
+    if (wrap) self->flags |= FL_WRAP;
+    else self->flags &= ~(uint8_t)FL_WRAP;
 }
 
 void VgaCanvas_resetAttr(VgaCanvas *self)
@@ -230,6 +239,7 @@ void VgaCanvas_right(VgaCanvas *self, unsigned n)
 {
     if (self->x == self->width)
     {
+	if (!(self->flags & FL_WRAP)) return;
 	self->x = 0;
 	VgaCanvas_down(self, 1);
     }
@@ -302,8 +312,16 @@ void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
 {
     if (self->x == self->width)
     {
-	*x = 0;
-	*y = self->y + 1;
+	if (self->flags & FL_WRAP)
+	{
+	    *x = 0;
+	    *y = self->y + 1;
+	}
+	else
+	{
+	    *x = self->x - 1;
+	    *y = self->y;
+	}
     }
     else
     {
