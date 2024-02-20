@@ -100,10 +100,11 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *stream)
 		}
 		else if (c == '?' || c == '=' || c == '>')
 		{
-		    ; // ignore "set screen mode" sequences
+		    ; // ignore "set screen mode" flags
 		}
 		else if (c == 'h' || c == 'l')
 		{
+		    if (escargs[0] == 7) VgaCanvas_setWrap(canvas, c == 'h');
 		    esc = 0;
 		}
 		else
