@@ -201,7 +201,7 @@ void VgaCanvas_resetAttr(VgaCanvas *self)
 {
     self->fg = 7U;
     self->bg = 0;
-    self->flags = 0;
+    self->flags &= 0xf0U;
 }
 
 void VgaCanvas_up(VgaCanvas *self, unsigned n)
