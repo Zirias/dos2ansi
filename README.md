@@ -37,8 +37,9 @@ doesn't need any other files at runtime.
 
 * Renders to a virtual canvas with a fixed width, defaulting to 80 columns
 * Supports SGR sequences as well as cursor movement/placement and line/screen
-  erasing sequences like ANSI.SYS, silently ignores sequences to set a screen
-  mode.
+  erasing sequences like ANSI.SYS; setting screen mode is implemented for the
+  standard text modes 0-3 and line wrapping on/off, other modes are silently
+  ignored
 * Autodetecs whether any visible color is used, if not, the output won't
   use any escape sequences
 * Supports flexible modes for color output, from simple 8-color mode with
@@ -87,7 +88,7 @@ fonts currently need a patch to play well with `xterm`, you can find it in
     Usage: showansi -V
            showansi -h
            showansi [-ensw] [-c columns] [-d dos2ansi] [-r rows]
-                    [-- [args ...]] file
+                    [[--] [args ...]] [--] [file]
 
 The behavior of the script can be adjusted to your needs using configuration
 files. A sample configuration file is installed to
