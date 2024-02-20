@@ -33,6 +33,7 @@ struct Sauce
     uint8_t filetype;
     uint8_t tflags;
     uint8_t cp;
+    uint8_t scrheight;
     uint8_t lines;
     char comment[][65];
 };
@@ -183,6 +184,7 @@ Sauce *Sauce_read(Stream *in)
     self->filetype = getSauceInt(raw, 95, 0);
     self->tflags = getSauceInt(raw, 105, 0);
     self->cp = CP_DEFAULT;
+    self->scrheight = 0;
     self->lines = lines;
     for (int i = 0; i < lines; ++i)
     {
@@ -209,6 +211,10 @@ Sauce *Sauce_read(Stream *in)
 	    if (!strncmp(self->tinfos, "IBM ", 4)) self->cp = CP_IMPLICIT;
 	    else self->cp = CP_OTHER;
 	}
+
+	if (!strncmp(self->tinfos, "IBM VGA50", 9)) self->scrheight = 50;
+	else if (!strncmp(self->tinfos, "IBM EGA43", 9)) self->scrheight = 43;
+	else if (!strncmp(self->tinfos, "IBM ", 4)) self->scrheight = 25;
     }
 
     return self;
@@ -329,6 +335,11 @@ int Sauce_cpflags(const Sauce *self)
     const char *cpname = validCpStr(self);
     if (!cpname) return CPF_NONE;
     return CodepageFlags_byName(cpname);
+}
+
+int Sauce_scrheight(const Sauce *self)
+{
+    return self->scrheight ? self->scrheight : -1;
 }
 
 int Sauce_comments(const Sauce *self)

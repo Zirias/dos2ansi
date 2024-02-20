@@ -260,11 +260,14 @@ int main(int argc, char **argv)
     if (width < 0 && insettings.sauce) width = Sauce_width(insettings.sauce);
     if (width < 0) width = Config_width(config);
     if (width < 0) width = 80;
+    int height = -1;
+    if (insettings.sauce) height = Sauce_scrheight(insettings.sauce);
+    if (height < 0) height = 25;
     int tabwidth = Config_tabwidth(config);
     if (tabwidth < 0) tabwidth = 8;
     if (tabwidth > width) tabwidth = width;
 
-    canvas = VgaCanvas_create(width, 25, tabwidth);
+    canvas = VgaCanvas_create(width, height, tabwidth);
     if (!canvas) goto done;
     if (Config_showsauce(config) && insettings.sauce)
     {
