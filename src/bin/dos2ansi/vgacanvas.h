@@ -38,6 +38,7 @@ void VgaCanvas_clearLine(VgaCanvas *self) CMETHOD;
 void VgaCanvas_clearAfter(VgaCanvas *self) CMETHOD;
 void VgaCanvas_clearBefore(VgaCanvas *self) CMETHOD;
 void VgaCanvas_clearAll(VgaCanvas *self) CMETHOD;
+void VgaCanvas_reset(VgaCanvas *self, int newwidth) CMETHOD;
 
 void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
     CMETHOD ATTR_NONNULL((2)) ATTR_NONNULL((3));

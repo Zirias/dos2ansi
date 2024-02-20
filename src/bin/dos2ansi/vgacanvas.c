@@ -308,6 +308,24 @@ void VgaCanvas_clearAll(VgaCanvas *self)
     clearLines(self, 0, self->height);
 }
 
+void VgaCanvas_reset(VgaCanvas *self, int newwidth)
+{
+    if (newwidth < 0 || (size_t)newwidth == self->width) return;
+    for (size_t i = 0; i < self->linecapa; ++i)
+    {
+	self->lines[i] = xrealloc(self->lines[i], sizeof self->lines[i]
+		+ newwidth * sizeof *self->lines[i]->chars);
+	if (self->lines[i]->len > newwidth) self->lines[i]->len = newwidth;
+	for (size_t j = self->width; j < (size_t)newwidth; ++j)
+	{
+	    self->lines[i]->chars[j].chr = 0x20U;
+	    self->lines[i]->chars[j].att = 0x07U;
+	}
+    }
+    if (self->x > (size_t)newwidth) self->x = newwidth;
+    self->width = newwidth;
+}
+
 void VgaCanvas_xy(const VgaCanvas *self, unsigned *x, unsigned *y)
 {
     if (self->x == self->width)
