@@ -27,9 +27,9 @@ version()
 
 usage()
 {
-    echo "Usage: showansi -H"
-    echo "       showansi -V"
-    echo "       showansi [-ens] [-d dos2ansi] [-h height] [-w width]"
+    echo "Usage: showansi -V"
+    echo "       showansi -h"
+    echo "       showansi [-ensw] [-c columns] [-d dos2ansi] [-r rows]"
     echo "                [-- [args ...]] file"
 }
 
@@ -47,14 +47,19 @@ help()
 {
     usage
     echo
-    echo "         -H            Print this help and exit"
     echo "         -V            Print version information and exit"
+    echo "         -S            Ignore SAUCE metadata and use all defaults"
+    echo "                       Also passed to dos2ansi"
+    echo "         -c columns    Default number of columns instead of 80"
+    echo "                       Also passed to dos2ansi as the width when"
+    echo "                       no width from SAUCE is available"
     echo "         -d dos2ansi   Run 'dos2ansi' instead of %%DOS2ANSI%%"
     echo "         -e            Use an EGA font by default instead of VGA"
-    echo "         -h height     Default height instead of 25"
+    echo "         -h            Print this help and exit"
     echo "         -n            Disable letter spacing by default"
+    echo "         -r rows       Default number of rows instead of 25"
     echo "         -s            Assume square pixels by default"
-    echo "         -w width      Default width instead of 80"
+    echo "         -w            Use wide fonts (VGA50 or EGA43) by default"
     echo
     echo "         args          Extra arguments for dos2ansi"
     echo "                       Run 'dos2ansi -h' for help"
@@ -65,11 +70,11 @@ help()
 fetcharg()
 {
     case "${_needarg}" in
+	c*) is_integer "${1}" || err "Invalid number of columns"
+	    _def_width="${1}"; _needarg="${_needarg#c}";;
 	d*) _dos2ansi="${1}"; _needarg="${_needarg#d}";;
-	h*) is_integer "${1}" || err "Invalid height"
-	    _def_height="${1}"; _needarg="${_needarg#h}";;
-	w*) is_integer "${1}" || err "Invalid width"
-	    _def_width="${1}"; _needarg="${_needarg#w}";;
+	r*) is_integer "${1}" || err "Invalid number of rows"
+	    _def_height="${1}"; _needarg="${_needarg#r}";;
 	*)  err "Unknown flag"
     esac
 }
@@ -81,6 +86,8 @@ _def_height=25
 _def_spacing=1
 _def_aspect=0
 _def_fontbase=vga
+_def_fontvariant=""
+_nosauce=0
 _needarg=""
 
 while true; do
@@ -89,14 +96,16 @@ while true; do
 	-*) _flags="${1#-}"
 	    while true; do
 		case "${_flags}" in
-		    H*) help; exit 0;;
 		    V*) version; exit 0;;
+		    S*) _nosauce=1; _flags="${_flags#S}";;
+		    c*) _needarg="${_needarg}c"; _flags="${_flags#c}";;
 		    d*) _needarg="${_needarg}d"; _flags="${_flags#d}";;
 		    e*) _def_fontbase=ega; _flags="${_flags#e}";;
-		    h*) _needarg="${_needarg}h"; _flags="${_flags#h}";;
+		    h*) help; exit 0;;
 		    n*) _def_spacing=0; _flags="${_flags#n}";;
+		    r*) _needarg="${_needarg}r"; _flags="${_flags#r}";;
 		    s*) _def_aspect=1; _flags="${_flags#s}";;
-		    w*) _needarg="${_needarg}w"; _flags="${_flags#w}";;
+		    w*) _def_fontvariant=w; _flags="${_flags#w}";;
 		    '')	break;;
 		    *) fetcharg "${_flags}"; break;;
 		esac
@@ -183,7 +192,17 @@ test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
 eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 
 # read SAUCE metadata
-{
+if [ ${_nosauce} -eq 1 ]; then
+    s_title=""
+    s_author=""
+    s_group=""
+    s_width=""
+    s_height=""
+    s_spacing=""
+    s_aspect=""
+    s_font=""
+    _d2a_args="${_d2a_args} -S"
+else {
     read -r _f; eval s_title=${_f}
     read -r _f; eval s_author=${_f}
     read -r _f; eval s_group=${_f}
@@ -195,6 +214,7 @@ eval "${_dos2ansi} ${_d2a_args} ${_file} >/dev/null" || exit 1
 } <<SAUCE
 $(${_dos2ansi} -q :TAGwhsaf "${_file}" 2>/dev/null)
 SAUCE
+fi
 
 # sanitize SAUCE metadata, construct full title and set defaults
 test -z "${s_title}" && s_title="showansi: <Unnamed>"
@@ -224,7 +244,7 @@ case "${s_font}" in
     "IBM VGA50")    _fontbase=vgaw;;
     "IBM EGA")	    _fontbase=ega;;
     "IBM EGA43")    _fontbase=egaw;;
-    *)		    _fontbase=${_def_fontbase};;
+    *)		    _fontbase=${_def_fontbase}${_def_fontvariant};;
 esac
 _fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
 eval _font=\${${_fontname}}
