@@ -96,6 +96,12 @@ files. A sample configuration file is installed to
 `$(prefix)/etc/showansirc`. All the configuration options are documented in
 the comments there.
 
+For aspect corrected display, you will have to use scalable fonts instead of
+the default fonts mentioned above. This will have an effect on sharpness,
+depending on your display. Scalable fonts are available from [The Ultimate
+Oldschool PC Font Pack](https://int10h.org/oldschool-pc-fonts), an example
+configuration using these is included in the `examples` directory.
+
 The script can output debugging information by setting the environment
 variable `SHOWANSI_DEBUG` to `1`.
 

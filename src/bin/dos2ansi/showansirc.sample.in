@@ -63,6 +63,7 @@
 # ---------------------------------------------------------------------------
 # The fonts to use in the X terminal emulator to match what is requested
 # according to SAUCE metadata.
+#
 # The default settings select bitmap fonts from ibmfonts found here:
 # https://github.com/farsil/ibmfonts
 # ---------------------------------------------------------------------------
@@ -79,14 +80,19 @@
 # ---------------------------------------------------------------------------
 # The fonts to use instead when aspect correction is requested in SAUCE
 # metadata.
+#
 # The default is just using the same fonts (therefore ignoring aspect
 # correction). Aspect correction with plain bitmap font rendering is
 # impossible, it can be achieved with scalable fonts using antialiasing
 # subpixel rendering though, but quality will suffer of course.
-# You might want to try it using fonts from
+# You might want to try it using scalable fonts from
 # https://int10h.org/oldschool-pc-fonts/
+#
 # With xterm, this would mean setting the font must be done with -fa instead
 # of -fn.
+#
+# An example configuration using these scalable fonts is included with the
+# dos2ansi source tarball.
 # ---------------------------------------------------------------------------
 
 #FONT_AC_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1

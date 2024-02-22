@@ -1,0 +1,34 @@
+# ===========================================================================
+# This is an example configuration for showansi from dos2ansi using scalable
+# fonts from https://int10h.org/oldschool-pc-fonts/ instead of the default
+# bitmap fonts.
+# ===========================================================================
+
+# You might have to fiddle with the "size" property in those fonts to make
+# them display acceptably on your screen. The values here somewhat work for
+# a 96dpi screen.
+#
+# For more information, see the comments in the sample configuration file
+# installed with dos2ansi.
+
+TERM_ARGS="-tn xterm-256color -bg black -fg lightgray -sl 0"
+SETFONT=-fa
+
+FONT_VGA9X16="xft:MxPlus IBM VGA9x16:size=12"
+FONT_VGA8X16="xft:MxPlus IBM VGA8x16:size=12"
+FONT_VGA9X8="xft:MxPlus IBM VGA9x16\-2x:size=12"
+FONT_VGA8X8="xft:MxPlus IBM VGA8x16\-2x:size=12"
+FONT_EGA9X14="xft:MxPlus IBM EGA9x14:size=12"
+FONT_EGA8X14="xft:MxPlus IBM EGA8x14:size=12"
+FONT_EGA9X8="xft:MxPlus IBM EGA9x14\-2x:size=12"
+FONT_EGA8X8="xft:MxPlus IBM EGA8x14\-2x:size=12"
+
+FONT_AC_VGA9X16="xft:AcPlus IBM VGA9x16:size=16"
+FONT_AC_VGA8X16="xft:AcPlus IBM VGA8x16:size=16"
+FONT_AC_VGA9X8="xft:AcPlus IBM VGA9x16\-2x:size=16"
+FONT_AC_VGA8X8="xft:AcPlus IBM VGA8x16\-2x:size=16"
+FONT_AC_EGA9X14="xft:AcPlus IBM EGA9x14:size=15.8"
+FONT_AC_EGA8X14="xft:AcPlus IBM EGA8x14:size=15.8"
+FONT_AC_EGA9X8="xft:AcPlus IBM EGA9x14\-2x:size=15.8"
+FONT_AC_EGA8X8="xft:AcPlus IBM EGA8x14\-2x:size=15.8"
+
