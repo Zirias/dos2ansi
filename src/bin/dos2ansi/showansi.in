@@ -46,7 +46,7 @@ usage()
     echo "Usage: showansi -V"
     echo "       showansi -h"
     echo "       showansi [-Sensw] [-c columns] [-d dos2ansi] [-r rows]"
-    echo "                [[--] [args ...]]"
+    echo "                [--] [args ...]"
 }
 
 err()
@@ -79,7 +79,8 @@ help()
     echo "         -w            Use wide fonts (VGA50 or EGA43) by default"
     echo
     echo "         args          Arguments for dos2ansi, including the file"
-    echo "                       to display"
+    echo "                       to display, must be preceded by '--' if it"
+    echo "                       contains flags (starting with '-')"
     echo "                       Run 'dos2ansi -h' for help"
     echo
 }
