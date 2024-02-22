@@ -133,11 +133,9 @@ while true; do
 done
 _d2a_endflags=0
 while test -n "${1}"; do
-    if [ ! "${1}" = "--" ]; then
-	_file="${1}"
-	if [ ${_d2a_endflags} -eq 1 -o -n "${1#-}" ]; then
-	    _d2a_args="${_d2a_args} \"${1}\""
-	fi
+    test "${1}" = "--" || _file="${1}"
+    if [ ${_d2a_endflags} -eq 1 -o -n "${1#-}" ]; then
+	_d2a_args="${_d2a_args} \"${1}\""
     fi
     case "${1}" in
 	--) _d2a_endflags=1;;
@@ -147,10 +145,11 @@ while test -n "${1}"; do
     shift
 done
 test -n "${_needarg}" && err "Missing arguments for given flags"
+test ${_d2a_endflags} -eq 0 && _file="${_file#-}"
 if [ ${_noinput} -eq 1 ]; then
     _file=""
     _exec=exec
-elif [ -z "${_file#-}" ]; then
+elif [ -z "${_file}" ]; then
     if ! mktmpdir; then
 	echo >&2 "Error creating temporary directory"
 	test -n "${TMPDIR}" && echo >&2 "Check TMPDIR variable."
