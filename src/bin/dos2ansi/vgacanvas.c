@@ -119,6 +119,13 @@ static uint8_t VgaCanvas_att(const VgaCanvas *self)
     return (bg << 4) | fg;
 }
 
+static void VgaCanvas_addLine(VgaCanvas *self)
+{
+    ++ self->y;
+    if (self->screenrow + 1 < self->screenheight) ++self->screenrow;
+    expand(self);
+}
+
 void VgaCanvas_put(VgaCanvas *self, char c)
 {
     /* ignore NUL, BEL and ESC */
@@ -135,7 +142,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	{
 	    if (!(self->flags & FL_WRAP)) return;
 	    self->x = 0;
-	    VgaCanvas_down(self, 1);
+	    VgaCanvas_addLine(self);
 	}
 	self->lines[self->y]->chars[self->x].att = VgaCanvas_att(self);
 	self->lines[self->y]->chars[self->x].chr = 0x20;
@@ -143,7 +150,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	if (self->y >= self->height) self->height = self->y+1;
     } while (self->x % self->tab);
     /* execute LF */
-    else if (c == 0x0a) VgaCanvas_down(self, 1);
+    else if (c == 0x0a) VgaCanvas_addLine(self);
     /* execute CR */
     else if (c == 0x0d) self->x = 0;
     /* put any other character to canvas */
@@ -153,7 +160,7 @@ void VgaCanvas_put(VgaCanvas *self, char c)
 	{
 	    if (!(self->flags & FL_WRAP)) return;
 	    self->x = 0;
-	    VgaCanvas_down(self, 1);
+	    VgaCanvas_addLine(self);
 	}
 	self->lines[self->y]->chars[self->x].att = VgaCanvas_att(self);
 	self->lines[self->y]->chars[self->x].chr = c;
@@ -211,6 +218,11 @@ void VgaCanvas_resetAttr(VgaCanvas *self)
 
 void VgaCanvas_up(VgaCanvas *self, unsigned n)
 {
+    if (n && self->x == self->width)
+    {
+	self->x = 0;
+	VgaCanvas_addLine(self);
+    }
     if (n > self->screenrow) n = self->screenrow;
     if (!n) return;
     self->y -= n;
@@ -219,49 +231,40 @@ void VgaCanvas_up(VgaCanvas *self, unsigned n)
 
 void VgaCanvas_down(VgaCanvas *self, unsigned n)
 {
+    if (n && self->x == self->width)
+    {
+	self->x = 0;
+	VgaCanvas_addLine(self);
+    }
+    unsigned maxdown = self->screenheight - self->screenrow - 1;
+    if (n > maxdown) n = maxdown;
     if (!n) return;
     self->y += n;
-    if (self->screenrow + n >= self->screenheight)
-    {
-	self->screenrow = self->screenheight - 1;
-    }
-    else self->screenrow += n;
+    self->screenrow += n;
     expand(self);
 }
 
 void VgaCanvas_left(VgaCanvas *self, unsigned n)
 {
-    unsigned maxleft = self->x + self->screenrow * self->width;
-    if (n > maxleft) n = maxleft;
-    if (!n) return;
-    if (self->x == self->width)
+    if (n && self->x == self->width)
     {
 	self->x = 0;
-	++self->y;
+	VgaCanvas_addLine(self);
     }
-    if (n > self->x)
-    {
-	VgaCanvas_up(self, (n - self->x) / self->width + 1);
-	n %= self->width;
-	self->x += self->width;
-    }
+    if (n > self->x) n = self->x;
     self->x -= n;
 }
 
 void VgaCanvas_right(VgaCanvas *self, unsigned n)
 {
-    if (self->x == self->width)
+    if (n && self->x == self->width)
     {
-	if (!(self->flags & FL_WRAP)) return;
 	self->x = 0;
-	VgaCanvas_down(self, 1);
+	VgaCanvas_addLine(self);
     }
-    if (n > self->width - self->x)
-    {
-	VgaCanvas_down(self, (n - (self->width - self->x)) / self->width + 1);
-	self->x = (self->x + n) % self->width;
-    }
-    else self->x += n;
+    unsigned maxright = self->width - self->x - 1;
+    if (n > maxright) n = maxright;
+    self->x += n;
 }
 
 void VgaCanvas_gotoxy(VgaCanvas *self, unsigned x, unsigned y)
