@@ -39,7 +39,7 @@ usage()
 {
     echo "Usage: showansi -V"
     echo "       showansi -h"
-    echo "       showansi [-ensw] [-c columns] [-d dos2ansi] [-r rows]"
+    echo "       showansi [-Sensw] [-c columns] [-d dos2ansi] [-r rows]"
     echo "                [[--] [args ...]] [--] [file]"
 }
 
