@@ -40,7 +40,7 @@ usage()
     echo "Usage: showansi -V"
     echo "       showansi -h"
     echo "       showansi [-Sensw] [-c columns] [-d dos2ansi] [-r rows]"
-    echo "                [[--] [args ...]] [--] [file]"
+    echo "                [[--] [args ...]]"
 }
 
 err()
@@ -72,10 +72,9 @@ help()
     echo "         -s            Assume square pixels by default"
     echo "         -w            Use wide fonts (VGA50 or EGA43) by default"
     echo
-    echo "         args          Extra arguments for dos2ansi"
+    echo "         args          Arguments for dos2ansi, including the file"
+    echo "                       to display"
     echo "                       Run 'dos2ansi -h' for help"
-    echo "         file          MS-DOS/ANSI.SYS file to display or '-' to"
-    echo "                       read from standard input"
     echo
 }
 
@@ -104,6 +103,7 @@ _nosauce=0
 _nometa=0
 _noinput=0
 _needarg=""
+_exec=exec
 
 while true; do
     case "${1}" in
@@ -134,9 +134,7 @@ done
 _d2a_endflags=0
 while test -n "${1}"; do
     test "${1}" = "--" || _file="${1}"
-    if [ ${_d2a_endflags} -eq 1 -o -n "${1#-}" ]; then
-	_d2a_args="${_d2a_args} \"${1}\""
-    fi
+    _d2a_args="${_d2a_args} \"${1}\""
     case "${1}" in
 	--) _d2a_endflags=1;;
 	-*T*) test ${_d2a_endflags} -eq 0 && _noinput=1 && _nosauce=1;;
@@ -145,23 +143,8 @@ while test -n "${1}"; do
     shift
 done
 test -n "${_needarg}" && err "Missing arguments for given flags"
-test ${_d2a_endflags} -eq 0 && _file="${_file#-}"
 if [ ${_noinput} -eq 1 ]; then
     _file=""
-    _exec=exec
-elif [ -z "${_file}" ]; then
-    if ! mktmpdir; then
-	echo >&2 "Error creating temporary directory"
-	test -n "${TMPDIR}" && echo >&2 "Check TMPDIR variable."
-	exit 1
-    fi
-    trap "rm -fr '${_tmpdir}'" EXIT HUP INT TERM
-    _file="${_tmpdir}/dosinput"
-    cat >"${_file}"
-    _d2a_args="${_d2a_args} \"${_file}\""
-    _exec=""
-else
-    _exec=exec
 fi
 
 # default configuration
@@ -231,11 +214,31 @@ m_resetwidth=""
 m_resetheight=""
 m_height=""
 test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
-if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null");
-then
-    printf >&2 "${_d2a_stderr}\n"
-    exit 1;
+exec 3<&0
+exec 0</dev/null
+if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null"); then
+    if [ -n "${_d2a_stderr}" ]; then
+	printf >&2 "${_d2a_stderr}\n"
+	exit 1;
+    fi
+    if ! mktmpdir; then
+	echo >&2 "Error creating temporary directory"
+	test -n "${TMPDIR}" && echo >&2 "Check TMPDIR variable."
+	exit 1
+    fi
+    trap "rm -fr '${_tmpdir}'" EXIT HUP INT TERM
+    _file="${_tmpdir}/dosinput"
+    cat <&3 >"${_file}"
+    _d2a_args="${_d2a_args} \"${_file}\""
+    _exec=""
+    if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null");
+    then
+	echo >&2 "No input found."
+	exit 1
+    fi
 fi
+exec 0<&-
+exec 3<&-
 if [ ${_nometa} -eq 0 ]; then
     while read -r _m; do eval ${_m}; done <<META
 ${_d2a_stderr}
