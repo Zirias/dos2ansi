@@ -14,8 +14,14 @@ is_integer()
     esac
 }
 
+rmtmpdir()
+{
+    rm -fr "${_tmpdir}"
+}
+
 mktmpdir()
 {
+    trap rmtmpdir EXIT HUP INT TERM
     if command -v mktemp >/dev/null 2>&1; then
 	_tmpdir="$(mktemp -d)"
     else
@@ -214,9 +220,8 @@ m_resetwidth=""
 m_resetheight=""
 m_height=""
 test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
-exec 3<&0
-exec 0</dev/null
-if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null"); then
+if ! _d2a_stderr=$(eval \
+    "${_dos2ansi} -m ${_d2a_args} </dev/null 2>&1 >/dev/null"); then
     if [ -n "${_d2a_stderr}" ]; then
 	printf >&2 "${_d2a_stderr}\n"
 	exit 1;
@@ -226,9 +231,8 @@ if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null"); then
 	test -n "${TMPDIR}" && echo >&2 "Check TMPDIR variable."
 	exit 1
     fi
-    trap "rm -fr '${_tmpdir}'" EXIT HUP INT TERM
     _file="${_tmpdir}/dosinput"
-    cat <&3 >"${_file}"
+    cat >"${_file}"
     _d2a_args="${_d2a_args} \"${_file}\""
     _exec=""
     if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null");
@@ -237,8 +241,6 @@ if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null"); then
 	exit 1
     fi
 fi
-exec 0<&-
-exec 3<&-
 if [ ${_nometa} -eq 0 ]; then
     while read -r _m; do eval ${_m}; done <<META
 ${_d2a_stderr}
