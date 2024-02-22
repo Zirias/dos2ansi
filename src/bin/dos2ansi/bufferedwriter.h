@@ -10,4 +10,6 @@ C_CLASS_DECL(Stream);
 Stream *BufferedWriter_create(Stream *out, size_t bufsize)
     ATTR_NONNULL((1)) ATTR_RETNONNULL;
 
+void BufferedWriter_discard(Stream *stream);
+
 #endif

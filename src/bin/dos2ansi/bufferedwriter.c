@@ -70,3 +70,10 @@ Stream *BufferedWriter_create(Stream *out, size_t bufsize)
     writer->bufused = 0;
     return Stream_createWriter((StreamWriter *)writer, magic);
 }
+
+void BufferedWriter_discard(Stream *stream)
+{
+    StreamWriter *self = Stream_writer(stream, magic);
+    if (!self) return;
+    ((BufferedWriter *)self)->bufused = 0;
+}

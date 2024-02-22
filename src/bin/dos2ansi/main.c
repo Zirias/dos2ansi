@@ -288,7 +288,13 @@ int main(int argc, char **argv)
     }
     else
     {
-	if (AnsiSysRenderer_render(canvas, meta, in) < 0) goto done;
+	int rdsz = AnsiSysRenderer_render(canvas, meta, in);
+	if (meta && !rdsz)
+	{
+	    BufferedWriter_discard(meta);
+	    --rdsz;
+	}
+	if (rdsz < 0) goto done;
     }
     Stream_destroy(in);
     in = 0;

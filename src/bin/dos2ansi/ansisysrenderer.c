@@ -4,6 +4,7 @@
 #include "vgacanvas.h"
 #include "util.h"
 
+#include <limits.h>
 #include <string.h>
 
 int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *meta, Stream *stream)
@@ -13,9 +14,11 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *meta, Stream *stream)
     int c;
     unsigned x = 0;
     unsigned y = 0;
+    size_t sz = 0;
 
     while ((c = Stream_getc(stream)) >= 0)
     {
+	++sz;
 	if (esc)
 	{
 	    if (esc < 0)
@@ -184,5 +187,6 @@ int AnsiSysRenderer_render(VgaCanvas *canvas, Stream *meta, Stream *stream)
 	else VgaCanvas_put(canvas, c);
     }
 
-    return -(Stream_status(stream) == SS_ERROR);
+    if (Stream_status(stream) == SS_ERROR) return -1;
+    return sz > INT_MAX ? INT_MAX : sz;
 }
