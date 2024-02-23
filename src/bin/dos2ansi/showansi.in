@@ -172,6 +172,13 @@ if [ ${_noinput} -eq 1 ]; then
     _file=""
 fi
 
+# Implied defaults
+_imp_height=25
+if [ "${_def_fontvariant}" = "w" ]; then
+    test "${_def_fontbase}" = "vga" && _imp_height=50
+    test "${_def_fontbase}" = "ega" && _imp_height=43
+fi
+
 # Default configuration values
 TERMINAL=xterm
 TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray -sl 0"
@@ -362,7 +369,7 @@ fi
 _height=${s_height}
 is_integer ${_height}	|| _height=${_def_height}
 is_integer ${_height}	|| _height=${m_height}
-is_integer ${_height}	|| _height=25
+is_integer ${_height}	|| _height=${_imp_height}
 _height=$((${_height} + ${ADDLINES}))
 test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
 test ${_width} -lt 20 && _width=20
