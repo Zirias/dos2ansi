@@ -1,10 +1,15 @@
 #!/bin/sh
 
-if [ $(id -u) -eq 0 ]; then
+# Refuse to run as root.
+# This doesn't reliably prevent running with privileges, but it's a start.
+if command -v id >/dev/null 2>&1 && [ $(id -u) -eq 0 ]; then
     echo >&2 showansi will not run as root.
     exit 1
 fi
 
+# Check whether a variable is an integer.
+# Return values are "exit codes" (0 means true).
+# Accept non-emtpy strings containing only digits.
 is_integer()
 {
     case "${1#[+-]}" in
@@ -14,11 +19,15 @@ is_integer()
     esac
 }
 
+# Exit handler to clean up temp dir
 rmtmpdir()
 {
     rm -fr "${_tmpdir}"
 }
 
+# Create a private temp dir and install handler to clean it.
+# Prefer mktemp if available, fall back to constructing a name including
+# our pid.
 mktmpdir()
 {
     trap rmtmpdir EXIT HUP INT TERM
@@ -30,6 +39,7 @@ mktmpdir()
     fi
 }
 
+# Version output
 version()
 {
     echo
@@ -41,6 +51,7 @@ version()
     echo
 }
 
+# Print usage message
 usage()
 {
     echo "Usage: showansi -V"
@@ -49,16 +60,7 @@ usage()
     echo "                [--] [args ...]"
 }
 
-err()
-{
-    usage >&2
-    if [ -n "$1" ]; then
-	echo >&2
-	echo >&2 Error: $1
-    fi
-    exit 1
-}
-
+# Print help message
 help()
 {
     usage
@@ -69,7 +71,7 @@ help()
     echo "                       Also passes ignoring SAUCE to dos2ansi"
     echo "         -c columns    Default number of columns instead of 80"
     echo "                       Also passed to dos2ansi as the width when"
-    echo "                       no width from SAUCE is available"
+    echo "                       no width from metadata is available"
     echo "         -d dos2ansi   Run 'dos2ansi' instead of %%DOS2ANSI%%"
     echo "         -e            Use an EGA font by default instead of VGA"
     echo "         -h            Print this help and exit"
@@ -85,6 +87,18 @@ help()
     echo
 }
 
+# Print usage plus optional error and exit
+err()
+{
+    usage >&2
+    if [ -n "$1" ]; then
+	echo >&2
+	echo >&2 Error: $1
+    fi
+    exit 1
+}
+
+# Try to get an argument for a commandline flag
 fetcharg()
 {
     case "${_needarg}" in
@@ -97,6 +111,7 @@ fetcharg()
     esac
 }
 
+# Default settings before parsing commandline
 _dos2ansi="%%DOS2ANSI%%"
 _d2a_args=""
 _def_width=80
@@ -112,6 +127,7 @@ _noinput=0
 _needarg=""
 _exec=exec
 
+# Parse commandline part one: showansi flags
 while true; do
     case "${1}" in
 	--) shift; break;;
@@ -138,6 +154,8 @@ while true; do
 	    shift;;
     esac
 done
+
+# Parse commandline part two: dos2ansi flags and optional input file
 _d2a_endflags=0
 while test -n "${1}"; do
     test "${1}" = "--" || _file="${1}"
@@ -154,7 +172,7 @@ if [ ${_noinput} -eq 1 ]; then
     _file=""
 fi
 
-# default configuration
+# Default configuration values
 TERMINAL=xterm
 TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray -sl 0"
 D2A_ARGS=-X
@@ -185,18 +203,22 @@ FONT_AC_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
 FONT_AC_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
 USERRC=
 
-# read system-wide configuration
+# Read system-wide configuration
 test -r "%%SYSCONFDIR%%/showansirc" && . "%%SYSCONFDIR%%/showansirc"
 
-# read per-user configuration (if enabled in system-wide configuration)
+# Read per-user configuration (if enabled in system-wide configuration)
 test -n "${USERRC}" && test -r "${USERRC}" && . "${USERRC}"
 
-# sanitize numeric values
+# Sanitize numeric values
 is_integer "${MAXWIDTH}"    || MAXWIDTH=200
 is_integer "${MAXHEIGHT}"   || MAXHEIGHT=60
 is_integer "${ADDLINES}"    || ADDLINES=1
 
-# create "mapping table" to map SAUCE metadata to fonts easily
+# Prepend dos2ansi flags from configuration
+test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
+
+# Create "mapping table" to map SAUCE metadata to fonts and per font
+# max window height easily
 _font_vga_1_1=${FONT_VGA9X16}
 _font_vga_0_1=${FONT_VGA8X16}
 _font_vgaw_1_1=${FONT_VGA9X8}
@@ -213,20 +235,39 @@ _font_ega_1_0=${FONT_AC_EGA9X14}
 _font_ega_0_0=${FONT_AC_EGA8X14}
 _font_egaw_1_0=${FONT_AC_EGA9X8}
 _font_egaw_0_0=${FONT_AC_EGA8X8}
+_height_vga_1_1=${MAXHEIGHT_VGA9X16}
+_height_vga_0_1=${MAXHEIGHT_VGA8X16}
+_height_vgaw_1_1=${MAXHEIGHT_VGA9X8}
+_height_vgaw_0_1=${MAXHEIGHT_VGA8X8}
+_height_ega_1_1=${MAXHEIGHT_EGA9X14}
+_height_ega_0_1=${MAXHEIGHT_EGA8X14}
+_height_egaw_1_1=${MAXHEIGHT_EGA9X8}
+_height_egaw_0_1=${MAXHEIGHT_EGA8X8}
+_height_vga_1_0=${MAXHEIGHT_AC_VGA9X16}
+_height_vga_0_0=${MAXHEIGHT_AC_VGA8X16}
+_height_vgaw_1_0=${MAXHEIGHT_AC_VGA9X8}
+_height_vgaw_0_0=${MAXHEIGHT_AC_VGA8X8}
+_height_ega_1_0=${MAXHEIGHT_AC_EGA9X14}
+_height_ega_0_0=${MAXHEIGHT_AC_EGA8X14}
+_height_egaw_1_0=${MAXHEIGHT_AC_EGA9X8}
+_height_egaw_0_0=${MAXHEIGHT_AC_EGA8X8}
 
-# validate dos2ansi works with given flags and input file and collect metadata
+# Validate dos2ansi works with given flags, try to feed stdin if input is
+# missing and collect medatada.
 m_setwidth=""
 m_setheight=""
 m_resetwidth=""
 m_resetheight=""
 m_height=""
-test -n "${D2A_ARGS}" && _d2a_args="${D2A_ARGS} ${_d2a_args}"
 if ! _d2a_stderr=$(eval \
     "${_dos2ansi} -m ${_d2a_args} </dev/null 2>&1 >/dev/null"); then
+    # When dos2ansi fails for missing input with -m, there will be no
+    # output. So, error out if there *is* output.
     if [ -n "${_d2a_stderr}" ]; then
 	printf >&2 "${_d2a_stderr}\n"
 	exit 1;
     fi
+    # Otherwise retry after capturing stdin to a temporary file.
     if ! mktmpdir; then
 	echo >&2 "Error creating temporary directory"
 	test -n "${TMPDIR}" && echo >&2 "Check TMPDIR variable."
@@ -248,7 +289,7 @@ ${_d2a_stderr}
 META
 fi
 
-# read SAUCE metadata
+# Read SAUCE metadata
 if [ ${_noinput} -eq 0 ]; then {
     read -r _f; eval s_title=${_f}
     read -r _f; eval s_author=${_f}
@@ -276,7 +317,7 @@ if [ ${_nosauce} -eq 1 ]; then
     _d2a_args="-S ${_d2a_args}"
 fi
 
-# sanitize SAUCE metadata, construct full title and set defaults
+# Sanitize SAUCE metadata, construct full title and set defaults
 test -z "${s_title}" && s_title="showansi: <Unnamed>"
 if [ -n "${s_author}" ]; then
     s_title="${s_title} | by ${s_author}"
@@ -285,24 +326,7 @@ fi
 is_integer ${s_spacing}	|| s_spacing=${_def_spacing}
 is_integer ${s_aspect}	|| s_aspect=${_def_aspect}
 
-# calculate terminal window geometry
-_width=${s_width}
-is_integer ${_width} || _width=${m_resetwidth}
-if ! is_integer ${_width}; then
-    _d2a_args="-w${_def_width} ${_d2a_args}"
-    _width=${_def_width}
-fi
-_height=${s_height}
-is_integer ${_height}	|| _height=${_def_height}
-is_integer ${_height}	|| _height=${m_height}
-is_integer ${_height}	|| _height=25
-_height=$((${_height} + ${ADDLINES}))
-test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
-test ${_width} -lt 20 && _width=20
-test ${_height} -gt ${MAXHEIGHT} && _height=${MAXHEIGHT}
-test ${_height} -lt $((${ADDLINES} + 2)) && _height=$((${ADDLINES} + 2))
-
-# map metadata to font to use
+# Map metadata to font to use and optional max height
 case "${s_font}" in
     "IBM VGA")	    _fontbase=vga;;
     "IBM VGA50")    _fontbase=vgaw;;
@@ -323,10 +347,29 @@ case "${s_font}" in
 	fi
 	;;
 esac
-_fontname=_font_${_fontbase}_${s_spacing}_${s_aspect}
-eval _font=\${${_fontname}}
+_fontname=${_fontbase}_${s_spacing}_${s_aspect}
+eval _font=\${_font_${_fontname}}
+eval _maxheight=\${_height_${_fontname}}
+is_integer "${_maxheight}" || _maxheight=${MAXHEIGHT}
 
-# construct commandline to execute
+# Calculate terminal window geometry
+_width=${s_width}
+is_integer ${_width} || _width=${m_resetwidth}
+if ! is_integer ${_width}; then
+    _d2a_args="-w${_def_width} ${_d2a_args}"
+    _width=${_def_width}
+fi
+_height=${s_height}
+is_integer ${_height}	|| _height=${_def_height}
+is_integer ${_height}	|| _height=${m_height}
+is_integer ${_height}	|| _height=25
+_height=$((${_height} + ${ADDLINES}))
+test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
+test ${_width} -lt 20 && _width=20
+test ${_height} -gt ${_maxheight} && _height=${_maxheight}
+test ${_height} -lt $((${ADDLINES} + 2)) && _height=$((${ADDLINES} + 2))
+
+# Construct commandline to execute
 _dos2ansicmd="${_dos2ansi} ${_d2a_args} | ${PAGER}"
 test -n "${SETGEOM}" && \
 	TERM_ARGS="${TERM_ARGS} '${SETGEOM}' ${_width}x${_height}"
@@ -336,7 +379,7 @@ test -n "${SETTITLE}" && \
 	TERM_ARGS="${TERM_ARGS} '${SETTITLE}' '${s_title}'"
 TERM_ARGS="${TERM_ARGS} '${EXECUTE}' '${_dos2ansicmd}'"
 
-# debugging output
+# Debugging output
 if [ -n "${SHOWANSI_DEBUG}" ]; then
     is_integer ${m_resetwidth} && m_setwidth=${m_resetwidth}
     is_integer ${m_resetheight} && m_setheight=${m_resetheight}
@@ -352,7 +395,7 @@ if [ -n "${SHOWANSI_DEBUG}" ]; then
     echo Executing: ${TERMINAL} ${TERM_ARGS}
 fi
 
-# execute
+# Execute
 export SHELL
 unset LESS
 eval ${_exec} ${TERMINAL} ${TERM_ARGS}
