@@ -87,8 +87,8 @@ fonts currently need a patch to play well with `xterm`, you can find it in
 
     Usage: showansi -V
            showansi -h
-           showansi [-ensw] [-c columns] [-d dos2ansi] [-r rows]
-                    [[--] [args ...]] [--] [file]
+           showansi [-Sensw] [-c columns] [-d dos2ansi] [-r rows]
+                    [--] [args ...]
 
 The behavior of the script can be adjusted to your needs using configuration
 files. A sample configuration file is installed to
