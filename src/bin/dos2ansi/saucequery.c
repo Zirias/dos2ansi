@@ -156,8 +156,7 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
 
 	    case 't':
 		sv = Sauce_type(sauce);
-		if (*sv == '<') sv = "";
-		goto string;
+		goto strvalorempty;
 
 	    case 'w':
 		iv = Sauce_width(sauce);
@@ -181,17 +180,17 @@ int SauceQuery_print(const Sauce *sauce, const char *query, int crlf)
 
 	    case 'f':
 		sv = Sauce_font(sauce);
-		if (*sv == '<') sv = "";
-		goto string;
+		goto strvalorempty;
 
 	    case 'c':
 		sv = Sauce_codepage(sauce);
-		if (*sv == '<') sv = "";
-		goto string;
+		goto strvalorempty;
 
 	    default:
 		break;
 
+	    strvalorempty:
+		if (sv && *sv == '<') sv = "";
 	    stringorempty:
 		if (!sv) sv = "";
 	    string:
