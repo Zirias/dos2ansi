@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+
+export V=1
+export prefix=/usr
+export sysconfdir=/etc/dos2ansi
+
+stagedir=$$(pwd)/debian/dos2ansi
+etcdir=/etc/dos2ansi
+docdir=/usr/share/doc/dos2ansi
+
+%:
+	dh $@
+
+execute_after_dh_install:
+	mv $(stagedir)$(etcdir)/showansirc.sample \
+		$(stagedir)$(etcdir)/showansirc
+	install -d -m755 $(stagedir)$(docdir)/examples
+	install -m644 README.md $(stagedir)$(docdir)
+	install -m644 examples/* $(stagedir)$(docdir)/examples
+

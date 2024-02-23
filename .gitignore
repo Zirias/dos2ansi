@@ -27,3 +27,8 @@ src/bin/dos2ansi/dos2ansi.exe.manifest
 src/bin/dos2ansi/showansi
 src/bin/dos2ansi/showansirc.sample
 src/bin/dos2ansi/windres.rc
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/dos2ansi.substvars
+debian/dos2ansi/
+debian/files

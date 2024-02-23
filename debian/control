@@ -1,0 +1,16 @@
+Source: dos2ansi
+Maintainer: Felix Palmen <felix@palmen-it.de>
+Section: misc
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13), ncurses-dev
+
+Package: dos2ansi
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Converter for old MS-DOS/ANSI.SYS text files
+ This tool converts MS-DOS text files using ANSI.SYS escape sequences to a
+ format a modern terminal can display. The output will use a Unicode encoding
+ of characters and only ANSI SGR escape sequences to set basic foreground and
+ background colors, intensity and blinking attribute. The input is expected to
+ use CP-437 or one of the other supported DOS codepages.
