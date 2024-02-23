@@ -19,6 +19,10 @@
 #define CP_NAMED 2
 #define CP_OTHER 3
 
+#define is_text(s) ((s)->datatype == 1 && (s)->filetype < 3)
+#define is_ansi(s) (is_text(s) && (s)->filetype > 0)
+#define likely_text(s) (is_text(s) || (s)->datatype == 0)
+
 struct Sauce
 {
     char *title;
@@ -135,20 +139,26 @@ static void getSauceComment(char *dst, RawSauce *raw, int lines, int lineno)
 static time_t getSauceDate(RawSauce *raw, size_t pos)
 {
     char *src = raw->bytes + (raw->size - MINSAUCE) + pos;
-    size_t len = 0;
-    for (; len < 8; ++len)
-    {
-	if (src[len] < '0' || src[len] > '9') break;
-    }
-    if (len != 8) return (time_t)(-1);
     struct tm tm = {0};
     char buf[5] = {0};
-    memcpy(buf, src+6, 2);
-    tm.tm_mday = atoi(buf);
-    memcpy(buf, src+4, 2);
-    tm.tm_mon = atoi(buf)-1;
-    memcpy(buf, src, 4);
-    tm.tm_year = atoi(buf)-1900;
+    char *bufp;
+    char *endp;
+    memcpy(bufp = buf, src + 6, 2);
+    if (*bufp < '0' || *bufp > '9') ++bufp;
+    tm.tm_mday = strtol(bufp, &endp, 10);
+    if (endp == buf) return (time_t)(-1);
+    memcpy(bufp = buf, src + 4, 2);
+    if (*bufp < '0' || *bufp > '9') ++bufp;
+    tm.tm_mon = strtol(bufp, 0, 10) - 1;
+    if (endp == buf) return (time_t)(-1);
+    memcpy(bufp = buf, src, 4);
+    if (*bufp < '0' || *bufp > '9') ++bufp;
+    if (*bufp < '0' || *bufp > '9') ++bufp;
+    int year = strtol(bufp, 0, 10);
+    if (endp < buf+2) return (time_t)(-1);
+    if (year < 100) tm.tm_year = year + (year < 70);
+    else if (year < 1970) return (time_t)(-1);
+    else tm.tm_year = year - 1900;
     return mktime(&tm);
 }
 
@@ -192,7 +202,7 @@ Sauce *Sauce_read(Stream *in)
     }
     free(raw);
 
-    if (self->datatype == 1 && self->filetype < 3 && self->tinfos)
+    if (likely_text(self) && self->tinfos)
     {
 	for (unsigned i = 0; i < sizeof cpfonts / sizeof *cpfonts; ++i)
 	{
@@ -258,29 +268,27 @@ const char *Sauce_type(const Sauce *self)
 
 int Sauce_width(const Sauce *self)
 {
-    if (self->datatype != 1 || self->filetype > 2) return -1;
+    if (!likely_text(self)) return -1;
     if (!self->tinfo1) return -1;
     return self->tinfo1;
 }
 
 int Sauce_height(const Sauce *self)
 {
-    if (self->datatype != 1 || self->filetype > 2) return -1;
+    if (!likely_text(self)) return -1;
     if (!self->tinfo2) return -1;
     return self->tinfo2;
 }
 
 int Sauce_nonblink(const Sauce *self)
 {
-    if (self->datatype != 1
-	    || self->filetype < 1 || self->filetype > 2) return -1;
+    if (!is_ansi(self)) return -1;
     return self->tflags & 1;
 }
 
 int Sauce_letterspacing(const Sauce *self)
 {
-    if (self->datatype != 1
-	    || self->filetype < 1 || self->filetype > 2) return -1;
+    if (!is_text(self)) return -1;
     int lsval = ((self->tflags >> 1) & 3) - 1;
     if (lsval > 1) lsval = -1;
     return lsval;
@@ -288,8 +296,7 @@ int Sauce_letterspacing(const Sauce *self)
 
 int Sauce_squarepixels(const Sauce *self)
 {
-    if (self->datatype != 1
-	    || self->filetype < 1 || self->filetype > 2) return -1;
+    if (!is_text(self)) return -1;
     int spval = ((self->tflags >> 3) & 3) - 1;
     if (spval > 1) spval = -1;
     return spval;
@@ -297,20 +304,20 @@ int Sauce_squarepixels(const Sauce *self)
 
 const char *Sauce_font(const Sauce *self)
 {
-    if (self->datatype != 1 || self->filetype > 2) return 0;
-    if (!self->tinfos) return "<IBM VGA (default)>";
+    if (!likely_text(self)) return 0;
+    if (!self->tinfos) return is_text(self) ? "<IBM VGA (default)>" : 0;
     return self->tinfos;
 }
 
 const char *Sauce_codepage(const Sauce *self)
 {
-    if (self->datatype != 1 || self->filetype > 2) return 0;
+    if (!likely_text(self)) return 0;
     switch (self->cp)
     {
-	case CP_DEFAULT: return "<437 (default)>";
+	case CP_DEFAULT: return is_text(self) ? "<437 (default)>" : 0;
 	case CP_IMPLICIT: return "<437 (implicit)>";
 	case CP_NAMED: return self->cpname;
-	case CP_OTHER: return "<Other (unknown)>";
+	case CP_OTHER: return is_text(self) ? "<Other (unknown)>" : 0;
 	default: return 0;
     }
 }
