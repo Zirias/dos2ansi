@@ -105,6 +105,29 @@
 #FONT_AC_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
 
 # ---------------------------------------------------------------------------
+# Maximum window heights per font. These can be used when the configured
+# fonts have different heights and override the global MAXHEIGHT.
+# They are all empty by default.
+# ---------------------------------------------------------------------------
+
+#MAXHEIGHT_VGA9X16=
+#MAXHEIGHT_VGA8X16=
+#MAXHEIGHT_VGA9X8=
+#MAXHEIGHT_VGA8X8=
+#MAXHEIGHT_EGA9X14=
+#MAXHEIGHT_EGA8X14=
+#MAXHEIGHT_EGA9X8=
+#MAXHEIGHT_EGA8X8=
+#MAXHEIGHT_AC_VGA9X16=
+#MAXHEIGHT_AC_VGA8X16=
+#MAXHEIGHT_AC_VGA9X8=
+#MAXHEIGHT_AC_VGA8X8=
+#MAXHEIGHT_AC_EGA9X14=
+#MAXHEIGHT_AC_EGA8X14=
+#MAXHEIGHT_AC_EGA9X8=
+#MAXHEIGHT_AC_EGA8X8=
+
+# ---------------------------------------------------------------------------
 # Finally, specify where to read per-user configuration from.
 #
 # *** CAUTION ***
