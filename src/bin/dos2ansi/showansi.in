@@ -405,7 +405,7 @@ fi
 test -n "${SETTITLE}" && \
     TERM_ARGS="${TERM_ARGS} $(shquote "${SETTITLE}") $(shquote "${s_title}")"
 test -n "${_dos2ansiesc}" && \
-    _dos2ansicmd="printf \"%b\" $(shquote "${_dos2ansiesc}"); ${_dos2ansicmd}"
+    _dos2ansicmd="printf %b $(shquote "${_dos2ansiesc}"); ${_dos2ansicmd}"
 TERM_ARGS="${TERM_ARGS} $(shquote "${EXECUTE}") $(shquote "${_dos2ansicmd}")"
 
 # Debugging output
