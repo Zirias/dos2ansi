@@ -11,7 +11,7 @@
 # The default args will set the TERM name to xterm-256color, disable Xft
 # usage by passing an empty string for -fa, set default colors to match
 # VGA and disable the scrollback buffer.
-#TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray -sl 0"
+#TERM_ARGS="-tn xterm-256color -fa '' -bg black -fg lightgray -sl 0"
 
 # The shell to use in the X terminal emulator
 # This will just be exported, terminal emulators *should* use it to execute

@@ -7,6 +7,11 @@ if command -v id >/dev/null 2>&1 && [ $(id -u) -eq 0 ]; then
     exit 1
 fi
 
+if ! command -v sed >/dev/null 2>&1; then
+    echo >&2 showansi needs a sed command.
+    exit 1
+fi
+
 # Check whether a variable is an integer.
 # Return values are "exit codes" (0 means true).
 # Accept non-emtpy strings containing only digits.
@@ -23,6 +28,12 @@ is_integer()
 rmtmpdir()
 {
     rm -fr "${_tmpdir}"
+}
+
+# Quote a string to remain uninterpreted by the shell
+shquote()
+{
+    printf %s\\n "$1" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/'/"
 }
 
 # Create a private temp dir and install handler to clean it.
@@ -159,7 +170,7 @@ done
 _d2a_endflags=0
 while test -n "${1}"; do
     test "${1}" = "--" || _file="${1}"
-    _d2a_args="${_d2a_args} \"${1}\""
+    _d2a_args="${_d2a_args} $(shquote "${1}")"
     case "${1}" in
 	--) _d2a_endflags=1;;
 	-*T*) test ${_d2a_endflags} -eq 0 && _noinput=1 && _nosauce=1;;
@@ -181,7 +192,7 @@ fi
 
 # Default configuration values
 TERMINAL=xterm
-TERM_ARGS="-tn xterm-256color -fa \"\" -bg black -fg lightgray -sl 0"
+TERM_ARGS="-tn xterm-256color -fa '' -bg black -fg lightgray -sl 0"
 D2A_ARGS=-X
 MAXWIDTH=200
 MAXHEIGHT=60
@@ -282,7 +293,7 @@ if ! _d2a_stderr=$(eval \
     fi
     _file="${_tmpdir}/dosinput"
     cat >"${_file}"
-    _d2a_args="${_d2a_args} \"${_file}\""
+    _d2a_args="${_d2a_args} $(shquote "${_file}")"
     _exec=""
     if ! _d2a_stderr=$(eval "${_dos2ansi} -m ${_d2a_args} 2>&1 >/dev/null");
     then
@@ -384,18 +395,18 @@ if [ "${SETGEOM}" = "!" ]; then
     SETGEOM=""
 fi
 test -n "${SETGEOM}" && \
-    TERM_ARGS="${TERM_ARGS} '${SETGEOM}' ${_width}x${_height}"
+    TERM_ARGS="${TERM_ARGS} $(shquote "${SETGEOM}") ${_width}x${_height}"
 test -n "${SETFONT}" && \
-    TERM_ARGS="${TERM_ARGS} '${SETFONT}' '${_font}'"
+    TERM_ARGS="${TERM_ARGS} $(shquote "${SETFONT}") $(shquote "${_font}")"
 if [ "${SETTITLE}" = "!" ]; then
     _dos2ansiesc="${_dos2ansiesc}\\033]0;${s_title}\\07"
     SETTITLE=""
 fi
 test -n "${SETTITLE}" && \
-    TERM_ARGS="${TERM_ARGS} '${SETTITLE}' '${s_title}'"
+    TERM_ARGS="${TERM_ARGS} $(shquote "${SETTITLE}") $(shquote "${s_title}")"
 test -n "${_dos2ansiesc}" && \
-    _dos2ansicmd="printf \"%b\" \"${_dos2ansiesc}\"; ${_dos2ansicmd}"
-TERM_ARGS="${TERM_ARGS} '${EXECUTE}' '${_dos2ansicmd}'"
+    _dos2ansicmd="printf \"%b\" $(shquote "${_dos2ansiesc}"); ${_dos2ansicmd}"
+TERM_ARGS="${TERM_ARGS} $(shquote "${EXECUTE}") $(shquote "${_dos2ansicmd}")"
 
 # Debugging output
 if [ -n "${SHOWANSI_DEBUG}" ]; then
