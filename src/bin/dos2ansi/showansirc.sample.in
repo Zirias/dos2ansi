@@ -48,9 +48,13 @@
 # ---------------------------------------------------------------------------
 
 # How to set a window title
-#SETTITLE=-title
+# If this is set to '!', an escape sequence to set the terminal title is
+# used insead.
+#SETTITLE=!
 
 # How to set a window geometry (<w>x<h> in characters)
+# If this is set to '!', an escape sequence to set the terminal size is
+# used instead.
 #SETGEOM=-geometry
 
 # How to set a font

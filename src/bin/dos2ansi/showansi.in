@@ -187,7 +187,7 @@ MAXWIDTH=200
 MAXHEIGHT=60
 PAGER="less --mouse --wheel-lines 3 -~QRScPs"
 ADDLINES=1
-SETTITLE=-title
+SETTITLE=!
 SETGEOM=-geometry
 SETFONT=-fn
 EXECUTE=-e
@@ -377,13 +377,24 @@ test ${_height} -gt ${_maxheight} && _height=${_maxheight}
 test ${_height} -lt $((${ADDLINES} + 2)) && _height=$((${ADDLINES} + 2))
 
 # Construct commandline to execute
+_dos2ansiesc=""
 _dos2ansicmd="${_dos2ansi} ${_d2a_args} | ${PAGER}"
+if [ "${SETGEOM}" = "!" ]; then
+    _dos2ansiesc="${_dos2ansiesc}\\033[8;${_height};${_width}t"
+    SETGEOM=""
+fi
 test -n "${SETGEOM}" && \
-	TERM_ARGS="${TERM_ARGS} '${SETGEOM}' ${_width}x${_height}"
+    TERM_ARGS="${TERM_ARGS} '${SETGEOM}' ${_width}x${_height}"
 test -n "${SETFONT}" && \
-	TERM_ARGS="${TERM_ARGS} '${SETFONT}' '${_font}'"
+    TERM_ARGS="${TERM_ARGS} '${SETFONT}' '${_font}'"
+if [ "${SETTITLE}" = "!" ]; then
+    _dos2ansiesc="${_dos2ansiesc}\\033]0;${s_title}\\07"
+    SETTITLE=""
+fi
 test -n "${SETTITLE}" && \
-	TERM_ARGS="${TERM_ARGS} '${SETTITLE}' '${s_title}'"
+    TERM_ARGS="${TERM_ARGS} '${SETTITLE}' '${s_title}'"
+test -n "${_dos2ansiesc}" && \
+    _dos2ansicmd="printf \"%b\" \"${_dos2ansiesc}\"; ${_dos2ansicmd}"
 TERM_ARGS="${TERM_ARGS} '${EXECUTE}' '${_dos2ansicmd}'"
 
 # Debugging output
