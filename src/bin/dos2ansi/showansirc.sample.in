@@ -49,7 +49,7 @@
 
 # How to set a window title
 # If this is set to '!', an escape sequence to set the terminal title is
-# used insead.
+# used instead.
 #SETTITLE=!
 
 # How to set a window geometry (<w>x<h> in characters)

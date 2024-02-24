@@ -35,7 +35,7 @@ FONT_AC_EGA9X8="xft:AcPlus IBM EGA9x14\-2x:size=15.8"
 FONT_AC_EGA8X8="xft:AcPlus IBM EGA8x14\-2x:size=15.8"
 
 # As an alternative example, here's a configuration using smaller sizes for
-# the "x8" variants used e.g. with VGA 50-lines ans EGA 43-lines modes.
+# the "x8" variants used e.g. with VGA 50-lines and EGA 43-lines modes.
 #
 # Here we definitely also want to use the per-font maximum height as character
 # heights between the fonts differ a lot. The values must be adjusted for the
