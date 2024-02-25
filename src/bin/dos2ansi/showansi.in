@@ -24,16 +24,22 @@ is_integer()
     esac
 }
 
-# Exit handler to clean up temp dir
-rmtmpdir()
-{
-    rm -fr "${_tmpdir}"
-}
-
 # Quote a string to remain uninterpreted by the shell
 shquote()
 {
     printf %s\\n "$1" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/'/"
+}
+
+# Quote all backslashes in a string
+escquote()
+{
+    printf %s\\n "$1" | sed 's/\\/\\\\/g'
+}
+
+# Exit handler to clean up temp dir
+rmtmpdir()
+{
+    rm -fr "${_tmpdir}"
 }
 
 # Create a private temp dir and install handler to clean it.
@@ -399,7 +405,7 @@ test -n "${SETGEOM}" && \
 test -n "${SETFONT}" && \
     TERM_ARGS="${TERM_ARGS} $(shquote "${SETFONT}") $(shquote "${_font}")"
 if [ "${SETTITLE}" = "!" ]; then
-    _dos2ansiesc="${_dos2ansiesc}\\033]0;${s_title}\\07"
+    _dos2ansiesc="${_dos2ansiesc}\\033]0;$(escquote "${s_title}")\\07"
     SETTITLE=""
 fi
 test -n "${SETTITLE}" && \
