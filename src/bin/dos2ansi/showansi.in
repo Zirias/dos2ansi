@@ -7,11 +7,6 @@ if command -v id >/dev/null 2>&1 && [ $(id -u) -eq 0 ]; then
     exit 1
 fi
 
-if ! command -v sed >/dev/null 2>&1; then
-    echo >&2 showansi needs a sed command.
-    exit 1
-fi
-
 # Check whether a variable is an integer.
 # Return values are "exit codes" (0 means true).
 # Accept non-emtpy strings containing only digits.
@@ -27,13 +22,34 @@ is_integer()
 # Quote a string to remain uninterpreted by the shell
 shquote()
 {
-    printf %s\\n "$1" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/'/"
+    _unquoted="${1}"
+    _quoted=""
+    while [ -n "${_unquoted}" ]; do
+	_rest="${_unquoted#?}"
+	_char="${_unquoted%"${_rest}"}"
+	_unquoted="${_rest}"
+	if [ "${_char}" = "'" ]; then
+	    _quoted="${_quoted}'\\''"
+	else
+	    _quoted="${_quoted}${_char}"
+	fi
+    done
+    printf %s "'${_quoted}'"
 }
 
 # Quote all backslashes in a string
 escquote()
 {
-    printf %s\\n "$1" | sed 's/\\/\\\\/g'
+    _unquoted="${1}"
+    _quoted=""
+    while [ -n "${_unquoted}" ]; do
+	_rest="${_unquoted#?}"
+	_char="${_unquoted%"${_rest}"}"
+	_unquoted="${_rest}"
+	test "${_char}" = '\' && _quoted="${_quoted}\\"
+	_quoted="${_quoted}${_char}"
+    done
+    printf %s "${_quoted}"
 }
 
 # Exit handler to clean up temp dir
