@@ -14,7 +14,7 @@ dos2ansi_MODULES:=	ansicolorwriter \
 			util \
 			vgacanvas
 
-dos2ansi_VERSION:=	1.6.2
+dos2ansi_VERSION:=	1.6.3
 dos2ansi_SUB_FILES:=	decl.h
 
 ifeq ($(PLATFORM),posix)
