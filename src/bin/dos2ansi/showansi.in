@@ -1,4 +1,4 @@
-#!%%POSIXSHELL%%
+#!%%SH%%
 
 # Refuse to run as root.
 # This doesn't reliably prevent running with privileges, but it's a start.
