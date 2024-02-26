@@ -15,6 +15,7 @@ defaults.mk
 *.exo
 *.prg
 /*.cfg
+/.path-cache
 /bin/
 /lib/
 /obj/
