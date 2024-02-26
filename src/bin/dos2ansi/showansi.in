@@ -1,4 +1,5 @@
 #!%%SH%%
+# vim: ft=sh:sts=4:sw=4
 
 # Refuse to run as root.
 # This doesn't reliably prevent running with privileges, but it's a start.
