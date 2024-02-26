@@ -17,7 +17,7 @@
 # This will just be exported, terminal emulators *should* use it to execute
 # the dos2ansi pipeline (xterm does) and there should rarely be a need to
 # change it.
-#SHELL=/bin/sh
+#SHELL=%%SH%%
 
 # Arguments to always pass to dos2ansi
 # The default -X disables attempting to match visuals by replacing some
