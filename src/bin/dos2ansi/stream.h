@@ -32,6 +32,13 @@ typedef enum StreamStatus
     SS_ERROR	= 2	    /* An error occured */
 } StreamStatus;
 
+typedef enum StreamSeekStart
+{
+    SSS_START	= 0,	    /* Seek from the beginning of the stream */
+    SSS_POS	= 1,	    /* Seek from current reading position */
+    SSS_END	= 2	    /* Seek from the end of the stream */
+} StreamSeekStart;
+
 #if defined(USE_WIN32)
 typedef void *FILEHANDLE;	    /* Use a HANDLE in client code */
 #  define NOTAFILE ((FILEHANDLE)-1)
@@ -92,6 +99,8 @@ size_t Stream_read(Stream *self, void *ptr, size_t sz)
     CMETHOD ATTR_NONNULL((2));
 int Stream_getc(Stream *self) CMETHOD;
 int Stream_flush(Stream *self, int sys) CMETHOD;
+long Stream_size(Stream *self) CMETHOD;
+long Stream_seek(Stream *self, StreamSeekStart start, long offset) CMETHOD;
 StreamStatus Stream_status(const Stream *self) CMETHOD;
 
 void Stream_destroy(Stream *self);

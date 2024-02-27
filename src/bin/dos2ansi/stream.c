@@ -104,8 +104,38 @@ static StreamStatus readFile(HANDLE file, size_t *nread,
     return status;
 }
 
+static long fileSize(HANDLE file)
+{
+    LARGE_INTEGER sz;
+    if (GetFileSizeEx(file, &sz)) return sz.QuadPart;
+    else return -1;
+}
+
+static long seekFile(HANDLE file, StreamSeekStart start, long offset)
+{
+    LARGE_INTEGER off;
+    LARGE_INTEGER pos;
+    DWORD method = 0;
+    off.QuadPart = offset;
+    switch (start)
+    {
+	case SSS_START:
+	    method = FILE_BEGIN;
+	    break;
+	case SSS_POS:
+	    method = FILE_CURRENT;
+	    break;
+	case SSS_END:
+	    method = FILE_END;
+	    break;
+    }
+    if (SetFilePointerEx(file, off, &pos, method)) return pos.QuadPart;
+    else return -1;
+}
+
 #elif defined(USE_POSIX)
 #  include <fcntl.h>
+#  include <sys/stat.h>
 #  include <unistd.h>
 #  define GETEXTRAFLAGS(f, fl) (void)(fl);
 #  define FLUSHFILE(f, fl) fdatasync(f)
@@ -160,6 +190,31 @@ static StreamStatus readFile(int file, size_t *nread,
     }
     *nread = rc;
     return rc == 0 ? SS_EOF : SS_OK;
+}
+
+static long fileSize(int file)
+{
+    struct stat st;
+    if (fstat(file, &st) == 0) return st.st_size;
+    else return -1;
+}
+
+static long seekFile(int file, StreamSeekStart start, long offset)
+{
+    int whence = 0;
+    switch (start)
+    {
+	case SSS_START:
+	    whence = SEEK_SET;
+	    break;
+	case SSS_POS:
+	    whence = SEEK_CUR;
+	    break;
+	case SSS_END:
+	    whence = SEEK_END;
+	    break;
+    }
+    return lseek(file, offset, whence);
 }
 
 #else /* !USE_WIN32 && !USE_POSIX */
@@ -236,6 +291,34 @@ static StreamStatus readFile(FILE *file, size_t *nread,
     return SS_OK;
 }
 
+static long fileSize(FILE *file)
+{
+    long pos = ftell(file);
+    if (pos < 0) return -1;
+    if (fseek(file, 0, SEEK_END) < 0) return -1;
+    long sz = ftell(file);
+    fseek(file, pos, SEEK_SET);
+    return sz >= 0 ? sz : -1;
+}
+
+static long seekFile(FILE *file, StreamSeekStart start, long offset)
+{
+    int whence = 0;
+    switch (start)
+    {
+	case SSS_START:
+	    whence = SEEK_SET;
+	    break;
+	case SSS_POS:
+	    whence = SEEK_CUR;
+	    break;
+	case SSS_END:
+	    whence = SEEK_END;
+	    break;
+    }
+    if (fseek(file, offset, whence) < 0) return -1;
+    return ftell(file);
+}
 #endif
 
 struct Stream
@@ -527,6 +610,91 @@ size_t Stream_read(Stream *self, void *ptr, size_t sz)
 	cptr += cs;
     }
     return rd;
+}
+
+static long MemoryStream_size(MemoryStream *self)
+{
+    return self->writepos;
+}
+
+static long FileStream_size(FileStream *self)
+{
+    return fileSize(self->file);
+}
+
+static long ReaderStream_size(ReaderStream *self)
+{
+    return self->reader->stream ? Stream_size(self->reader->stream) : -1;
+}
+
+long Stream_size(Stream *self)
+{
+    switch (self->size)
+    {
+	case T_FILESTREAM:
+	    return FileStream_size((FileStream *)self);
+	case T_READERSTREAM:
+	    return ReaderStream_size((ReaderStream *)self);
+	case T_WRITERSTREAM:
+	    return -1;
+	default:
+	    return MemoryStream_size((MemoryStream *)self);
+    }
+}
+
+static long MemoryStream_seek(MemoryStream *self,
+	StreamSeekStart start, long offset)
+{
+    switch (start)
+    {
+	case SSS_START:
+	    if (offset <= 0) self->readpos = 0;
+	    else self->readpos = (size_t)offset > self->writepos
+		? self->writepos : (size_t)offset;
+	    break;
+	case SSS_POS:
+	    if (!offset) break;
+	    if (offset < 0) self->readpos = (size_t)(-offset) > self->readpos
+		? 0 : self->readpos - (size_t)(-offset);
+	    else self->readpos =
+		self->readpos + (size_t)offset > self->writepos
+		? self->writepos : self->readpos + offset;
+	    break;
+	case SSS_END:
+	    if (offset >= 0) self->readpos = self->writepos;
+	    else self->readpos = (size_t)(-offset) > self->writepos
+		? 0 : self->writepos - (size_t)(-offset);
+	    break;
+    }
+    return self->readpos;
+}
+
+static long FileStream_seek(FileStream *self,
+	StreamSeekStart start, long offset)
+{
+    return seekFile(self->file, start, offset);
+}
+
+static long ReaderStream_seek(ReaderStream *self,
+	StreamSeekStart start, long offset)
+{
+    if (!self->reader->stream) return -1;
+    return Stream_seek(self->reader->stream, start, offset);
+}
+
+long Stream_seek(Stream *self, StreamSeekStart start, long offset)
+{
+    switch (self->size)
+    {
+	case T_FILESTREAM:
+	    return FileStream_seek((FileStream *)self, start, offset);
+	case T_READERSTREAM:
+	    return ReaderStream_seek((ReaderStream *)self, start, offset);
+	case T_WRITERSTREAM:
+	    return -1;
+	default:
+	    return MemoryStream_seek((MemoryStream *)self, start, offset);
+    }
 }
 
 int Stream_getc(Stream *self)
