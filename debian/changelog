@@ -1,3 +1,9 @@
+dos2ansi (1.7) stable; urgency=low
+
+  * Minor release, several fixes and improvements
+
+ -- Felix Palmen <felix@palmen-it.de>  Tue, 27 Feb 2024 12:16:05 +0100
+
 dos2ansi (1.6.3) stable; urgency=low
 
   * Bugfix release.
