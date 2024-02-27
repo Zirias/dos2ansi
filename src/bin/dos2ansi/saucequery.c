@@ -52,15 +52,15 @@ static size_t writecp437(StreamWriter *self, const void *ptr, size_t sz)
 	    Stream_write(self->stream, &uc, 2);
 	}
 	uc = U'\n';
-	return Stream_write(self->stream, &uc, 2) / 2;
+	return !!Stream_write(self->stream, &uc, 2);
     }
     if (writer->quote && c == U'\'')
     {
-	uc = U'\\';
-	Stream_write(self->stream, &uc, 2);
+	const uint16_t us[] = { U'\'', U'\\', U'\'', U'\'' };
+	return !!Stream_write(self->stream, us, sizeof us);
     }
     uc = Codepage_map(writer->cp, c);
-    return Stream_write(self->stream, &uc, 2) / 2;
+    return !!Stream_write(self->stream, &uc, 2);
 }
 
 static void destroycp437(StreamWriter *self)
