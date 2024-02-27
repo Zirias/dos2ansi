@@ -1,5 +1,6 @@
 #!%%SH%%
 # vim: ft=sh:sts=4:sw=4
+set -f
 
 # Refuse to run as root.
 # This doesn't reliably prevent running with privileges, but it's a start.
@@ -26,16 +27,15 @@ shquote()
     _unquoted="${1}"
     _quoted=""
     while [ -n "${_unquoted}" ]; do
-	_rest="${_unquoted#?}"
-	_char="${_unquoted%"${_rest}"}"
-	_unquoted="${_rest}"
+	_char="$(printf %.1s "${_unquoted}")"
+	_unquoted="${_unquoted#"${_char}"}"
 	if [ "${_char}" = "'" ]; then
 	    _quoted="${_quoted}'\\''"
 	else
 	    _quoted="${_quoted}${_char}"
 	fi
     done
-    printf %s "'${_quoted}'"
+    printf "'%s'" "${_quoted}"
 }
 
 # Quote all backslashes in a string
@@ -44,9 +44,8 @@ escquote()
     _unquoted="${1}"
     _quoted=""
     while [ -n "${_unquoted}" ]; do
-	_rest="${_unquoted#?}"
-	_char="${_unquoted%"${_rest}"}"
-	_unquoted="${_rest}"
+	_char="$(printf %.1s "${_unquoted}")"
+	_unquoted="${_unquoted#"${_char}"}"
 	test "${_char}" = '\' && _quoted="${_quoted}\\"
 	_quoted="${_quoted}${_char}"
     done
