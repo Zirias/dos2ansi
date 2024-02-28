@@ -758,6 +758,7 @@ int Stream_flush(Stream *self, int sys)
 
 static StreamStatus MemoryStream_status(const MemoryStream *self)
 {
+    if (self->status == SS_ERROR) return SS_ERROR;
     return self->readpos == self->writepos ? SS_EOF : SS_OK;
 }
 
