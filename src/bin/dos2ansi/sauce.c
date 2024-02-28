@@ -27,6 +27,7 @@ struct Sauce
     char *group;
     char *tinfos;
     const char *cpname;
+    long startpos;
     time_t date;
     uint16_t tinfo1;
     uint16_t tinfo2;
@@ -129,10 +130,11 @@ Sauce *Sauce_read(Stream *in)
     uint8_t rawsauce[SAUCESZ];
     uint8_t *rawcmnt = 0;
     Sauce *self = 0;
+    long startpos = 0;
 
     long insz = Stream_size(in);
     if (insz < SAUCESZ) goto done;
-    if (Stream_seek(in, SSS_END, -SAUCESZ) < 0) goto done;
+    if ((startpos = Stream_seek(in, SSS_END, -SAUCESZ)) < 0) goto done;
     if (Stream_read(in, rawsauce, SAUCESZ) != SAUCESZ) goto done;
     if (strncmp((const char *)rawsauce, "SAUCE00", 7) != 0) goto done;
 
@@ -141,7 +143,8 @@ Sauce *Sauce_read(Stream *in)
     {
 	long cmntsz = 64 * lines + 5;
 	if (cmntsz + SAUCESZ > insz) goto done;
-	if (Stream_seek(in, SSS_END, -(cmntsz + SAUCESZ)) < 0) goto done;
+	if ((startpos = Stream_seek(in,
+			SSS_END, -(cmntsz + SAUCESZ))) < 0) goto done;
 	rawcmnt = xmalloc(cmntsz);
 	if (Stream_read(in, rawcmnt, cmntsz) != (unsigned)cmntsz) goto done;
 	if (strncmp((const char *)rawcmnt, "COMNT", 5) != 0) goto done;
@@ -153,6 +156,7 @@ Sauce *Sauce_read(Stream *in)
     self->group = getSauceStr(rawsauce, 62, 20);
     self->tinfos = getSauceStr(rawsauce, 106, 22);
     self->cpname = 0;
+    self->startpos = startpos;
     self->date = getSauceDate(rawsauce, 82);
     self->tinfo1 = getSauceInt(rawsauce, 96, 1);
     self->tinfo2 = getSauceInt(rawsauce, 98, 1);
@@ -195,6 +199,11 @@ Sauce *Sauce_read(Stream *in)
 done:
     free(rawcmnt);
     return self;
+}
+
+long Sauce_startpos(const Sauce *self)
+{
+    return self->startpos;
 }
 
 const char *Sauce_title(const Sauce *self)
