@@ -64,26 +64,22 @@ static Stream *createInputStream(const Config *config,
     else in = Stream_createStandard(SST_STDIN);
     if (!in) return 0;
 
-    if (Config_showsauce(config) || Config_query(config)
-	    || !Config_nosauce(config))
+    long insz = Stream_size(in);
+    if (insz < 0)
     {
-	long insz = Stream_size(in);
-	if (insz < 0)
-	{
-	    Stream *mem = Stream_fromStream(in, MAXSTREAMSIZE);
-	    Stream_destroy(in);
-	    in = mem;
-	    if (!in) return 0;
-	}
-	settings->sauce = Sauce_read(in);
-	Stream_seek(in, SSS_START, 0);
+	Stream *mem = Stream_fromStream(in, MAXSTREAMSIZE);
+	Stream_destroy(in);
+	in = mem;
+	if (!in) return 0;
     }
+    settings->sauce = Sauce_read(in);
+    Stream_seek(in, SSS_START, 0);
 
     if (!Config_showsauce(config) && !Config_query(config))
     {
-	long insz = settings->sauce ? Sauce_startpos(settings->sauce) : -1;
+	long dossz = settings->sauce ? Sauce_startpos(settings->sauce) : -1;
 	in = DosReader_create(in,
-		STREAMBUFSIZE, insz, Config_ignoreeof(config));
+		STREAMBUFSIZE, dossz, Config_ignoreeof(config));
     }
 
     if (Config_showsauce(config))
@@ -262,6 +258,12 @@ int main(int argc, char **argv)
     {
 	meta = Stream_createStandard(SST_STDERR);
 	meta = BufferedWriter_create(meta, 1024);
+    }
+
+    if (Config_nosauce(config))
+    {
+	Sauce_destroy(insettings.sauce);
+	insettings.sauce = 0;
     }
 
     int width = insettings.forcedwidth;
