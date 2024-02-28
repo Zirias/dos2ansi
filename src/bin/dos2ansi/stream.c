@@ -107,8 +107,9 @@ static StreamStatus readFile(HANDLE file, size_t *nread,
 static long fileSize(HANDLE file)
 {
     LARGE_INTEGER sz;
-    if (GetFileSizeEx(file, &sz)) return sz.QuadPart;
-    else return -1;
+    if (GetFileType(file) != FILE_TYPE_DISK) return -1;
+    if (!GetFileSizeEx(file, &sz)) return -1;
+    return sz.QuadPart;
 }
 
 static long seekFile(HANDLE file, StreamSeekStart start, long offset)
@@ -195,8 +196,9 @@ static StreamStatus readFile(int file, size_t *nread,
 static long fileSize(int file)
 {
     struct stat st;
-    if (fstat(file, &st) == 0) return st.st_size;
-    else return -1;
+    if (fstat(file, &st) < 0) return -1;
+    if (!S_ISREG(st.st_mode)) return -1;
+    return st.st_size;
 }
 
 static long seekFile(int file, StreamSeekStart start, long offset)
