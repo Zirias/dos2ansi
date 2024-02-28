@@ -9,10 +9,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAXSAUCE 0x4100
-#define MINSAUCE 0x80
-#define RDBUFCHUNK 0x208
-#define RDCHUNK 0x200
+#define SAUCESZ 0x80
 
 #define CP_DEFAULT 0
 #define CP_IMPLICIT 1
@@ -42,12 +39,6 @@ struct Sauce
     char comment[][65];
 };
 
-typedef struct RawSauce
-{
-    size_t size;
-    char bytes[];
-} RawSauce;
-
 static const char *cpfonts[] =
 {
     "IBM VGA ",
@@ -57,41 +48,10 @@ static const char *cpfonts[] =
     "IBM EGA43 "
 };
 
-static RawSauce *RawSauce_read(Stream *in)
+static unsigned checkSauceStr(uint8_t *src, unsigned maxlen)
 {
-    size_t avail = 2 * RDBUFCHUNK;
-    RawSauce *self = xmalloc(sizeof *self + avail);
-    self->size = 0;
-    size_t read = 0;
-    size_t rdchunk = RDCHUNK;
-    while ((read = Stream_read(in, self->bytes + self->size, rdchunk)))
-    {
-	self->size += read;
-	if (self->size + rdchunk > MAXSAUCE) rdchunk = MAXSAUCE - self->size;
-	if (self->size + rdchunk > avail)
-	{
-	    avail += RDBUFCHUNK;
-	    if (avail > MAXSAUCE) goto error;
-	    self = xrealloc(self, sizeof *self + avail);
-	}
-	if (read < rdchunk) break;
-    }
-    int status = Stream_status(in);
-    if (status != SS_EOF) goto error;
-    if (self->size < MINSAUCE) goto error;
-    if (strncmp(self->bytes + (self->size - MINSAUCE),
-		"SAUCE00", 7) != 0) goto error;
-    return self;
-
-error:
-    free(self);
-    return 0;
-}
-
-static size_t checkSauceStr(char *src, size_t maxlen)
-{
-    size_t len = 0;
-    for (size_t i = 0; i < maxlen; ++i)
+    unsigned len = 0;
+    for (unsigned i = 0; i < maxlen; ++i)
     {
 	if (!src[i]) break;
 	if (src[i] != 0x20)
@@ -107,10 +67,10 @@ static size_t checkSauceStr(char *src, size_t maxlen)
     return len;
 }
 
-static char *getSauceStr(RawSauce *raw, size_t pos, size_t maxlen)
+static char *getSauceStr(uint8_t *raw, unsigned pos, unsigned maxlen)
 {
-    char *src = raw->bytes + (raw->size - MINSAUCE) + pos;
-    size_t len = checkSauceStr(src, maxlen);
+    uint8_t *src = raw + pos;
+    unsigned len = checkSauceStr(src, maxlen);
     if (!len) return 0;
     char *str = xmalloc(len + 1);
     memcpy(str, src, len);
@@ -118,27 +78,18 @@ static char *getSauceStr(RawSauce *raw, size_t pos, size_t maxlen)
     return str;
 }
 
-static int checkSauceComment(RawSauce *raw, unsigned lines)
+static void getSauceComment(char *dst, uint8_t *raw, int lineno)
 {
-    size_t size = 64 * lines + MINSAUCE + 5;
-    if (raw->size < size) return -1;
-    char *tag = raw->bytes + (raw->size - size);
-    if (strncmp(tag, "COMNT", 5) != 0) return -1;
-    return 0;
-}
-
-static void getSauceComment(char *dst, RawSauce *raw, int lines, int lineno)
-{
-    char *src = raw->bytes + (raw->size - MINSAUCE - 64 * (lines - lineno));
-    size_t len = checkSauceStr(src, 64);
+    uint8_t *src = raw + 64 * lineno + 5;
+    unsigned len = checkSauceStr(src, 64);
     if (len > 0 && len < 64 && src[len] == 0x20) ++len;
     memcpy(dst, src, len);
     dst[len] = 0;
 }
 
-static time_t getSauceDate(RawSauce *raw, size_t pos)
+static time_t getSauceDate(uint8_t *raw, unsigned pos)
 {
-    char *src = raw->bytes + (raw->size - MINSAUCE) + pos;
+    uint8_t *src = raw + pos;
     struct tm tm = {0};
     char buf[5] = {0};
     char *bufp;
@@ -162,45 +113,59 @@ static time_t getSauceDate(RawSauce *raw, size_t pos)
     return mktime(&tm);
 }
 
-static unsigned getSauceInt(RawSauce *raw, size_t pos, int word)
+static unsigned getSauceInt(uint8_t *raw, unsigned pos, int word)
 {
-    char *src = raw->bytes + (raw->size - MINSAUCE) + pos;
-    unsigned v = (uint8_t)*src;
+    uint8_t *src = raw + pos;
+    unsigned v = *src;
     if (word)
     {
-	v |= (((uint8_t)src[1]) << 8);
+	v |= (src[1] << 8);
     }
     return v;
 }
 
 Sauce *Sauce_read(Stream *in)
 {
-    RawSauce *raw = RawSauce_read(in);
-    if (!raw) return 0;
+    uint8_t rawsauce[SAUCESZ];
+    uint8_t *rawcmnt = 0;
+    Sauce *self = 0;
 
-    int lines = getSauceInt(raw, 104, 0);
-    if (lines && checkSauceComment(raw, lines) < 0) lines = 0;
+    long insz = Stream_size(in);
+    if (insz < SAUCESZ) goto done;
+    if (Stream_seek(in, SSS_END, -SAUCESZ) < 0) goto done;
+    if (Stream_read(in, rawsauce, SAUCESZ) != SAUCESZ) goto done;
+    if (strncmp((const char *)rawsauce, "SAUCE00", 7) != 0) goto done;
 
-    Sauce *self = xmalloc(sizeof *self + lines * sizeof *self->comment);
-    self->title = getSauceStr(raw, 7, 35);
-    self->author = getSauceStr(raw, 42, 20);
-    self->group = getSauceStr(raw, 62, 20);
-    self->tinfos = getSauceStr(raw, 106, 22);
+    unsigned lines = getSauceInt(rawsauce, 104, 0);
+    if (lines)
+    {
+	long cmntsz = 64 * lines + 5;
+	if (cmntsz + SAUCESZ > insz) goto done;
+	if (Stream_seek(in, SSS_END, -(cmntsz + SAUCESZ)) < 0) goto done;
+	rawcmnt = xmalloc(cmntsz);
+	if (Stream_read(in, rawcmnt, cmntsz) != (unsigned)cmntsz) goto done;
+	if (strncmp((const char *)rawcmnt, "COMNT", 5) != 0) goto done;
+    }
+
+    self = xmalloc(sizeof *self + lines * sizeof *self->comment);
+    self->title = getSauceStr(rawsauce, 7, 35);
+    self->author = getSauceStr(rawsauce, 42, 20);
+    self->group = getSauceStr(rawsauce, 62, 20);
+    self->tinfos = getSauceStr(rawsauce, 106, 22);
     self->cpname = 0;
-    self->date = getSauceDate(raw, 82);
-    self->tinfo1 = getSauceInt(raw, 96, 1);
-    self->tinfo2 = getSauceInt(raw, 98, 1);
-    self->datatype = getSauceInt(raw, 94, 0);
-    self->filetype = getSauceInt(raw, 95, 0);
-    self->tflags = getSauceInt(raw, 105, 0);
+    self->date = getSauceDate(rawsauce, 82);
+    self->tinfo1 = getSauceInt(rawsauce, 96, 1);
+    self->tinfo2 = getSauceInt(rawsauce, 98, 1);
+    self->datatype = getSauceInt(rawsauce, 94, 0);
+    self->filetype = getSauceInt(rawsauce, 95, 0);
+    self->tflags = getSauceInt(rawsauce, 105, 0);
     self->cp = CP_DEFAULT;
     self->scrheight = 0;
     self->lines = lines;
-    for (int i = 0; i < lines; ++i)
+    for (unsigned i = 0; i < lines; ++i)
     {
-	getSauceComment(self->comment[i], raw, lines, i);
+	getSauceComment(self->comment[i], rawcmnt, i);
     }
-    free(raw);
 
     if (likely_text(self) && self->tinfos)
     {
@@ -227,6 +192,8 @@ Sauce *Sauce_read(Stream *in)
 	else if (!strncmp(self->tinfos, "IBM ", 4)) self->scrheight = 25;
     }
 
+done:
+    free(rawcmnt);
     return self;
 }
 
