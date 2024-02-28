@@ -1,0 +1,26 @@
+# ===========================================================================
+# This file configures showansi to use a mix of bitmap (for square pixels)
+# and scalable (for rectangular pixels) fonts. For more info, see the files
+# fonts.bitmap and fonts.scalable
+#
+# To customize or add your own, place the files in
+# %%SYSCONFDIR%%/showansi/
+# ===========================================================================
+
+FONT_VGA9X16="-fa '' -fn -ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1"
+FONT_VGA8X16="-fa '' -fn -ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1"
+FONT_VGA9X8="-fa '' -fn -ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1"
+FONT_VGA8X8="-fa '' -fn -ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1"
+FONT_EGA9X14="-fa '' -fn -ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1"
+FONT_EGA8X14="-fa '' -fn -ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1"
+FONT_EGA9X8="-fa '' -fn -ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1"
+FONT_EGA8X8="-fa '' -fn '-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1'"
+
+FONT_AC_VGA9X16="-fa 'xft:AcPlus IBM VGA9x16:size=16'"
+FONT_AC_VGA8X16="-fa 'xft:AcPlus IBM VGA8x16:size=16'"
+FONT_AC_VGA9X8="-fa 'xft:AcPlus IBM VGA9x16\-2x:size=16'"
+FONT_AC_VGA8X8="-fa 'xft:AcPlus IBM VGA8x16\-2x:size=16'"
+FONT_AC_EGA9X14="-fa 'xft:AcPlus IBM EGA9x14:size=15.8'"
+FONT_AC_EGA8X14="-fa 'xft:AcPlus IBM EGA8x14:size=15.8'"
+FONT_AC_EGA9X8="-fa 'xft:AcPlus IBM EGA9x14\-2x:size=15.8'"
+FONT_AC_EGA8X8="-fa 'xft:AcPlus IBM EGA8x14\-2x:size=15.8'"

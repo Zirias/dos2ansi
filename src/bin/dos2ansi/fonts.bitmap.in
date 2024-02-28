@@ -1,0 +1,33 @@
+# ---------------------------------------------------------------------------
+# This file configures showansi to use bitmap fonts from
+# https://github.com/farsil/ibmfonts
+#
+# To customize or add your own, place the files in
+# %%SYSCONFDIR%%/showansi/
+# ---------------------------------------------------------------------------
+
+FONT_VGA9X16="-fa '' -fn -ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1"
+FONT_VGA8X16="-fa '' -fn -ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1"
+FONT_VGA9X8="-fa '' -fn -ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1"
+FONT_VGA8X8="-fa '' -fn -ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1"
+FONT_EGA9X14="-fa '' -fn -ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1"
+FONT_EGA8X14="-fa '' -fn -ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1"
+FONT_EGA9X8="-fa '' -fn -ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1"
+FONT_EGA8X8="-fa '' -fn '-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1'"
+
+# ---------------------------------------------------------------------------
+# The fonts to use instead when aspect correction is requested in SAUCE
+# metadata.
+#
+# For bitmap fonts, these are just the same as above.
+# ---------------------------------------------------------------------------
+
+FONT_AC_VGA9X16="-fa '' -fn -ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1"
+FONT_AC_VGA8X16="-fa '' -fn -ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1"
+FONT_AC_VGA9X8="-fa '' -fn -ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1"
+FONT_AC_VGA8X8="-fa '' -fn -ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1"
+FONT_AC_EGA9X14="-fa '' -fn -ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1"
+FONT_AC_EGA8X14="-fa '' -fn -ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1"
+FONT_AC_EGA9X8="-fa '' -fn -ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1"
+FONT_AC_EGA8X8="-fa '' -fn -ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1"
+

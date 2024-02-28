@@ -8,10 +8,9 @@
 #TERMINAL=xterm
 
 # Arguments to always pass to the X terminal emulator
-# The default args will set the TERM name to xterm-256color, disable Xft
-# usage by passing an empty string for -fa, set default colors to match
-# VGA and disable the scrollback buffer.
-#TERM_ARGS="-tn xterm-256color -fa '' -bg black -fg lightgray -sl 0"
+# The default args will set the TERM name to xterm-256color, set default
+# colors to match VGA and disable the scrollback buffer.
+#TERM_ARGS="-tn xterm-256color -bg black -fg lightgray -sl 0"
 
 # The shell to use in the X terminal emulator
 # This will just be exported, terminal emulators *should* use it to execute
@@ -41,12 +40,6 @@
 # The default of 1 matches the bottom line less always displays
 #ADDLINES=1
 
-
-# ---------------------------------------------------------------------------
-# The following settings contain commandline flags to use with the selected
-# TERMINAL to make it do things we will need
-# ---------------------------------------------------------------------------
-
 # How to set a window title
 # If this is set to '!', an escape sequence to set the terminal title is
 # used instead.
@@ -57,89 +50,27 @@
 # used instead.
 #SETGEOM=-geometry
 
-# How to set a font
-#SETFONT=-fn
-
-# How to execute a command (instead of the interactive shell)
+# How to execute a command in the terminal (instead of the interactive shell)
 #EXECUTE=-e
 
+# The set of fonts to use
+# showansi will look for a file named "fonts.<FONTSET>" in these locations:
+# - %%FONTSDIR%%
+# - %%SYSCONFDIR%%/showansi
+# - whatever USERFONTS is set to
+# Each existing file will be loaded, so it's e.g. possible to just override
+# a few fonts from %%FONTSDIR%%/fonts.example
+# by placing a file named fonts.example in USERFONTS.
+# For examples see the files installed to %%FONTSDIR%%
+FONTSET=mixed
 
-# ---------------------------------------------------------------------------
-# The fonts to use in the X terminal emulator to match what is requested
-# according to SAUCE metadata.
-#
-# The default settings select bitmap fonts from ibmfonts found here:
-# https://github.com/farsil/ibmfonts
-# ---------------------------------------------------------------------------
-
-#FONT_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
-#FONT_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
-#FONT_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
-#FONT_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
-#FONT_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
-#FONT_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
-#FONT_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
-#FONT_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
-
-# ---------------------------------------------------------------------------
-# The fonts to use instead when aspect correction is requested in SAUCE
-# metadata.
-#
-# The default is just using the same fonts (therefore ignoring aspect
-# correction). Aspect correction with plain bitmap font rendering is
-# impossible, it can be achieved with scalable fonts using antialiasing
-# subpixel rendering though, but quality will suffer of course.
-# You might want to try it using scalable fonts from
-# https://int10h.org/oldschool-pc-fonts/
-#
-# With xterm, this would mean setting the font must be done with -fa instead
-# of -fn.
-#
-# An example configuration using these scalable fonts is included with the
-# dos2ansi source tarball.
-# ---------------------------------------------------------------------------
-
-#FONT_AC_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
-#FONT_AC_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
-#FONT_AC_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
-#FONT_AC_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
-#FONT_AC_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
-#FONT_AC_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
-#FONT_AC_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
-#FONT_AC_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
-
-# ---------------------------------------------------------------------------
-# Maximum window heights per font. These can be used when the configured
-# fonts have different heights and override the global MAXHEIGHT.
-# They are all empty by default.
-# ---------------------------------------------------------------------------
-
-#MAXHEIGHT_VGA9X16=
-#MAXHEIGHT_VGA8X16=
-#MAXHEIGHT_VGA9X8=
-#MAXHEIGHT_VGA8X8=
-#MAXHEIGHT_EGA9X14=
-#MAXHEIGHT_EGA8X14=
-#MAXHEIGHT_EGA9X8=
-#MAXHEIGHT_EGA8X8=
-#MAXHEIGHT_AC_VGA9X16=
-#MAXHEIGHT_AC_VGA8X16=
-#MAXHEIGHT_AC_VGA9X8=
-#MAXHEIGHT_AC_VGA8X8=
-#MAXHEIGHT_AC_EGA9X14=
-#MAXHEIGHT_AC_EGA8X14=
-#MAXHEIGHT_AC_EGA9X8=
-#MAXHEIGHT_AC_EGA8X8=
-
-# ---------------------------------------------------------------------------
-# Finally, specify where to read per-user configuration from.
-#
+# Finally, specify where to read per-user configuration from
 # *** CAUTION ***
 # showansi just sources configuration files, so any shell script there will
 # be executed. It will refuse to run as root, but if you're paranoid enough,
-# you might still want to additionally comment this setting, which will
+# you might still want to additionally comment these settings, which will
 # disable reading any user configuration.
 # ***************
-# ---------------------------------------------------------------------------
 
-USERRC=~/.config/showansirc
+USERRC=~/.config/dos2ansi/showansirc
+USERFONTS=~/.config/dos2ansi

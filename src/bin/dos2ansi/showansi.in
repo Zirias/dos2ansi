@@ -216,7 +216,7 @@ fi
 
 # Default configuration values
 TERMINAL=xterm
-TERM_ARGS="-tn xterm-256color -fa '' -bg black -fg lightgray -sl 0"
+TERM_ARGS="-tn xterm-256color -bg black -fg lightgray -sl 0"
 D2A_ARGS=-X
 MAXWIDTH=200
 MAXHEIGHT=60
@@ -224,32 +224,62 @@ PAGER="less --mouse --wheel-lines 3 -~QRScPs"
 ADDLINES=1
 SETTITLE=!
 SETGEOM=-geometry
-SETFONT=-fn
 EXECUTE=-e
 SHELL=%%SH%%
-FONT_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
-FONT_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
-FONT_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
-FONT_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
-FONT_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
-FONT_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
-FONT_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
-FONT_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
-FONT_AC_VGA9X16=-ibm-vga-normal-r-normal--16-120-96-96-c-90-iso10646-1
-FONT_AC_VGA8X16=-ibm-vga-normal-r-normal--16-120-96-96-c-80-iso10646-1
-FONT_AC_VGA9X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-180-iso10646-1
-FONT_AC_VGA8X8=-ibm-vga-normal-r-expanded--16-120-96-96-c-160-iso10646-1
-FONT_AC_EGA9X14=-ibm-ega-normal-r-normal--14-100-96-96-c-90-iso10646-1
-FONT_AC_EGA8X14=-ibm-ega-normal-r-normal--14-100-96-96-c-80-iso10646-1
-FONT_AC_EGA9X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-180-iso10646-1
-FONT_AC_EGA8X8=-ibm-ega-normal-r-expanded--14-100-96-96-c-160-iso10646-1
+FONTSET=
+FONT_VGA9X16=
+FONT_VGA8X16=
+FONT_VGA9X8=
+FONT_VGA8X8=
+FONT_EGA9X14=
+FONT_EGA8X14=
+FONT_EGA9X8=
+FONT_EGA8X8=
+FONT_AC_VGA9X16=
+FONT_AC_VGA8X16=
+FONT_AC_VGA9X8=
+FONT_AC_VGA8X8=
+FONT_AC_EGA9X14=
+FONT_AC_EGA8X14=
+FONT_AC_EGA9X8=
+FONT_AC_EGA8X8=
+MAXHEIGHT_VGA9X16=
+MAXHEIGHT_VGA8X16=
+MAXHEIGHT_VGA9X8=
+MAXHEIGHT_VGA8X8=
+MAXHEIGHT_EGA9X14=
+MAXHEIGHT_EGA8X14=
+MAXHEIGHT_EGA9X8=
+MAXHEIGHT_EGA8X8=
+MAXHEIGHT_AC_VGA9X16=
+MAXHEIGHT_AC_VGA8X16=
+MAXHEIGHT_AC_VGA9X8=
+MAXHEIGHT_AC_VGA8X8=
+MAXHEIGHT_AC_EGA9X14=
+MAXHEIGHT_AC_EGA8X14=
+MAXHEIGHT_AC_EGA9X8=
+MAXHEIGHT_AC_EGA8X8=
 USERRC=
+USERFONTS=
 
 # Read system-wide configuration
 test -r "%%SYSCONFDIR%%/showansirc" && . "%%SYSCONFDIR%%/showansirc"
 
 # Read per-user configuration (if enabled in system-wide configuration)
 test -n "${USERRC}" && test -r "${USERRC}" && . "${USERRC}"
+
+# Read configured fontset
+if [ -n "${FONTSET}" ]; then
+    if [ -r "%%FONTSDIR%%/fonts.${FONTSET}" ]; then
+	. "%%FONTSDIR%%/fonts.${FONTSET}"
+    fi
+    if [ -r "%%SYSCONFDIR%%/showansi/fonts.${FONTSET}" ]; then
+	. "%%SYSCONFDIR%%/showansi/fonts.${FONTSET}"
+    fi
+    if [ -n "${USERFONTS}" ] && [ -r "${USERFONTS}/fonts.${FONTSET}" ]; then
+	. "${USERFONTS}/fonts.${FONTSET}"
+    fi
+fi
 
 # Sanitize numeric values
 is_integer "${MAXWIDTH}"    || MAXWIDTH=200
@@ -418,8 +448,7 @@ if [ "${SETGEOM}" = "!" ]; then
 fi
 test -n "${SETGEOM}" && \
     TERM_ARGS="${TERM_ARGS} $(shquote "${SETGEOM}") ${_width}x${_height}"
-test -n "${SETFONT}" && \
-    TERM_ARGS="${TERM_ARGS} $(shquote "${SETFONT}") $(shquote "${_font}")"
+test -n "${_font}" && TERM_ARGS="${TERM_ARGS} ${_font}"
 if [ "${SETTITLE}" = "!" ]; then
     _dos2ansiesc="${_dos2ansiesc}\\033]0;$(escquote "${s_title}")\\07"
     SETTITLE=""
