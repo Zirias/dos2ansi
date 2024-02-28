@@ -104,14 +104,14 @@ help()
     echo "         -S            Ignore SAUCE and other metadata and use"
     echo "                       all defaults"
     echo "                       Also passes ignoring SAUCE to dos2ansi"
-    echo "         -c columns    Default number of columns instead of 80"
-    echo "                       Also passed to dos2ansi as the width when"
-    echo "                       no width from metadata is available"
+    echo "         -c columns    Number of columns for display"
+    echo "                       Also passed to dos2ansi as the default"
+    echo "                       canvas width (-w)"
     echo "         -d dos2ansi   Run 'dos2ansi' instead of %%DOS2ANSI%%"
     echo "         -e            Use an EGA font by default instead of VGA"
     echo "         -h            Print this help and exit"
     echo "         -n            Disable letter spacing by default"
-    echo "         -r rows       Default number of rows instead of 25"
+    echo "         -r rows       Number of rows for display"
     echo "         -s            Assume square pixels by default"
     echo "         -w            Use wide fonts (VGA50 or EGA43) by default"
     echo
@@ -149,7 +149,7 @@ fetcharg()
 # Default settings before parsing commandline
 _dos2ansi="%%DOS2ANSI%%"
 _d2a_args=""
-_def_width=80
+_def_width=""
 _def_height=""
 _def_spacing=1
 _def_aspect=0
@@ -205,13 +205,6 @@ done
 test -n "${_needarg}" && err "Missing arguments for given flags"
 if [ ${_noinput} -eq 1 ]; then
     _file=""
-fi
-
-# Implied defaults
-_imp_height=25
-if [ "${_def_fontvariant}" = "w" ]; then
-    test "${_def_fontbase}" = "vga" && _imp_height=50
-    test "${_def_fontbase}" = "ega" && _imp_height=43
 fi
 
 # Default configuration values
@@ -364,13 +357,11 @@ if [ ${_noinput} -eq 0 ]; then {
     read -r _f; eval s_title=${_f}
     read -r _f; eval s_author=${_f}
     read -r _f; eval s_group=${_f}
-    read -r _f; eval s_width=${_f}
-    read -r _f; eval s_height=${_f}
     read -r _f; eval s_spacing=${_f}
     read -r _f; eval s_aspect=${_f}
     read -r _f; eval s_font=${_f}
 } <<SAUCE
-$(${_dos2ansi} -q :TAGwhsaf "${_file}" 2>/dev/null)
+$(${_dos2ansi} -q :TAGsaf "${_file}" 2>/dev/null)
 SAUCE
 fi
 if [ ${_nosauce} -eq 1 ]; then
@@ -379,8 +370,6 @@ if [ ${_nosauce} -eq 1 ]; then
 	s_author=""
 	s_group=""
     fi
-    s_width=""
-    s_height=""
     s_spacing=""
     s_aspect=""
     s_font=""
@@ -406,9 +395,13 @@ case "${s_font}" in
 	_fontbase=${_def_fontbase}${_def_fontvariant}
 	if [ ${_nometa} -eq 0 ]; then
 	    if is_integer ${m_resetheight}; then
-		if ${m_resetheight} -eq 25; then
-		    if is_integer ${m_resetwidth} && ${m_resetwidth} -eq 40
-		    then _fontbase=vgaw; else _fontbase=vga; fi
+		if [ ${m_resetheight} -eq 25 ]; then
+		    if is_integer ${m_resetwidth} && [ ${m_resetwidth} -eq 40 ]
+		    then
+			_fontbase=${_def_fontbase}w
+		    else
+			_fontbase=${_def_fontbase}
+		    fi
 		fi
 	    elif is_integer ${m_height}; then
 		test ${m_height} -eq 43 && _fontbase=egaw
@@ -423,16 +416,14 @@ eval _maxheight=\${_height_${_fontname}}
 is_integer "${_maxheight}" || _maxheight=${MAXHEIGHT}
 
 # Calculate terminal window geometry
-_width=${s_width}
-is_integer ${_width} || _width=${m_resetwidth}
-if ! is_integer ${_width}; then
+if is_integer ${_def_width}; then
     _d2a_args="-w${_def_width} ${_d2a_args}"
     _width=${_def_width}
 fi
-_height=${s_height}
-is_integer ${_height}	|| _height=${_def_height}
-is_integer ${_height}	|| _height=${m_height}
-is_integer ${_height}	|| _height=${_imp_height}
+is_integer ${_width} || _width=${m_resetwidth}
+is_integer ${_width} || _width=${m_setwidth}
+_height=${_def_height}
+is_integer ${_height} || _height=${m_height}
 _height=$((${_height} + ${ADDLINES}))
 test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
 test ${_width} -lt 20 && _width=20
@@ -465,7 +456,6 @@ if [ -n "${SHOWANSI_DEBUG}" ]; then
     is_integer ${m_resetheight} && m_setheight=${m_resetheight}
     is_integer ${m_setwidth} || m_setwidth=${_def_width}
     is_integer ${m_setheight} || m_setheight=${_def_height}
-    is_integer ${s_width} && echo SAUCE size: ${s_width}x${s_height}
     echo screen size: ${m_setwidth}x${m_setheight}
     is_integer ${m_height} && echo canvas size: ${m_setwidth}x${m_height}
     echo font: ${s_font}
