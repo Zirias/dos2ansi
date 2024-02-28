@@ -323,11 +323,9 @@ if ! _d2a_stderr=$(eval \
 	exit 1
     fi
 fi
-if [ ${_nometa} -eq 0 ]; then
-    while read -r _m; do eval ${_m}; done <<META
+while read -r _m; do eval ${_m}; done <<META
 ${_d2a_stderr}
 META
-fi
 
 # Read SAUCE metadata
 if [ ${_noinput} -eq 0 ]; then {
