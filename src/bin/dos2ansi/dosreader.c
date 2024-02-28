@@ -8,7 +8,6 @@
 typedef struct DosReader
 {
     StreamReader base;
-    Stream *out;
     size_t bufsize;
     size_t bufused;
     size_t bufpos;
@@ -55,8 +54,6 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
 	    memcpy(cptr, reader->buf + reader->bufpos, buflen);
 	    cptr += buflen;
 	}
-	else if (reader->out) Stream_write(reader->out,
-		reader->buf + reader->bufpos, buflen);
 	nread += buflen;
 	reader->bufpos += buflen;
 	if (!reader->ignoreeof && reader->bufpos < reader->bufused
@@ -84,42 +81,11 @@ Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
     reader->base.status = status;
     reader->base.destroy = 0;
     reader->base.stream = in;
-    reader->out = 0;
     reader->bufsize = bufsize;
     reader->bufused = 0;
     reader->bufpos = 0;
     reader->ignoreeof = ignoreeof;
     reader->doseof = 0;
     return Stream_createReader((StreamReader *)reader, magic);
-}
-
-int DosReader_readUntilEof(Stream *stream, Stream *out)
-{
-    StreamReader *self = Stream_reader(stream, magic);
-    if (!self) return -1;
-    DosReader *reader = (DosReader *)self;
-    reader->out = out;
-    while (read(self, 0, reader->bufsize)) ;
-    reader->out = 0;
-    return -(Stream_status(self->stream) == SS_ERROR);
-}
-
-int DosReader_seekAfterEof(Stream *stream)
-{
-    StreamReader *self = Stream_reader(stream, magic);
-    if (!self) return -1;
-    DosReader *reader = (DosReader *)self;
-    while (read(self, 0, reader->bufsize)) ;
-    if (!reader->doseof) return -1;
-    return 0;
-}
-
-int DosReader_setIgnoreEof(Stream *stream, int ignoreeof)
-{
-    StreamReader *self = Stream_reader(stream, magic);
-    if (!self) return -1;
-    DosReader *reader = (DosReader *)self;
-    reader->ignoreeof = ignoreeof;
-    return 0;
 }
 
