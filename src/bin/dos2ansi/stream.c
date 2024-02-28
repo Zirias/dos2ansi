@@ -329,8 +329,10 @@ struct Stream
 typedef struct MemoryStream
 {
     struct Stream base;
+    size_t maxsize;
     size_t readpos;
     size_t writepos;
+    StreamStatus status;
     unsigned char *mem;
 } MemoryStream;
 
@@ -359,14 +361,32 @@ typedef struct WriterStream
     StreamWriter *writer;
 } WriterStream;
 
-Stream *Stream_createMemory(void)
+Stream *Stream_createMemory(size_t maxsize)
 {
     MemoryStream *self = xmalloc(sizeof *self);
-    self->base.size = MS_CHUNKSZ;
+    self->base.size = MS_CHUNKSZ > maxsize ? maxsize : MS_CHUNKSZ;
+    self->maxsize = maxsize;
     self->readpos = 0;
     self->writepos = 0;
+    self->status = SS_OK;
     self->mem = xmalloc(self->base.size * sizeof *self->mem);
     return (Stream *)self;
+}
+
+Stream *Stream_fromStream(Stream *in, size_t maxsize)
+{
+    char buf[16*1024];
+    Stream *self = Stream_createMemory(maxsize);
+    size_t rdsz;
+    while ((rdsz = Stream_read(in, buf, sizeof buf)))
+    {
+	if (Stream_write(self, buf, rdsz) < rdsz)
+	{
+	    Stream_destroy(self);
+	    return 0;
+	}
+    }
+    return self;
 }
 
 Stream *Stream_fromFile(FILEHANDLE file, FileOpenFlags flags)
@@ -452,12 +472,19 @@ StreamWriter *Stream_writer(Stream *self, const void *magic)
 static size_t MemoryStream_write(MemoryStream *self,
 	const void *ptr, size_t sz)
 {
+    if (self->writepos + sz > self->maxsize)
+    {
+	self->status = SS_ERROR;
+	sz = self->maxsize - self->writepos;
+	if (!sz) return 0;
+    }
     size_t newpos = self->writepos + sz;
     if (newpos > self->base.size)
     {
 	size_t newsz = newpos;
 	size_t fragsz = newsz % MS_CHUNKSZ;
 	if (fragsz) newsz += (MS_CHUNKSZ - fragsz);
+	if (newsz > self->maxsize) newsz = self->maxsize;
 	self->mem = xrealloc(self->mem, newsz * sizeof *self->mem);
 	self->base.size = newsz;
     }

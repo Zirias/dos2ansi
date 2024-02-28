@@ -69,7 +69,8 @@ struct StreamWriter
     Stream  *stream;
 };
 
-Stream *Stream_createMemory(void) ATTR_RETNONNULL;
+Stream *Stream_createMemory(size_t maxsize) ATTR_RETNONNULL;
+Stream *Stream_fromStream(Stream *in, size_t maxsize) ATTR_NONNULL((1));
 Stream *Stream_fromFile(FILEHANDLE file, FileOpenFlags flags) ATTR_RETNONNULL;
 Stream *Stream_createStandard(StandardStreamType type) ATTR_RETNONNULL;
 Stream *Stream_openFile(const char *filename, FileOpenFlags flags);

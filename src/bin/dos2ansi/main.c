@@ -45,7 +45,7 @@ static Stream *createInputStream(const Config *config,
 
     if (Config_test(config))
     {
-	in = Stream_createMemory();
+	in = Stream_createMemory(4096);
 	TestWriter_write(in);
 	settings->forcedwidth = 70;
 	return in;
@@ -75,7 +75,7 @@ static Stream *createInputStream(const Config *config,
 	    && !Config_ignoreeof(config)
 	    && !Config_nosauce(config))
     {
-	Stream *tmp = Stream_createMemory();
+	Stream *tmp = Stream_createMemory(4*1024*1024);
 	if (DosReader_readUntilEof(in, tmp) == 0)
 	{
 	    if (Stream_status(in) == SS_DOSEOF)
