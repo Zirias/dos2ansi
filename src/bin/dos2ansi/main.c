@@ -49,7 +49,7 @@ static Stream *createInputStream(const Config *config,
     if (Config_test(config))
     {
 	in = Stream_createMemory(4096);
-	TestWriter_write(in);
+	TestWriter_write(in, config);
 	settings->forcedwidth = 70;
 	settings->forcedheight = 25;
 	return in;

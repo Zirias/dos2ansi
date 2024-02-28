@@ -1,14 +1,16 @@
 #include "testwriter.h"
 
+#include "codepage.h"
+#include "config.h"
 #include "stream.h"
 
 #include <stdio.h>
 #include <string.h>
 
-int TestWriter_write(Stream *stream)
+int TestWriter_write(Stream *stream, const Config *config)
 {
-    Stream_puts(stream, "Codepage:\r\n\r\n");
-    Stream_puts(stream, "\33[1;44m 0x ");
+    Stream_printf(stream, "Codepage %s:\r\n\r\n\33[1;44m 0x ",
+	    Codepage_name(Config_codepage(config)));
     for (unsigned char i = 0; i < 16; ++i)
     {
 	Stream_printf(stream, " %02x ", i << 4);

@@ -532,6 +532,12 @@ CodepageFlags CodepageFlags_byName(const char *name)
     return CPF_NONE;
 }
 
+const char *Codepage_name(CodepageId cpid)
+{
+    if (cpid < 0 || cpid > sizeof cpnames / sizeof *cpnames) return 0;
+    return cpnames[cpid];
+}
+
 Codepage *Codepage_create(CodepageId id, CodepageFlags flags)
 {
     int scanpipe = 0;

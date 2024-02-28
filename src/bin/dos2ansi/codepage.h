@@ -40,6 +40,7 @@ typedef enum CodepageFlags {
 
 CodepageId CodepageId_byName(const char *name) ATTR_NONNULL((1));
 CodepageFlags CodepageFlags_byName(const char *name) ATTR_NONNULL((1));
+const char *Codepage_name(CodepageId cpid) ATTR_PURE;
 
 Codepage *Codepage_create(CodepageId id, CodepageFlags flags);
 uint16_t Codepage_map(const Codepage *self, uint8_t c) CMETHOD ATTR_PURE;
