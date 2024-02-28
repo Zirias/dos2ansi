@@ -8,7 +8,7 @@
 C_CLASS_DECL(Sauce);
 C_CLASS_DECL(Stream);
 
-Sauce *Sauce_read(Stream *in) ATTR_NONNULL((1));
+Sauce *Sauce_read(Stream *in, long streamsz) ATTR_NONNULL((1));
 long Sauce_startpos(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_title(const Sauce *self) CMETHOD ATTR_PURE;
 const char *Sauce_author(const Sauce *self) CMETHOD ATTR_PURE;

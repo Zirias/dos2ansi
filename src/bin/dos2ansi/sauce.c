@@ -125,14 +125,15 @@ static unsigned getSauceInt(uint8_t *raw, unsigned pos, int word)
     return v;
 }
 
-Sauce *Sauce_read(Stream *in)
+Sauce *Sauce_read(Stream *in, long streamsz)
 {
     uint8_t rawsauce[SAUCESZ];
     uint8_t *rawcmnt = 0;
     Sauce *self = 0;
     long startpos = 0;
 
-    long insz = Stream_size(in);
+    long insz = streamsz;
+    if (insz < 0) insz = Stream_size(in);
     if (insz < SAUCESZ) goto done;
     if ((startpos = Stream_seek(in, SSS_END, -SAUCESZ)) < 0) goto done;
     if (Stream_read(in, rawsauce, SAUCESZ) != SAUCESZ) goto done;

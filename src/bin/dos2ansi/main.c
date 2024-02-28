@@ -72,11 +72,11 @@ static Stream *createInputStream(const Config *config,
 	in = mem;
 	if (!in) return 0;
     }
-    settings->sauce = Sauce_read(in);
-    Stream_seek(in, SSS_START, 0);
+    settings->sauce = Sauce_read(in, insz);
 
     if (!Config_showsauce(config) && !Config_query(config))
     {
+	Stream_seek(in, SSS_START, 0);
 	long dossz = settings->sauce ? Sauce_startpos(settings->sauce) : -1;
 	in = DosReader_create(in,
 		STREAMBUFSIZE, dossz, Config_ignoreeof(config));
