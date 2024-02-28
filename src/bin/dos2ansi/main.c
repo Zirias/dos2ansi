@@ -74,24 +74,29 @@ static Stream *createInputStream(const Config *config,
     }
     settings->sauce = Sauce_read(in, insz);
 
-    if (!Config_showsauce(config) && !Config_query(config))
+    if (Config_showsauce(config))
+    {
+	Stream_destroy(in);
+	in = 0;
+	settings->forcedwidth = 80;
+	settings->forcedheight = 25;
+	if (!settings->sauce)
+	{
+	    fputs("No SAUCE found!\n", stderr);
+	}
+    }
+    else
     {
 	Stream_seek(in, SSS_START, 0);
 	long dossz = settings->sauce ? Sauce_startpos(settings->sauce) : -1;
 	in = DosReader_create(in,
 		STREAMBUFSIZE, dossz, Config_ignoreeof(config));
-    }
 
-    if (Config_showsauce(config))
-    {
-	if (!settings->sauce)
+	if (Config_nosauce(config))
 	{
-	    fputs("No SAUCE found!\n", stderr);
-	    Stream_destroy(in);
-	    return 0;
+	    Sauce_destroy(settings->sauce);
+	    settings->sauce = 0;
 	}
-	settings->forcedwidth = 80;
-	settings->forcedheight = 25;
     }
 
     return in;
@@ -244,7 +249,7 @@ int main(int argc, char **argv)
     if (!config) goto done;
 
     in = createInputStream(config, &insettings);
-    if (!in) goto done;
+    if (!in && !insettings.sauce) goto done;
 
     if (Config_query(config))
     {
@@ -252,18 +257,6 @@ int main(int argc, char **argv)
 	if (SauceQuery_print(insettings.sauce, Config_query(config),
 		    Config_crlf(config)) >= 0) rc = EXIT_SUCCESS;
 	goto done;
-    }
-
-    if (Config_meta(config))
-    {
-	meta = Stream_createStandard(SST_STDERR);
-	meta = BufferedWriter_create(meta, 1024);
-    }
-
-    if (Config_nosauce(config))
-    {
-	Sauce_destroy(insettings.sauce);
-	insettings.sauce = 0;
     }
 
     int width = insettings.forcedwidth;
@@ -278,11 +271,14 @@ int main(int argc, char **argv)
     if (tabwidth < 0) tabwidth = 8;
     if (tabwidth > width) tabwidth = width;
 
-    if (meta)
+    if (Config_meta(config))
     {
+	meta = Stream_createStandard(SST_STDERR);
+	meta = BufferedWriter_create(meta, 1024);
 	Stream_printf(meta, "m_setwidth=%d\n", width);
 	Stream_printf(meta, "m_setheight=%d\n", height);
     }
+
     canvas = VgaCanvas_create(width, height, tabwidth);
     if (!canvas) goto done;
     if (Config_showsauce(config))
@@ -292,6 +288,8 @@ int main(int argc, char **argv)
     else
     {
 	int rdsz = AnsiSysRenderer_render(canvas, meta, in);
+	Stream_destroy(in);
+	in = 0;
 	if (meta && !rdsz)
 	{
 	    BufferedWriter_discard(meta);
@@ -299,8 +297,6 @@ int main(int argc, char **argv)
 	}
 	if (rdsz < 0) goto done;
     }
-    Stream_destroy(in);
-    in = 0;
 
     out = createOutputStream(config, insettings.sauce, &outsettings);
     if (!out) goto done;
