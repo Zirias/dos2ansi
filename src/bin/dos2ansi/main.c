@@ -25,10 +25,12 @@
 #endif
 
 #define STREAMBUFSIZE (256*1024)
+#define MAXSTREAMSIZE (4*1024*1024)
 
 typedef struct InputStreamSettings {
     Sauce *sauce;
     int forcedwidth;
+    int forcedheight;
 } InputStreamSettings;
 
 typedef struct OutputStreamSettings
@@ -41,6 +43,7 @@ static Stream *createInputStream(const Config *config,
 	InputStreamSettings *settings)
 {
     settings->forcedwidth = -1;
+    settings->forcedheight = -1;
     Stream *in = 0;
 
     if (Config_test(config))
@@ -48,6 +51,7 @@ static Stream *createInputStream(const Config *config,
 	in = Stream_createMemory(4096);
 	TestWriter_write(in);
 	settings->forcedwidth = 70;
+	settings->forcedheight = 25;
 	return in;
     }
 
@@ -60,41 +64,36 @@ static Stream *createInputStream(const Config *config,
     else in = Stream_createStandard(SST_STDIN);
     if (!in) return 0;
 
-    in = DosReader_create(in, STREAMBUFSIZE,
-	    !Config_showsauce(config) && Config_ignoreeof(config));
-
-    if (Config_showsauce(config)
-	    && DosReader_seekAfterEof(in) == 0
-	    && Stream_status(in) == SS_DOSEOF)
+    if (Config_showsauce(config) || Config_query(config)
+	    || !Config_nosauce(config))
     {
-	DosReader_setIgnoreEof(in, 1);
-	settings->sauce = Sauce_read(in);
-	settings->forcedwidth = 80;
-    }
-    else if (!Config_showsauce(config)
-	    && !Config_ignoreeof(config)
-	    && !Config_nosauce(config))
-    {
-	Stream *tmp = Stream_createMemory(4*1024*1024);
-	if (DosReader_readUntilEof(in, tmp) == 0)
+	long insz = Stream_size(in);
+	if (insz < 0)
 	{
-	    if (Stream_status(in) == SS_DOSEOF)
-	    {
-		DosReader_setIgnoreEof(in, 1);
-		settings->sauce = Sauce_read(in);
-	    }
+	    Stream *mem = Stream_fromStream(in, MAXSTREAMSIZE);
 	    Stream_destroy(in);
-	    in = tmp;
-	    tmp = 0;
+	    in = mem;
+	    if (!in) return 0;
 	}
-	else Stream_destroy(tmp);
+	settings->sauce = Sauce_read(in);
+	Stream_seek(in, SSS_START, 0);
     }
 
-    if (Config_showsauce(config) && !settings->sauce)
+    if (!Config_showsauce(config) && !Config_query(config))
     {
-	fputs("No SAUCE found!\n", stderr);
-	Stream_destroy(in);
-	in = 0;
+	in = DosReader_create(in, STREAMBUFSIZE, Config_ignoreeof(config));
+    }
+
+    if (Config_showsauce(config))
+    {
+	if (!settings->sauce)
+	{
+	    fputs("No SAUCE found!\n", stderr);
+	    Stream_destroy(in);
+	    return 0;
+	}
+	settings->forcedwidth = 80;
+	settings->forcedheight = 25;
     }
 
     return in;
@@ -267,7 +266,7 @@ int main(int argc, char **argv)
     if (width < 0 && insettings.sauce) width = Sauce_width(insettings.sauce);
     if (width < 0) width = Config_width(config);
     if (width < 0) width = 80;
-    int height = -1;
+    int height = insettings.forcedheight;
     if (insettings.sauce) height = Sauce_scrheight(insettings.sauce);
     if (height < 0) height = Config_scrheight(config);
     if (height < 0) height = 25;
@@ -282,7 +281,7 @@ int main(int argc, char **argv)
     }
     canvas = VgaCanvas_create(width, height, tabwidth);
     if (!canvas) goto done;
-    if (Config_showsauce(config) && insettings.sauce)
+    if (Config_showsauce(config))
     {
 	SaucePrinter_print(canvas, insettings.sauce, Config_nowrap(config));
     }
