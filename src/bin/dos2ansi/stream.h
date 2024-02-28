@@ -26,7 +26,6 @@ typedef enum StandardStreamType
 
 typedef enum StreamStatus
 {
-    SS_RESERVED	= -1,	    /* Negative values for reader/writer extensions */
     SS_OK	= 0,	    /* Stream is usable */
     SS_EOF	= 1,	    /* Stream reached the end */
     SS_ERROR	= 2	    /* An error occured */

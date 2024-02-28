@@ -11,8 +11,10 @@ typedef struct DosReader
     size_t bufsize;
     size_t bufused;
     size_t bufpos;
+    long insz;
+    long inpos;
     int ignoreeof;
-    int doseof;
+    int eof;
     char buf[];
 } DosReader;
 
@@ -24,14 +26,9 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
     char *cptr = ptr;
     size_t nread = 0;
 
-    if (reader->doseof > 0)
-    {
-	reader->doseof = -1;
-	return 0;
-    }
+    if (reader->eof) return 0;
 
-    reader->doseof = 0;
-    while (!reader->doseof && nread < size)
+    while (!reader->eof && nread < size)
     {
 	if (reader->bufpos == reader->bufused) reader->bufused = 0;
 	if (!reader->bufused)
@@ -46,22 +43,27 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
 	if (!reader->ignoreeof)
 	{
 	    char *eofpos = memchr(reader->buf + reader->bufpos, 0x1a, buflen);
-	    if (eofpos) buflen = eofpos - (reader->buf + reader->bufpos);
+	    if (eofpos)
+	    {
+		buflen = eofpos - (reader->buf + reader->bufpos);
+		reader->eof = 1;
+	    }
+	    if (reader->insz >= 0)
+	    {
+		reader->inpos += buflen;
+		if (reader->inpos > reader->insz)
+		{
+		    buflen -= reader->inpos - reader->insz;
+		    reader->eof = 1;
+		    reader->inpos = reader->insz;
+		}
+	    }
 	}
 	if (!buflen) break;
-	if (cptr)
-	{
-	    memcpy(cptr, reader->buf + reader->bufpos, buflen);
-	    cptr += buflen;
-	}
+	memcpy(cptr, reader->buf + reader->bufpos, buflen);
+	cptr += buflen;
 	nread += buflen;
 	reader->bufpos += buflen;
-	if (!reader->ignoreeof && reader->bufpos < reader->bufused
-		&& reader->buf[reader->bufpos] == 0x1a)
-	{
-	    ++reader->bufpos;
-	    reader->doseof = 1;
-	}
 	if (reader->bufused < reader->bufsize) break;
     }
     return nread;
@@ -70,11 +72,11 @@ static size_t read(StreamReader *self, void *ptr, size_t size)
 static int status(const StreamReader *self)
 {
     const DosReader *reader = (const DosReader *)self;
-    if (reader->doseof < 0) return SS_DOSEOF;
+    if (reader->eof) return SS_EOF;
     return Stream_status(self->stream);
 }
 
-Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
+Stream *DosReader_create(Stream *in, size_t bufsize, long insz, int ignoreeof)
 {
     DosReader *reader = xmalloc(sizeof *reader + bufsize);
     reader->base.read = read;
@@ -84,8 +86,10 @@ Stream *DosReader_create(Stream *in, size_t bufsize, int ignoreeof)
     reader->bufsize = bufsize;
     reader->bufused = 0;
     reader->bufpos = 0;
+    reader->insz = insz;
+    reader->inpos = 0;
     reader->ignoreeof = ignoreeof;
-    reader->doseof = 0;
+    reader->eof = 0;
     return Stream_createReader((StreamReader *)reader, magic);
 }
 
