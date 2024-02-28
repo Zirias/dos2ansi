@@ -1,6 +1,8 @@
 #!%%SH%%
 # vim: ft=sh:sts=4:sw=4
 set -f
+_locale=$(locale)
+LC_ALL=C
 
 # Refuse to run as root.
 # This doesn't reliably prevent running with privileges, but it's a start.
@@ -27,7 +29,7 @@ shquote()
     _unquoted="${1}"
     _quoted=""
     while [ -n "${_unquoted}" ]; do
-	_char="$(printf %.1s "${_unquoted}")"
+	_char="$(printf %c "${_unquoted}")"
 	_unquoted="${_unquoted#"${_char}"}"
 	if [ "${_char}" = "'" ]; then
 	    _quoted="${_quoted}'\\''"
@@ -44,7 +46,7 @@ escquote()
     _unquoted="${1}"
     _quoted=""
     while [ -n "${_unquoted}" ]; do
-	_char="$(printf %.1s "${_unquoted}")"
+	_char="$(printf %c "${_unquoted}")"
 	_unquoted="${_unquoted#"${_char}"}"
 	test "${_char}" = '\' && _quoted="${_quoted}\\"
 	_quoted="${_quoted}${_char}"
@@ -447,4 +449,4 @@ fi
 # Execute
 export SHELL
 unset LESS
-eval ${_exec} ${TERMINAL} ${TERM_ARGS}
+eval ${_locale} ${_exec} ${TERMINAL} ${TERM_ARGS}
