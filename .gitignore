@@ -25,12 +25,12 @@ defaults.mk
 html
 src/bin/dos2ansi/decl.h
 src/bin/dos2ansi/dos2ansi.exe.manifest
-src/bin/dos2ansi/fonts.bitmap
-src/bin/dos2ansi/fonts.mixed
-src/bin/dos2ansi/fonts.scalable
-src/bin/dos2ansi/showansi
-src/bin/dos2ansi/showansirc.sample
 src/bin/dos2ansi/windres.rc
+src/bin/showansi/fonts.bitmap
+src/bin/showansi/fonts.mixed
+src/bin/showansi/fonts.scalable
+src/bin/showansi/showansi
+src/bin/showansi/showansirc.sample
 debian/.debhelper/
 debian/debhelper-build-stamp
 debian/dos2ansi.substvars
