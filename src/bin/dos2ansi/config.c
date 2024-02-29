@@ -99,7 +99,7 @@ static void printusage(Stream *out, const char *prgname)
     Stream_printf(out,
 	    "Usage: %s -V\n"
 	    "       %s -h\n"
-	    "       %s [-ABCEPRSTWXabdeiklmprsvxy] [-H scrheight]\n"
+	    "       %s [-ABCEIPRSTWXabdeiklmprsvxy] [-H scrheight]\n"
 	    "\t\t[-c codepage] [-o outfile] [-q saucequery] [-t tabwidth]\n"
 	    "\t\t[-u format] [-w width] [infile]\n",
 	    prgname, prgname, prgname);
