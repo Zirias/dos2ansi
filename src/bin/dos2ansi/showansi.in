@@ -422,8 +422,10 @@ if is_integer ${_def_width}; then
 fi
 is_integer ${_width} || _width=${m_resetwidth}
 is_integer ${_width} || _width=${m_setwidth}
+is_integer ${_width} || _width=80
 _height=${_def_height}
 is_integer ${_height} || _height=${m_height}
+is_integer ${_height} || _height=25
 _height=$((${_height} + ${ADDLINES}))
 test ${_width} -gt ${MAXWIDTH} && _width=${MAXWIDTH}
 test ${_width} -lt 20 && _width=20
