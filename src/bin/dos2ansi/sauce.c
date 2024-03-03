@@ -101,12 +101,12 @@ static time_t getSauceDate(uint8_t *raw, unsigned pos)
     if (endp == buf) return (time_t)(-1);
     memcpy(bufp = buf, src + 4, 2);
     if (*bufp < '0' || *bufp > '9') ++bufp;
-    tm.tm_mon = strtol(bufp, 0, 10) - 1;
+    tm.tm_mon = strtol(bufp, &endp, 10) - 1;
     if (endp == buf) return (time_t)(-1);
     memcpy(bufp = buf, src, 4);
     if (*bufp < '0' || *bufp > '9') ++bufp;
     if (*bufp < '0' || *bufp > '9') ++bufp;
-    int year = strtol(bufp, 0, 10);
+    int year = strtol(bufp, &endp, 10);
     if (endp < buf+2) return (time_t)(-1);
     if (year < 100) tm.tm_year = year + (year < 70);
     else if (year < 1970) return (time_t)(-1);
