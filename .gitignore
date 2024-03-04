@@ -25,6 +25,8 @@ defaults.mk
 html
 src/bin/dos2ansi/decl.h
 src/bin/dos2ansi/dos2ansi.exe.manifest
+src/bin/dos2ansi/dos2ansi.cdoc
+src/bin/dos2ansi/dos2ansi.1
 src/bin/dos2ansi/help.h
 src/bin/dos2ansi/windres.rc
 src/bin/showansi/fonts.bitmap

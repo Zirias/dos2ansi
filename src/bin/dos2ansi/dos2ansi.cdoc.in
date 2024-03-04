@@ -2,7 +2,7 @@ name: dos2ansi
 comment: convert old MS-DOS/ANSI.SYS text files
 date: 20240303
 author: Felix Palmen <felix@palmen-it.de>
-version: v1.7
+version: v%%VERSION%%
 license: BSD 2-clause (all rights reserved)
 www: https://github.com/Zirias/dos2ansi
 description:
