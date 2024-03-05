@@ -1,33 +1,38 @@
 # WITH_CURSES:		Build curses/terminfo writer (non-Windows only)
 # WITH_SHOWANSI:	Install the showansi script (non-Windows only)
 # FORCE_STDIO:		Don't use platform-specific file/stream I/O
+#
+# MANFMT:		man:    classic troff/man
+# 			mdoc:   BSD mandoc
+# 			defaults to mdoc when `uname` contains "BSD",
+# 			man otherwise.
 
 BOOLCONFVARS_ON=	WITH_CURSES WITH_SHOWANSI
 BOOLCONFVARS_OFF=	FORCE_STDIO
+SINGLECONFVARS=		MANFMT
 
-DISTCLEANGOALS=	cleanmkclidoc
+DISTCLEANGOALS=	cleantools
 NODIST=		tools/mkclidoc/zimk
-
 include zimk/zimk.mk
 
-MKCLIDOCDIR=	tools$(PSEP)mkclidoc
-MKCLIDOC=	$(MKCLIDOCDIR)$(PSEP)mkclidoc$(EXE)
-DISTCLEAN+=	$(MKCLIDOC)
+MANFMT:=	$(or $(MANFMT),$(if $(findstring BSD,$(SYSNAME)),mdoc,man))
+
+TOOLBINDIR=	tools$(PSEP)bin
+MKCLIDOC=	$(TOOLBINDIR)$(PSEP)mkclidoc$(EXE)
+MKCLIDOCSRC=	tools$(PSEP)mkclidoc
+DISTCLEANDIRS=	$(TOOLBINDIR)
 
 $(MKCLIDOC):
-	+@$(MAKE) -C $(MKCLIDOCDIR) DESTDIR=. GIT=$(GIT) PORTABLE=1 \
-		zimkdir=../../zimk install
+	+@$(MAKE) -C $(MKCLIDOCSRC) DESTDIR=..$(PSEP)bin GIT=$(GIT) \
+		PORTABLE=1 zimkdir=../../zimk install
 
-cleanmkclidoc:
-	+@$(MAKE) -C $(MKCLIDOCDIR) distclean
+cleantools:
+	+@$(MAKE) -C $(MKCLIDOCSRC) distclean
 
-.PHONY: cleanmkclidoc
+.PHONY: cleantools
 
 $(call zinc, src/bin/dos2ansi/dos2ansi.mk)
 ifeq ($(PLATFORM),posix)
-  ifeq ($(CROSS_COMPILE),)
-MANFORMAT:=	-f$(if $(findstring BSD,$(SYSNAME)),mdoc,man)
-  endif
   ifeq ($(WITH_SHOWANSI),1)
 $(call zinc, src/bin/showansi/showansi.mk)
   endif

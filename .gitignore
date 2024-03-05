@@ -22,6 +22,7 @@ defaults.mk
 /test/
 /dist/
 /html/
+/tools/bin/
 html
 src/bin/dos2ansi/decl.h
 src/bin/dos2ansi/dos2ansi.exe.manifest
