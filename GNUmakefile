@@ -11,25 +11,21 @@ BOOLCONFVARS_ON=	WITH_CURSES WITH_SHOWANSI
 BOOLCONFVARS_OFF=	FORCE_STDIO
 SINGLECONFVARS=		MANFMT
 
-DISTCLEANGOALS=	cleantools
-NODIST=		tools/mkclidoc/zimk
+NODIST=			tools/mkclidoc/zimk
+DISTCLEANDIRS=		tools/bin
+
+SUBBUILD=		MKCLIDOC
+MKCLIDOC_TARGET=	tools/bin/mkclidoc
+MKCLIDOC_SRCDIR=	tools/mkclidoc
+MKCLIDOC_MAKEARGS=	DESTDIR=../bin HOSTBUILD=1 PORTABLE=1 \
+			STATIC=0 zimkdir=../../zimk
+MKCLIDOC_MAKEGOAL=	install
+MKCLIDOC_CLEANGOAL=	distclean
+
 include zimk/zimk.mk
 
 MANFMT:=	$(or $(MANFMT),$(if $(findstring BSD,$(SYSNAME)),mdoc,man))
-
-TOOLBINDIR=	tools$(PSEP)bin
-MKCLIDOC=	$(TOOLBINDIR)$(PSEP)mkclidoc$(HOSTEXE)
-MKCLIDOCSRC=	tools$(PSEP)mkclidoc
-DISTCLEANDIRS=	$(TOOLBINDIR)
-
-$(MKCLIDOC):
-	+@$(MAKE) -C $(MKCLIDOCSRC) DESTDIR=..$(PSEP)bin HOSTBUILD=1 \
-		PORTABLE=1 STATIC=0 zimkdir=../../zimk install
-
-cleantools:
-	+@$(MAKE) -C $(MKCLIDOCSRC) zimkdir=../../zimk distclean
-
-.PHONY: cleantools
+MKCLIDOC:=	$(MKCLIDOC_TARGET)
 
 $(call zinc, src/bin/dos2ansi/dos2ansi.mk)
 ifeq ($(PLATFORM),posix)
