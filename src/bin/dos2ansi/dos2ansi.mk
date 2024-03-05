@@ -19,7 +19,7 @@ dos2ansi_MODULES:=	ansicolorwriter \
 			util \
 			vgacanvas
 
-dos2ansi_VERSION:=	1.7
+dos2ansi_VERSION:=	1.8
 dos2ansi_SUB_FILES:=	decl.h \
 			dos2ansi.cdoc
 
