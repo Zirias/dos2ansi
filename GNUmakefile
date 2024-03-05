@@ -17,8 +17,8 @@ DISTCLEANDIRS=		tools/bin
 SUBBUILD=		MKCLIDOC
 MKCLIDOC_TARGET=	tools/bin/mkclidoc
 MKCLIDOC_SRCDIR=	tools/mkclidoc
-MKCLIDOC_MAKEARGS=	DESTDIR=../bin HOSTBUILD=1 PORTABLE=1 \
-			STATIC=0 zimkdir=../../zimk
+MKCLIDOC_MAKEARGS=	DESTDIR=../bin prefix= bindir= zimkdir=../../zimk \
+			HOSTBUILD=1 PORTABLE=1 STATIC=0
 MKCLIDOC_MAKEGOAL=	install
 MKCLIDOC_CLEANGOAL=	distclean
 
