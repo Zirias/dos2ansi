@@ -18,13 +18,13 @@ include zimk/zimk.mk
 MANFMT:=	$(or $(MANFMT),$(if $(findstring BSD,$(SYSNAME)),mdoc,man))
 
 TOOLBINDIR=	tools$(PSEP)bin
-MKCLIDOC=	$(TOOLBINDIR)$(PSEP)mkclidoc$(EXE)
+MKCLIDOC=	$(TOOLBINDIR)$(PSEP)mkclidoc$(HOSTEXE)
 MKCLIDOCSRC=	tools$(PSEP)mkclidoc
 DISTCLEANDIRS=	$(TOOLBINDIR)
 
 $(MKCLIDOC):
-	+@$(MAKE) -C $(MKCLIDOCSRC) DESTDIR=..$(PSEP)bin \
-		PORTABLE=1 zimkdir=../../zimk install
+	+@$(MAKE) -C $(MKCLIDOCSRC) DESTDIR=..$(PSEP)bin HOSTBUILD=1 \
+		PORTABLE=1 STATIC=0 zimkdir=../../zimk install
 
 cleantools:
 	+@$(MAKE) -C $(MKCLIDOCSRC) zimkdir=../../zimk distclean
