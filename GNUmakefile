@@ -27,7 +27,7 @@ $(MKCLIDOC):
 		PORTABLE=1 zimkdir=../../zimk install
 
 cleantools:
-	+@$(MAKE) -C $(MKCLIDOCSRC) distclean
+	+@$(MAKE) -C $(MKCLIDOCSRC) zimkdir=../../zimk distclean
 
 .PHONY: cleantools
 
