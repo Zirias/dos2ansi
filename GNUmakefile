@@ -23,7 +23,7 @@ MKCLIDOCSRC=	tools$(PSEP)mkclidoc
 DISTCLEANDIRS=	$(TOOLBINDIR)
 
 $(MKCLIDOC):
-	+@$(MAKE) -C $(MKCLIDOCSRC) DESTDIR=..$(PSEP)bin GIT=$(GIT) \
+	+@$(MAKE) -C $(MKCLIDOCSRC) DESTDIR=..$(PSEP)bin \
 		PORTABLE=1 zimkdir=../../zimk install
 
 cleantools:
