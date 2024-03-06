@@ -24,12 +24,4 @@ MKCLIDOC_CLEANGOAL=	distclean
 
 include zimk/zimk.mk
 
-MANFMT:=	$(or $(MANFMT),$(if $(findstring BSD,$(SYSNAME)),mdoc,man))
-MKCLIDOC:=	$(MKCLIDOC_TARGET)
-
-$(call zinc, src/bin/dos2ansi/dos2ansi.mk)
-ifeq ($(PLATFORM),posix)
-  ifeq ($(WITH_SHOWANSI),1)
-$(call zinc, src/bin/showansi/showansi.mk)
-  endif
-endif
+$(call zinc, src/bin/bin.mk)

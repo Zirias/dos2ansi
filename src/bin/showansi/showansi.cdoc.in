@@ -1,0 +1,66 @@
+name: showansi
+date: 20240306
+version: v%%VERSION%%
+license: BSD 2-clause (all rights reserved)
+author: Felix Palmen <felix@palmen-it.de>
+description:
+%%name%% combines dos2ansi with a terminal emulator (by default xterm) and a
+pager (by default less) to form an ANSI-art viewer.
+.
+defgroup: 2
+
+[flag V]
+group: 0
+optional: 0
+description: Print version information and exit.
+
+[flag S]
+description:
+Ignore SAUCE and other metadata and use all defaults.
+
+Also passes ignoring SAUCE to dos2ansi.
+.
+
+[flag c columns]
+description:
+The number of columns for display, IOW, the width of the terminal window.
+
+Also passed to dos2ansi as the default canvas width (-w).
+.
+
+[flag d dos2ansi]
+description:
+Run %%arg%% to render the input file for the configured pager to display.
+.
+default: %%DOS2ANSI%%
+
+[flag e]
+description: Use an EGA font by default.
+default: Default to using a VGA font.
+
+[flag h]
+group: 1
+optional: 0
+description: Print a help text and exit.
+
+[flag n]
+description: Disable letter spacing by default.
+
+[flag r rows]
+description:
+The number of rows for display, IOW, the height of the terminal window.
+.
+
+[flag s]
+description: Assume square pixels by default.
+
+[flag w]
+description: Use a wide font (VGA50 or EGA43) by default.
+
+[arg args]
+description:
+Arguments for dos2ansi, including the file to display. Must be preceded by
+'--' if it contains flags (starting with '-'). If it doesn't contain a file
+to display, the standard input will be read and fed to dos2ansi.
+.
+

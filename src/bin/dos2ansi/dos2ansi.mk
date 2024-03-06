@@ -1,8 +1,3 @@
-GEN_HELP_tool:=		$(MKCLIDOC)
-GEN_HELP_args:=		-fcpp -o%o% %i%
-GEN_MAN_tool:=		$(MKCLIDOC)
-GEN_MAN_args:=		-f$(MANFMT) -o%o% %i%
-
 dos2ansi_MODULES:=	ansicolorwriter \
 			ansisysrenderer \
 			bufferedwriter \
@@ -23,8 +18,8 @@ dos2ansi_VERSION:=	1.8
 dos2ansi_SUB_FILES:=	decl.h \
 			dos2ansi.cdoc
 
-dos2ansi_GEN:=		HELP
-dos2ansi_HELP_FILES:=	help.h:dos2ansi.cdoc
+dos2ansi_GEN:=		CHELP
+dos2ansi_CHELP_FILES:=	help.h:dos2ansi.cdoc
 
 ifeq ($(PLATFORM),posix)
 dos2ansi_MAN1:=		dos2ansi

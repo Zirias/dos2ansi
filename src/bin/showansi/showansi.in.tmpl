@@ -11,6 +11,17 @@ if command -v id >/dev/null 2>&1 && [ $(id -u) -eq 0 ]; then
     exit 1
 fi
 
+# Determine our name.
+if [ -n "$0" ]; then
+    if [ "$(command -v showansi 2>/dev/null)" = "$0" ]; then
+	_name=showansi
+    else
+	_name=$0
+    fi
+else
+    _name=showansi
+fi
+
 # Check whether a variable is an integer.
 # Return values are "exit codes" (0 means true).
 # Accept non-emtpy strings containing only digits.
@@ -86,46 +97,12 @@ version()
     echo
 }
 
-# Print usage message
-usage()
-{
-    echo "Usage: showansi -V"
-    echo "       showansi -h"
-    echo "       showansi [-Sensw] [-c columns] [-d dos2ansi] [-r rows]"
-    echo "                [--] [args ...]"
-}
-
-# Print help message
-help()
-{
-    usage
-    echo
-    echo "         -V            Print version information and exit"
-    echo "         -S            Ignore SAUCE and other metadata and use"
-    echo "                       all defaults"
-    echo "                       Also passes ignoring SAUCE to dos2ansi"
-    echo "         -c columns    Number of columns for display"
-    echo "                       Also passed to dos2ansi as the default"
-    echo "                       canvas width (-w)"
-    echo "         -d dos2ansi   Run 'dos2ansi' instead of %%DOS2ANSI%%"
-    echo "         -e            Use an EGA font by default instead of VGA"
-    echo "         -h            Print this help and exit"
-    echo "         -n            Disable letter spacing by default"
-    echo "         -r rows       Number of rows for display"
-    echo "         -s            Assume square pixels by default"
-    echo "         -w            Use wide fonts (VGA50 or EGA43) by default"
-    echo
-    echo "         args          Arguments for dos2ansi, including the file"
-    echo "                       to display, must be preceded by '--' if it"
-    echo "                       contains flags (starting with '-')"
-    echo "                       Run 'dos2ansi -h' for help"
-    echo
-}
+%%CLIDOC%%
 
 # Print usage plus optional error and exit
 err()
 {
-    usage >&2
+    usage "${_name}" >&2
     if [ -n "$1" ]; then
 	echo >&2
 	echo >&2 Error: $1
@@ -174,7 +151,7 @@ while true; do
 		    c*) _needarg="${_needarg}c"; _flags="${_flags#c}";;
 		    d*) _needarg="${_needarg}d"; _flags="${_flags#d}";;
 		    e*) _def_fontbase=ega; _flags="${_flags#e}";;
-		    h*) help; exit 0;;
+		    h*) help "${_name}"; exit 0;;
 		    n*) _def_spacing=0; _flags="${_flags#n}";;
 		    r*) _needarg="${_needarg}r"; _flags="${_flags#r}";;
 		    s*) _def_aspect=1; _flags="${_flags#s}";;

@@ -34,6 +34,8 @@ src/bin/showansi/fonts.bitmap
 src/bin/showansi/fonts.mixed
 src/bin/showansi/fonts.scalable
 src/bin/showansi/showansi
+src/bin/showansi/showansi.cdoc
+src/bin/showansi/showansi.in
 src/bin/showansi/showansirc.sample
 debian/.debhelper/
 debian/debhelper-build-stamp
