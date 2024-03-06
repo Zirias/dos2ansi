@@ -1,5 +1,6 @@
 name: showansi
 date: 20240306
+comment: display ANSI art in a terminal
 version: v%%VERSION%%
 license: BSD 2-clause (all rights reserved)
 author: Felix Palmen <felix@palmen-it.de>
