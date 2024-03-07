@@ -1,12 +1,16 @@
 name: showansi
-date: 20240306
+date: 20240307
 comment: display ANSI art in a terminal
 version: v%%VERSION%%
 license: BSD 2-clause (all rights reserved)
 author: Felix Palmen <felix@palmen-it.de>
+www: https://github.com/Zirias/dos2ansi
+manrefs: dos2ansi less xterm
 description:
-%%name%% combines dos2ansi with a terminal emulator (by default xterm) and a
-pager (by default less) to form an ANSI-art viewer.
+%%name%% combines `dos2ansi` with a terminal emulator (by default `xterm`) and
+a pager (by default `less`) to form an ANSI-art viewer. It uses SAUCE metadata
+obtained from `dos2ansi` to select an appropriate font, set the terminal
+window size and the window title.
 .
 defgroup: 2
 
@@ -19,14 +23,14 @@ description: Print version information and exit.
 description:
 Ignore SAUCE and other metadata and use all defaults.
 
-Also passes ignoring SAUCE to dos2ansi.
+Also passes ignoring SAUCE to `dos2ansi`.
 .
 
 [flag c columns]
 description:
 The number of columns for display, IOW, the width of the terminal window.
 
-Also passed to dos2ansi as the default canvas width (-w).
+Also passed to `dos2ansi` as the default canvas width (-w).
 .
 
 [flag d dos2ansi]
@@ -60,8 +64,41 @@ description: Use a wide font (VGA50 or EGA43) by default.
 
 [arg args]
 description:
-Arguments for dos2ansi, including the file to display. Must be preceded by
+Arguments for `dos2ansi`, including the file to display. Must be preceded by
 '--' if it contains flags (starting with '-'). If it doesn't contain a file
-to display, the standard input will be read and fed to dos2ansi.
+to display, the standard input will be read and fed to `dos2ansi`.
+.
+
+[file %%SYSCONFDIR%%/showansirc]
+description:
+The main configuration file. This is used to configure the terminal emulator,
+including necessary command line arguments, the pager, and the fontset.
+
+Paths to per-user configuration files can be set here as well.
+.
+
+[file %%SYSCONFDIR%%/showansirc.sample]
+description:
+A commented example configuration file, demonstrating all the available
+options.
+.
+
+[file %%FONTSDIR%%/fonts.bitmap]
+description:
+A fontset for `xterm` using bitmap fonts from
+<https://github.com/farsil/ibmfonts>
+.
+
+[file %%FONTSDIR%%/fonts.scalable]
+description:
+A fontset for `xterm` using scalable fonts from
+<https://int10h.org/oldschool-pc-fonts>
+.
+
+[file %%FONTSDIR%%/fonts.mixed]
+description:
+A fontset combining both sets above, using scalable fonts when aspect
+correction for non-square pixels is wanted, bitmap fonts otherwise. This is
+the default fontset in the example configuration.
 .
 
