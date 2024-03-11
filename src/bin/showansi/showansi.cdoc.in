@@ -1,47 +1,63 @@
 name: showansi
-date: 20240307
-comment: display ANSI art in a terminal
+date: 20240311
+comment: display ANSI art in a terminal window
 version: v%%VERSION%%
 license: BSD 2-clause (all rights reserved)
 author: Felix Palmen <felix@palmen-it.de>
 www: https://github.com/Zirias/dos2ansi
-manrefs: dos2ansi less xterm
+manrefs: dos2ansi less xterm &mktemp &mkdir
 description:
 %%name%% combines `dos2ansi` with a terminal emulator (by default `xterm`) and
 a pager (by default `less`) to form an ANSI-art viewer. It uses SAUCE metadata
 obtained from `dos2ansi` to select an appropriate font, set the terminal
 window size and the window title.
+
+Even if SAUCE metadata is absent, it tries to guess the appropriate font from
+rendering metadata. If the final display size is exactly 80x50 or 80x43, the
+file is assumed to target the respective VGA or EGA mode, so a wide font is
+selected. If the input uses ANSI.SYS sequences for setting a textmode, the
+font selection takes into account whether an 80- or 40-column mode is
+selected.
+
+%%name%% always prefers the number of columns and rows given on the
+commandline for the terminal window size. For everything else, to override
+it from the commandline, the `-S` flag must be given if contradicting SAUCE
+metadata is available.
 .
 defgroup: 2
+
+[flag S]
+description:
+Ignore SAUCE and other metadata and use all defaults or values passed on the
+commandline.
+
+Also passes ignoring SAUCE to `dos2ansi`.
+.
 
 [flag V]
 group: 0
 optional: 0
 description: Print version information and exit.
 
-[flag S]
-description:
-Ignore SAUCE and other metadata and use all defaults.
-
-Also passes ignoring SAUCE to `dos2ansi`.
-.
-
 [flag c columns]
 description:
 The number of columns for display, IOW, the width of the terminal window.
 
-Also passed to `dos2ansi` as the default canvas width (-w).
+Also passed to `dos2ansi` as the default canvas width (flag `-w`).
 .
 
 [flag d dos2ansi]
 description:
 Run %%arg%% to render the input file for the configured pager to display.
 .
-default: %%DOS2ANSI%%
+default: `%%DOS2ANSI%%`
 
 [flag e]
-description: Use an EGA font by default.
-default: Default to using a VGA font.
+description:
+Use an EGA font. This is ignored if the font type can be deduced from SAUCE
+metadata unless `-S` is given.
+.
+default: from metadata or VGA
 
 [flag h]
 group: 1
@@ -49,7 +65,11 @@ optional: 0
 description: Print a help text and exit.
 
 [flag n]
-description: Disable letter spacing by default.
+description:
+No letter spacing, which means to pick an 8px wide font. This is ignored
+if spacing information is available from SAUCE unless `-S` is given.
+.
+default: from metadata or spaced (9px)
 
 [flag r rows]
 description:
@@ -57,15 +77,26 @@ The number of rows for display, IOW, the height of the terminal window.
 .
 
 [flag s]
-description: Assume square pixels by default.
+description:
+Assume square pixels, so, pick a font without aspect correction. This is
+ignored if aspect information is available from SAUCE unless `-S` is given.
+.
+default: from metadata or rectangular pixels
 
 [flag w]
-description: Use a wide font (VGA50 or EGA43) by default.
+description:
+Use a wide font (for 40-columns or VGA50 or EGA43 modes), which means a
+9x8/8x8 or 18x16/16x16 font. This is ignored if the font type can be deduced
+from SAUCE metadata unless `-S` is given.
+.
+default: from metadata or regular width
+
+[flag -]
 
 [arg args]
 description:
 Arguments for `dos2ansi`, including the file to display. Must be preceded by
-'--' if it contains flags (starting with '-'). If it doesn't contain a file
+`--` if it contains flags (starting with `-`). If it doesn't contain a file
 to display, the standard input will be read and fed to `dos2ansi`.
 .
 
@@ -102,3 +133,12 @@ correction for non-square pixels is wanted, bitmap fonts otherwise. This is
 the default fontset in the example configuration.
 .
 
+[var TMPDIR]
+description:
+%%name%% needs to process an input file multiple times with `dos2ansi` to get
+metadata and then render it in a terminal configured appropriately, so when
+input comes from standard input, it must be stored in a temporary file. A
+private directory will be created for that purpose, using `mktemp` if
+available, otherwise using plain `mkdir` below %%var%%. Note that `mktemp`
+typically also uses %%var%%. If unset, it defaults to `/tmp`.
+.
