@@ -27,8 +27,9 @@ different terminals and fonts before reporting a bug in dos2ansi.
 ### Install dos2ansi
 
 Releases will contain a `.tar.xz` archive of the source for building yourself
-(which works simply with `make` or `make strip`, see [Building](#building) for
-details) and a `.zip` archive containing dos2ansi compiled for Windows.
+(which works simply with `make`, see [Building](#building) for details), a
+`.deb` containing an amd64 Linux binary and a `.zip` archive containing an
+i386 dos2ansi binary for Windows.
 
 Installation is as simple as placing the binary somewhere in your path, it
 doesn't need any other files at runtime.
@@ -79,31 +80,22 @@ doesn't need any other files at runtime.
 
 dos2ansi can optionally install a POSIX shell script (only on non-Windows) to
 directly display some ANSI art file in some X terminal emulator, using fonts
-and other settings from SAUCE metadata. The script is pre-configured to use
-`xterm`, `less` as the pager and
-[IBM bitmap fonts](https://github.com/farsil/ibmfonts). Unfortunately, these
-fonts currently need a patch to play well with `xterm`, you can find it in
-[my fork](https://github.com/Zirias/ibmfonts/tree/novt100).
+and other settings from SAUCE metadata. It's pre-configured to use `xterm` as
+the X terminal emulator and `less` as the pager.
 
-    Usage: showansi -V
-           showansi -h
-           showansi [-Sensw] [-c columns] [-d dos2ansi] [-r rows]
-                    [--] [args ...]
+The script comes with a sample configuration file
+`$(prefix)/etc/dos2ansi/showansirc.sample` you can copy to
+`$(prefix)/etc/dos2ansi/showansirc` to activate it. Three fontsets are
+installed, one using bitmap fonts from [IBM bitmap
+fonts](https://github.com/farsil/ibmfonts), one using scalable fonts from [The
+Ultimate Oldschool PC Font Pack](https://int10h.org/oldschool-pc-fonts), and
+one using a mix of both. The sample configuration file defaults to the mix,
+because scalable fonts are necessary for aspect correction, but have an effect
+on sharpness, so bitmap fonts are preferred when no aspect correction is
+necessary.
 
-The behavior of the script can be adjusted to your needs using configuration
-files. A sample configuration file is installed to
-`$(prefix)/etc/showansirc.sample`, to actually use it, copy it to
-`$(prefix)/etc/showansirc`. All the configuration options are documented in
-the comments there.
-
-For aspect corrected display, you will have to use scalable fonts instead of
-the default fonts mentioned above. This will have an effect on sharpness,
-depending on your display. Scalable fonts are available from [The Ultimate
-Oldschool PC Font Pack](https://int10h.org/oldschool-pc-fonts), an example
-configuration using these is included in the `examples` directory.
-
-The script can output debugging information by setting the environment
-variable `SHOWANSI_DEBUG` to `1`.
+showansi can output debugging information by setting the environment variable
+`SHOWANSI_DEBUG` to `1`.
 
 > [!WARNING]
 >
@@ -131,17 +123,17 @@ The following is required for building:
   optional, but enabled by default.
 
 For Windows, GNU make and appropriate compilers are conveniently available
-from the [MSYS2](https://msys2.org) distribution. If your system has a
-different flavor of `make` by default (e.g. a BSD system), GNU make will
-typically be installed as `gmake`, so type this instead of `make`.
+from the [MSYS2](https://msys2.org) distribution, or if you want it truly
+minimal, installing `make` and `mingw` from "chocolatey" is also enough,
+then you can build directly from the Windows commandline (CMD.EXE).
+
+If your system has a different flavor of `make` by default (e.g. a BSD
+system), GNU make will typically be installed as `gmake`, so type this instead
+of `make`.
 
 To compile the tool, just type
 
     make
-
-To get a stripped version, type
-
-    make strip
 
 If you want to build a version with full debugging symbols, you can use
 
@@ -151,11 +143,6 @@ Installing can be done with
 
     make install
 
-The binary is installed to `$(prefix)/bin`, with `prefix` defaulting to
-`/usr/local`. So, to install e.g. to `/opt/dos2ansi/bin`, you would type
-
-    make prefix=/opt/dos2ansi install
-
 There are a few build-time configuration options available:
 
 * `STATIC`: When set to a truthy value, the tool is linked statically. This is
@@ -163,11 +150,39 @@ There are a few build-time configuration options available:
 * `WITH_CURSES`: Use `curses` to build a terminfo-based output writer that
   will automatically respect `$TERM`. Only available on non-Windows, defaults
   to `1`.
+* `WITH_HTML`: Build and install manpages in HTML format. Defaults to `0`, but
+  forced on when building for Windows.
+* `WITH_MAN`: Build and install manpages. Only available on non-Windows,
+  defaults to `1`.
 * `WITH_SHOWANSI`: Also install the `showansi` script, see above. Only
   available on non-Windows, defaults to `1`.
 * `FORCE_STDIO`: Always use the standard C `stdio.h` functions for I/O,
   instead of a platform-specific backend (available are POSIX and win32).
   Defaults to `0`.
+* `MANFMT`: The format of the manpages, either `man` (classic troff/man) or
+  `mdoc` (BSD-style mandoc). Defaults to `mdoc` if the OS name contains `BSD`,
+  `man` otherwise.
 
-So, `make FORCE_STDIO=1 strip` would build a stripped version using standard C
+So, `make FORCE_STDIO=1` would build a stripped version using standard C
 I/O, `make WITH_CURSES=no` would build a version not linked to `curses`.
+
+Options to `make` must be given unchanged for building and installing,
+otherwise installing will trigger a full rebuild. You can also save options
+using the `config` target, e.g.
+
+    make WITH_HTML=1 config
+
+The binary is installed to `$(prefix)/bin`, with `prefix` defaulting to
+`/usr/local`. So, to install e.g. to `/opt/dos2ansi/bin`, you would type
+
+    make prefix=/opt/dos2ansi config
+    make
+    make install
+
+To display all available configuration variables, including generic ones and
+target directories, with their current (default or configured) values, type
+
+    make showconfig
+
+This also shows a few detected values you can't change yourself, like the
+target platform and architecture.
