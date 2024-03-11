@@ -1,4 +1,6 @@
 # WITH_CURSES:		Build curses/terminfo writer (non-Windows only)
+# WITH_HTML:		Build manpages in HTML format (always on for Windows)
+# WITH_MAN:		Build manpages in MANFMT (always off for Windows)
 # WITH_SHOWANSI:	Install the showansi script (non-Windows only)
 # FORCE_STDIO:		Don't use platform-specific file/stream I/O
 #
@@ -7,8 +9,8 @@
 # 			defaults to mdoc when `uname` contains "BSD",
 # 			man otherwise.
 
-BOOLCONFVARS_ON=	WITH_CURSES WITH_SHOWANSI
-BOOLCONFVARS_OFF=	FORCE_STDIO
+BOOLCONFVARS_ON=	WITH_CURSES WITH_MAN WITH_SHOWANSI
+BOOLCONFVARS_OFF=	FORCE_STDIO WITH_HTML
 SINGLECONFVARS=		MANFMT
 
 NODIST=			tools/mkclidoc/zimk
