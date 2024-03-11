@@ -1,3 +1,5 @@
+dos2ansi_VERSION:=	2.0
+
 htmlsubdir?=		html
 ifeq ($(PORTABLE),1)
 dos2ansi_htmldir=	$(dos2ansi_docdir)
@@ -21,7 +23,6 @@ dos2ansi_MODULES:=	ansicolorwriter \
 			util \
 			vgacanvas
 
-dos2ansi_VERSION:=	1.8
 dos2ansi_SUB_FILES:=	decl.h \
 			dos2ansi.cdoc
 

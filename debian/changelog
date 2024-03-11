@@ -1,3 +1,10 @@
+dos2ansi (2.0) stable; urgency=low
+
+  * Major release, adjust a few minor things from 1.x
+  * Complete and improve documentation
+
+ -- Felix Palmen <felix@palmen-it.de>  Mon, 11 Mar 2024 20:35:36 +0100
+
 dos2ansi (1.8) stable; urgency=low
 
   * Minor release, improved showansi script and SAUCE detection
