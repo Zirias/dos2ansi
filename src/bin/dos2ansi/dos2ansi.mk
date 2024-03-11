@@ -1,3 +1,10 @@
+htmlsubdir?=		html
+ifeq ($(PORTABLE),1)
+dos2ansi_htmldir=	$(dos2ansi_docdir)
+else
+dos2ansi_htmldir=	$(dos2ansi_docdir)$(PSEP)$(htmlsubdir)
+endif
+
 dos2ansi_MODULES:=	ansicolorwriter \
 			ansisysrenderer \
 			bufferedwriter \
@@ -18,6 +25,9 @@ dos2ansi_VERSION:=	1.8
 dos2ansi_SUB_FILES:=	decl.h \
 			dos2ansi.cdoc
 
+dos2ansi_DOCS:=		LICENSE.txt \
+			README.md
+
 dos2ansi_GEN:=		CHELP
 dos2ansi_CHELP_FILES:=	help.h:dos2ansi.cdoc
 
@@ -28,8 +38,8 @@ dos2ansi_DEFINES+=	-DWITH_CURSES
 endif
 
 ifeq ($(WITH_HTML),1)
-dos2ansi_EXTRADIRS:=	doc
-dos2ansi_doc_FILES:=	dos2ansi.1.html
+dos2ansi_EXTRADIRS:=	html
+dos2ansi_html_FILES:=	dos2ansi.1.html
 dos2ansi_GEN+=		HTML
 dos2ansi_HTML_FILES:=	dos2ansi.1.html:dos2ansi.cdoc
 endif

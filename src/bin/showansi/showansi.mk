@@ -1,5 +1,5 @@
-showansi_docdir=	$(dos2ansi_docdir)
 showansi_fontsdir=	$(dos2ansi_datadir)$(PSEP)showansi
+showansi_htmldir=	$(dos2ansi_htmldir)
 showansi_sysconfdir=	$(sysconfdir)$(PSEP)dos2ansi
 
 showansi_NOBUILD:=	1
@@ -23,8 +23,8 @@ showansi_MAN_FILES:=	showansi.1:showansi.cdoc
 endif
 
 ifeq ($(WITH_HTML),1)
-showansi_EXTRADIRS+=	doc
-showansi_doc_FILES:=	showansi.1.html
+showansi_EXTRADIRS+=	html
+showansi_html_FILES:=	showansi.1.html
 showansi_GEN+=		HTML
 showansi_HTML_FILES:=	showansi.1.html:showansi.cdoc
 endif
