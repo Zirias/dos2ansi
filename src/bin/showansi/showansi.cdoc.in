@@ -133,6 +133,13 @@ correction for non-square pixels is wanted, bitmap fonts otherwise. This is
 the default fontset in the example configuration.
 .
 
+[var SHOWANSI_DEBUG]
+description:
+When this is set to `1`, %%name%% prints some debugging information to the
+standard output, including the full command line it will execute to display
+the input file.
+.
+
 [var TMPDIR]
 description:
 %%name%% needs to process an input file multiple times with `dos2ansi` to get
