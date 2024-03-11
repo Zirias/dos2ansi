@@ -15,6 +15,4 @@ docdir=/usr/share/doc/dos2ansi
 execute_after_dh_install:
 	mv $(stagedir)$(etcdir)/showansirc.sample \
 		$(stagedir)$(etcdir)/showansirc
-	install -d -m755 $(stagedir)$(docdir)
-	install -m644 README.md $(stagedir)$(docdir)
-
+	rm $(stagedir)$(docdir)/LICENSE.txt
