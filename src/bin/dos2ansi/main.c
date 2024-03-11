@@ -107,7 +107,7 @@ static Stream *createInputStream(const Config *config,
 static void initOutFlags(int *cflags, int *defformat, int *forcedbom)
 {
     *cflags = CF_NONE;
-    *defformat = UF_UTF16;
+    *defformat = UF_UTF16LE;
     *forcedbom = -1;
 }
 
