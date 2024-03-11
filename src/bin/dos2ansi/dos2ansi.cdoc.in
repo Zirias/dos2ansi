@@ -1,6 +1,6 @@
 name: dos2ansi
 comment: convert old MS-DOS/ANSI.SYS text files
-date: 20240303
+date: 20240311
 author: Felix Palmen <felix@palmen-it.de>
 version: v%%VERSION%%
 license: BSD 2-clause (all rights reserved)
@@ -10,7 +10,13 @@ description:
 format a modern terminal can display. The output will use a Unicode encoding
 of characters and only ANSI SGR escape sequences to set basic foreground and
 background colors, intensity and blinking attribute. The input is expected to
-use CP-437 or one of the other supported DOS codepages.
+use `CP-437` or one of the other supported DOS codepages.
+
+The builtin translation tables attempt to match the appearance on VGA as close
+as possible by mapping to Unicode characters looking similar to the original
+IBM PC glyphs in most fonts. This behavior can be disabled with the `-X` flag,
+which is helpful when %%name%% is used to convert some text or when using
+original IBM PC fonts for display.
 .
 
 defgroup: 2
@@ -20,18 +26,18 @@ description:
 Assume full support for ANSI SGR sequences including clearing individual
 attributes. This gives the shortest possible output in most cases, but might
 not work correctly with some terminals. Implies forcing generic ANSI output
-(-a).
+(`-a`).
 .
 
 [flag B]
 description: Disable writing a BOM.
-default: BOM enabled for UTF16/UTF16LE.
+default: BOM enabled for `UTF-16` and `UTF-16LE`.
 
 [flag C]
 description: Disable colors in output.
 
 [flag E]
-description: Ignore the DOS EOF character (0x1a) and just continue reading.
+description: Ignore the DOS EOF character (`0x1a`) and just continue reading.
 
 [flag H scrheight]
 description:
@@ -47,7 +53,7 @@ ANSI.SYS sequences.
 description:
 When using generic ANSI output, don't attempt to explicitly select intense
 colors but rely on the bold attribute for the foreground color instead. For
-background colors, see -k and -v.
+background colors, see `-k` and `-v`.
 .
 
 [flag P]
@@ -58,7 +64,7 @@ Replace with a broken bar for codepages not having an explicit broken bar.
 .
 
 [flag R]
-description: Use line endings without CR (Unix format).
+description: Use line endings without `CR` (Unix format).
 default: Disabled on Windows, enabled otherwise.
 
 [flag S]
@@ -85,8 +91,8 @@ configuration settings and exit.
 
 [flag W]
 description:
-When showing SAUCE (-s), don't attempt to re-wrap the comment but show it as is
-instead.
+When showing SAUCE (`-s`), don't attempt to re-wrap the comment but show it as
+is instead.
 .
 
 [flag X]
@@ -114,24 +120,24 @@ display, so this flag does nothing.
 
 [flag b]
 description: Force writing a BOM.
-default: BOM enabled for UTF16/UTF16LE.
+default: BOM enabled for `UTF-16` and `UTF-16LE`.
 
 [flag c codepage]
 description:
-The MS-DOS codepage used by the input file. May be prefixed with CP (any
+The MS-DOS codepage used by the input file. May be prefixed with `CP` (any
 casing) and an optional space or dash. When the codepage can be found in
 SAUCE metadata, this flag is ignored.
-- [supported:]: 437, 708, 720, 737, 775, 819, 850, 852, 855, 857, 860, 861,
-  862, 863, 864, 865, 869, KAM, MAZ, MIK
+- [supported:]: `437`, `708`, `720`, `737`, `775`, `819`, `850`, `852`, `855`,
+  `857`, `860`, `861`, `862`, `863`, `864`, `865`, `869`, `kam`, `maz`, `mik`
 - [aliases:]:
-  | 858           | => 850 with Euro (-e) |
-  | 872           | => 855 with Euro (-e) |
-  | 867, 895      | => KAM                |
-  | 667, 790, 991 | => MAZ                |
-  | 866           | => MIK                |
+  | `858`               | => `850` with Euro (`-e`) |
+  | `872`               | => `855` with Euro (`-e`) |
+  | `867`, `895`        | => `kam`                  |
+  | `667`, `790`, `991` | => `maz`                  |
+  | `866`               | => `mik`                  |
 .
 
-default: 437
+default: `437`
 
 [flag d]
 description: Use default terminal colors for VGA's gray on black.
@@ -140,8 +146,8 @@ default: Explicitly select these colors.
 [flag e]
 description:
 Use codepage variations with an Euro currency symbol if applicable. For
-codepages 850, 857, 864 and 869, there are specific known places for the
-Euro symbols. For other codepages that have a generic currency symbol,
+codepages `850`, `857`, `864` and `869`, there are specific known places for
+the Euro symbols. For other codepages that have a generic currency symbol,
 replace this with the Euro currency symbol.
 .
 
@@ -168,7 +174,7 @@ a Unicode LTR override region.
 [flag m]
 description:
 Write some metadata to stderr while rendering. The output format is
-'key=value', this can be used from scripts or for debugging purposes.
+`key=value`, this can be used from scripts or for debugging purposes.
 .
 
 [flag o outfile]
@@ -189,29 +195,29 @@ default: Only replace when the codepage does not have an explicit broken bar.
 description:
 Query individual SAUCE metadata fields in a machine-readable format. Each
 field is requested by a single character in %%arg%% and printed on a single
-line to the standard output, converted from CP-437 to UTF-8.
+line to the standard output, converted from `CP-437` to `UTF-8`.
 
 The following characters are supported in %%arg%%:
-- [:]: toggle quoting all subsequent fields in single quotes, with literal
-  single quotes translated to '\'' (POSIX shell style)
-- [T]: title
-- [A]: author
-- [G]: group
-- [D]: date (format: YYYYMMDD)
-- [C]: comment, output will be multiple lines, the first line is the number
+- [`:`]: toggle quoting all subsequent fields in single quotes, with literal
+  single quotes translated to `'\''` (POSIX shell style)
+- [`T`]: title
+- [`A`]: author
+- [`G`]: group
+- [`D`]: date (format: YYYYMMDD)
+- [`C`]: comment, output will be multiple lines, the first line is the number
   of lines to follow
-- [t]: file and data type
-- [w]: width (in characters)
-- [h]: height (in characters)
-- [b]: background mode (0: blink, 1: bright)
-- [s]: spacing (0: 8px, 1: 9px)
-- [a]: aspect ratio (0: rectangular pixels, 1: square pixels)
-- [f]: font name
-- [c]: codepage
+- [`t`]: file and data type
+- [`w`]: width (in characters)
+- [`h`]: height (in characters)
+- [`b`]: background mode (`0`: blink, `1`: bright)
+- [`s`]: spacing (`0`: 8px, `1`: 9px)
+- [`a`]: aspect ratio (`0`: rectangular pixels, `1`: square pixels)
+- [`f`]: font name
+- [`c`]: codepage
 .
 
 [flag r]
-description: Use line endings with CR (DOS/Windows format).
+description: Use line endings with `CR` (DOS/Windows format).
 default: Enabled on Windows, disabled otherwise.
 
 [flag s]
@@ -227,8 +233,8 @@ default: 8
 max: screen width or 255
 
 [flag u format]
-description: Unicode output format, one of UTF8, UTF16 or UTF16LE.
-default: UTF8, on Windows UTF16 when output goes to a file or pipe.
+description: Unicode output format, one of `UTF-8`, `UTF-16` or `UTF-16LE`.
+default: `UTF-8`, on Windows `UTF-16LE` when output goes to a file or pipe.
 
 [flag v]
 description:
@@ -236,7 +242,8 @@ Use reverse attribute for intense background colors. With most terminals,
 this will actually result in reversed colors. It's only included for exotic
 terminals abusing this attribute to enable bright background colors.
 
-Implies disabling explicit intense colors (-I) and conflicts with blink (-k).
+Implies disabling explicit intense colors (`-I`) and conflicts with blink
+(`-k`).
 .
 
 [flag w width]
@@ -258,9 +265,9 @@ appropriate terminal is found, or on Windows 10 and later.
 
 [flag y]
 description:
-Use exact colors (see -x), but with a "dark yellow" color instead of adjusting
-it to brown, resulting in a palette you would see on some CGA machine when
-using a cheap monitor or a TV set.
+Use exact colors (see `-x`), but with a "dark yellow" color instead of
+adjusting it to brown, resulting in a palette you would see on some CGA
+machine when using a cheap monitor or a TV set.
 .
 
 [arg infile]
@@ -269,3 +276,10 @@ description:
 Read input from %%arg%%. If not given, input is read from the standard input.
 .
 
+[var TERM]
+description:
+When %%name%% is built with curses support (non-Windows only), the output
+by default depends on the current value of %%var%%, even when writing to
+a file. This can be used to create files suitable for a specific terminal.
+To produce generic ANSI output instead, see the flags `-a` and `-A`.
+.
