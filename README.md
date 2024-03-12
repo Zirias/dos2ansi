@@ -34,6 +34,11 @@ i386 dos2ansi binary for Windows.
 Installation is as simple as placing the binary somewhere in your path, it
 doesn't need any other files at runtime.
 
+### Usage manual
+
+You can read the [Manpages](https://zirias.github.io/dos2ansi) online, they
+will also be installed by default.
+
 ## Features
 
 * Renders to a virtual canvas with a fixed width, defaulting to 80 columns
