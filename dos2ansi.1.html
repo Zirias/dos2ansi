@@ -1,0 +1,346 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="style.css" />
+<title>DOS2ANSI(1)</title>
+<meta name="viewport" content="width=device-width">
+</head>
+<body>
+<h1 data-man-title="DOS2ANSI" data-man-section="1" data-man-sectionname="General Commands Manual">DOS2ANSI(1)</h1>
+<h2>NAME</h2>
+<dl class="name">
+<dt><span class="name">dos2ansi</span> &ndash;</dt>
+<dd>convert old MS-DOS/ANSI.SYS text files</dd>
+</dl>
+<h2>SYNOPSIS</h2>
+<dl class="synopsis">
+<dt>dos2ansi</dt>
+<dd>
+<span class="flag">-V</span>
+</dd>
+<dt>dos2ansi</dt>
+<dd>
+<span class="flag">-h</span>
+</dd>
+<dt>dos2ansi</dt>
+<dd>
+[<span class="flag">-ABCEIPRSTWXabdeklmprsvxy</span>]
+[<span class="flag">-H</span>&nbsp;<span class="arg">scrheight</span>]
+[<span class="flag">-c</span>&nbsp;<span class="arg">codepage</span>]
+[<span class="flag">-o</span>&nbsp;<span class="arg">outfile</span>]
+[<span class="flag">-q</span>&nbsp;<span class="arg">saucequery</span>]
+[<span class="flag">-t</span>&nbsp;<span class="arg">tabwidth</span>]
+[<span class="flag">-u</span>&nbsp;<span class="arg">format</span>]
+[<span class="flag">-w</span>&nbsp;<span class="arg">width</span>]
+[<span class="arg">infile</span>]
+</dd>
+</dl>
+<h2>DESCRIPTION</h2>
+<p><span class="name">dos2ansi</span> converts MS-DOS text files using ANSI.SYS escape sequences to a format a modern terminal can display. The output will use a Unicode encoding of characters and only ANSI SGR escape sequences to set basic foreground and background colors, intensity and blinking attribute. The input is expected to use <span class="name">CP-437</span> or one of the other supported DOS codepages.</p>
+<p>The builtin translation tables attempt to match the appearance on VGA as close as possible by mapping to Unicode characters looking similar to the original IBM PC glyphs in most fonts. This behavior can be disabled with the <span class="flag">-X</span> flag, which is helpful when <span class="name">dos2ansi</span> is used to convert some text or when using original IBM PC fonts for display.</p>
+<p>The options are as follows:</p>
+<dl class="description">
+<dt><span class="flag">-A</span></dt>
+<dd>
+<p>Assume full support for ANSI SGR sequences including clearing individual attributes. This gives the shortest possible output in most cases, but might not work correctly with some terminals. Implies forcing generic ANSI output (<span class="flag">-a</span>).</p>
+</dd>
+<dt><span class="flag">-B</span></dt>
+<dd>
+<p>Disable writing a BOM.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>BOM enabled for <span class="name">UTF-16</span> and <span class="name">UTF-16LE</span>.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-C</span></dt>
+<dd>
+<p>Disable colors in output.</p>
+</dd>
+<dt><span class="flag">-E</span></dt>
+<dd>
+<p>Ignore the DOS EOF character (<span class="name">0x1a</span>) and just continue reading.</p>
+</dd>
+<dt><span class="flag">-H</span>&nbsp;<span class="arg">scrheight</span></dt>
+<dd>
+<p>Set a default screen height. This is relevant when ANSI.SYS sequences for cursor positioning or erasing are used.</p>
+<p>Ignored if the height can be deduced from SAUCE metadata or mode-setting ANSI.SYS sequences.</p>
+</dd>
+<dt><span class="flag">-I</span></dt>
+<dd>
+<p>When using generic ANSI output, don't attempt to explicitly select intense colors but rely on the bold attribute for the foreground color instead. For background colors, see <span class="flag">-k</span> and <span class="flag">-v</span>.</p>
+</dd>
+<dt><span class="flag">-P</span></dt>
+<dd>
+<p>Force using a normal pipe bar symbol.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>Replace with a broken bar for codepages not having an explicit broken bar.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-R</span></dt>
+<dd>
+<p>Use line endings without <span class="name">CR</span> (Unix format).</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>Disabled on Windows, enabled otherwise.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-S</span></dt>
+<dd>
+<p>Don't attempt to read SAUCE metadata. This enables setting options that are otherwise ignored when values are found in SAUCE, like the width, whether to use blink or bright colors, and the codepage.</p>
+</dd>
+<dt><span class="flag">-T</span></dt>
+<dd>
+<p>Test mode, instead of reading an input file, use some builtin test input that will render a codepage table and a display of all foreground and background colors.</p>
+</dd>
+<dt><span class="flag">-V</span></dt>
+<dd>
+<p>Print version information along with some build-time and OS-dependent configuration settings and exit.</p>
+</dd>
+<dt><span class="flag">-W</span></dt>
+<dd>
+<p>When showing SAUCE (<span class="flag">-s</span>), don't attempt to re-wrap the comment but show it as is instead.</p>
+</dd>
+<dt><span class="flag">-X</span></dt>
+<dd>
+<p>Disable the mapping to Unicode codepoints that look more similar to the original VGA font in most fonts used nowadays, instead map to codepoints identifying the same character. Use this when using some actual IBM-PC font for display.</p>
+</dd>
+<dt><span class="flag">-a</span></dt>
+<dd>
+<p>Force using the generic ANSI color writer, which defaults to use 16 explicit colors, but can be configured for just 8 colors as well as 256 colors.</p>
+<p>When <span class="name">dos2ansi</span> is built with curses support (non-Windows), it uses a terminfo-based writer by default, even when output goes to a file, possibly creating terminal-specific output.</p>
+<p>On Windows 10 and later, the terminal supports 256 colors which is used by default for output to the console, but can be disabled using this flag. On older Windows versions, only the legacy Windows Console API can be used for display, so this flag does nothing.</p>
+</dd>
+<dt><span class="flag">-b</span></dt>
+<dd>
+<p>Force writing a BOM.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>BOM enabled for <span class="name">UTF-16</span> and <span class="name">UTF-16LE</span>.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-c</span>&nbsp;<span class="arg">codepage</span></dt>
+<dd>
+<p>The MS-DOS codepage used by the input file. May be prefixed with <span class="name">CP</span> (any casing) and an optional space or dash. When the codepage can be found in SAUCE metadata, this flag is ignored.</p>
+<dl class="description">
+<dt>supported:</dt>
+<dd><p><span class="name">437</span>, <span class="name">708</span>, <span class="name">720</span>, <span class="name">737</span>, <span class="name">775</span>, <span class="name">819</span>, <span class="name">850</span>, <span class="name">852</span>, <span class="name">855</span>, <span class="name">857</span>, <span class="name">860</span>, <span class="name">861</span>, <span class="name">862</span>, <span class="name">863</span>, <span class="name">864</span>, <span class="name">865</span>, <span class="name">869</span>, <span class="name">kam</span>, <span class="name">maz</span>, <span class="name">mik</span></p>
+</dd>
+<dt>aliases:</dt>
+<dd><table>
+<tr>
+<td>
+<span class="name">858</span></td>
+<td>
+=&gt; <span class="name">850</span> with Euro (<span class="flag">-e</span>)</td>
+</tr>
+<tr>
+<td>
+<span class="name">872</span></td>
+<td>
+=&gt; <span class="name">855</span> with Euro (<span class="flag">-e</span>)</td>
+</tr>
+<tr>
+<td>
+<span class="name">867</span>, <span class="name">895</span></td>
+<td>
+=&gt; <span class="name">kam</span></td>
+</tr>
+<tr>
+<td>
+<span class="name">667</span>, <span class="name">790</span>, <span class="name">991</span></td>
+<td>
+=&gt; <span class="name">maz</span></td>
+</tr>
+<tr>
+<td>
+<span class="name">866</span></td>
+<td>
+=&gt; <span class="name">mik</span></td>
+</tr>
+</table>
+</dd>
+</dl>
+<dl class="meta">
+<dt>default:</dt><dd><p><span class="name">437</span></p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-d</span></dt>
+<dd>
+<p>Use default terminal colors for VGA's gray on black.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>Explicitly select these colors.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-e</span></dt>
+<dd>
+<p>Use codepage variations with an Euro currency symbol if applicable. For codepages <span class="name">850</span>, <span class="name">857</span>, <span class="name">864</span> and <span class="name">869</span>, there are specific known places for the Euro symbols. For other codepages that have a generic currency symbol, replace this with the Euro currency symbol.</p>
+</dd>
+<dt><span class="flag">-h</span></dt>
+<dd>
+<p>Print a help text and exit.</p>
+</dd>
+<dt><span class="flag">-k</span></dt>
+<dd>
+<p>Use blink attribute for intense background colors. This flag is ignored if SAUCE metadata is available.</p>
+<p>Note that blink only works in some terminals. In any case, bright background colors will be disabled.</p>
+</dd>
+<dt><span class="flag">-l</span></dt>
+<dd>
+<p>Attempt to enforce left-to-right writing direction by wrapping the output in a Unicode LTR override region.</p>
+</dd>
+<dt><span class="flag">-m</span></dt>
+<dd>
+<p>Write some metadata to stderr while rendering. The output format is <span class="name">key=value</span>, this can be used from scripts or for debugging purposes.</p>
+</dd>
+<dt><span class="flag">-o</span>&nbsp;<span class="arg">outfile</span></dt>
+<dd>
+<p>Write output to <span class="arg">outfile</span>. If not given, output is written to the standard output.</p>
+</dd>
+<dt><span class="flag">-p</span></dt>
+<dd>
+<p>Force replacing the pipe bar with a broken bar better matching the appearance of most VGA fonts.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>Only replace when the codepage does not have an explicit broken bar.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-q</span>&nbsp;<span class="arg">saucequery</span></dt>
+<dd>
+<p>Query individual SAUCE metadata fields in a machine-readable format. Each field is requested by a single character in <span class="arg">saucequery</span> and printed on a single line to the standard output, converted from <span class="name">CP-437</span> to <span class="name">UTF-8</span>.</p>
+<p>The following characters are supported in <span class="arg">saucequery</span>:</p>
+<dl class="description">
+<dt><span class="name">:</span></dt>
+<dd><p>toggle quoting all subsequent fields in single quotes, with literal single quotes translated to <span class="name">'\''</span> (POSIX shell style)</p>
+</dd>
+<dt><span class="name">T</span></dt>
+<dd><p>title</p>
+</dd>
+<dt><span class="name">A</span></dt>
+<dd><p>author</p>
+</dd>
+<dt><span class="name">G</span></dt>
+<dd><p>group</p>
+</dd>
+<dt><span class="name">D</span></dt>
+<dd><p>date (format: YYYYMMDD)</p>
+</dd>
+<dt><span class="name">C</span></dt>
+<dd><p>comment, output will be multiple lines, the first line is the number of lines to follow</p>
+</dd>
+<dt><span class="name">t</span></dt>
+<dd><p>file and data type</p>
+</dd>
+<dt><span class="name">w</span></dt>
+<dd><p>width (in characters)</p>
+</dd>
+<dt><span class="name">h</span></dt>
+<dd><p>height (in characters)</p>
+</dd>
+<dt><span class="name">b</span></dt>
+<dd><p>background mode (<span class="name">0</span>: blink, <span class="name">1</span>: bright)</p>
+</dd>
+<dt><span class="name">s</span></dt>
+<dd><p>spacing (<span class="name">0</span>: 8px, <span class="name">1</span>: 9px)</p>
+</dd>
+<dt><span class="name">a</span></dt>
+<dd><p>aspect ratio (<span class="name">0</span>: rectangular pixels, <span class="name">1</span>: square pixels)</p>
+</dd>
+<dt><span class="name">f</span></dt>
+<dd><p>font name</p>
+</dd>
+<dt><span class="name">c</span></dt>
+<dd><p>codepage</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-r</span></dt>
+<dd>
+<p>Use line endings with <span class="name">CR</span> (DOS/Windows format).</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>Enabled on Windows, disabled otherwise.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-s</span></dt>
+<dd>
+<p>Show SAUCE metadata instead of actual contents. If the input file does not have SAUCE, <span class="name">dos2ansi</span> will fail.</p>
+</dd>
+<dt><span class="flag">-t</span>&nbsp;<span class="arg">tabwidth</span></dt>
+<dd>
+<p>Distance of tabstop positions.</p>
+<dl class="meta">
+<dt>min:</dt><dd><p>2</p>
+</dd>
+<dt>max:</dt><dd><p>screen width or 255</p>
+</dd>
+<dt>default:</dt><dd><p>8</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-u</span>&nbsp;<span class="arg">format</span></dt>
+<dd>
+<p>Unicode output format, one of <span class="name">UTF-8</span>, <span class="name">UTF-16</span> or <span class="name">UTF-16LE</span>.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p><span class="name">UTF-8</span>, on Windows <span class="name">UTF-16LE</span> when output goes to a file or pipe.</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-v</span></dt>
+<dd>
+<p>Use reverse attribute for intense background colors. With most terminals, this will actually result in reversed colors. It's only included for exotic terminals abusing this attribute to enable bright background colors.</p>
+<p>Implies disabling explicit intense colors (<span class="flag">-I</span>) and conflicts with blink (<span class="flag">-k</span>).</p>
+</dd>
+<dt><span class="flag">-w</span>&nbsp;<span class="arg">width</span></dt>
+<dd>
+<p>Width of the virtual screen. If the width is available from SAUCE metadata, this flag is ignored.</p>
+<dl class="meta">
+<dt>min:</dt><dd><p>16</p>
+</dd>
+<dt>max:</dt><dd><p>1024</p>
+</dd>
+<dt>default:</dt><dd><p>80</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-x</span></dt>
+<dd>
+<p>Attempt to use exact CGA/VGA colors. This requires a terminal capable of 256 colors and is used automatically when <span class="name">dos2ansi</span> is built with curses and an appropriate terminal is found, or on Windows 10 and later.</p>
+</dd>
+<dt><span class="flag">-y</span></dt>
+<dd>
+<p>Use exact colors (see <span class="flag">-x</span>), but with a "dark yellow" color instead of adjusting it to brown, resulting in a palette you would see on some CGA machine when using a cheap monitor or a TV set.</p>
+</dd>
+<dt><span class="arg">infile</span></dt>
+<dd>
+<p>Read input from <span class="arg">infile</span>. If not given, input is read from the standard input.</p>
+</dd>
+</dl>
+<h3>Additional information</h3>
+<dl class="meta">
+<dt>Version:</dt>
+<dd><span class="name">dos2ansi</span> v2.0</dd>
+<dt>License:</dt><dd>BSD 2-clause (all rights reserved)</dd>
+<dt>WWW:</dt><dd><a href="https://github.com/Zirias/dos2ansi">https://github.com/Zirias/dos2ansi</a></dd>
+</dl>
+<h2>ENVIRONMENT</h2>
+<dl class="environment">
+<dt><span class="name">TERM</span></dt>
+<dd>
+<p>When <span class="name">dos2ansi</span> is built with curses support (non-Windows only), the output by default depends on the current value of <span class="name">TERM</span>, even when writing to a file. This can be used to create files suitable for a specific terminal. To produce generic ANSI output instead, see the flags <span class="flag">-a</span> and <span class="flag">-A</span>.</p>
+</dd>
+</dl>
+<h2>AUTHORS</h2>
+Felix Palmen  &lt;<a href="mailto:felix@palmen-it.de">felix@palmen-it.de</a>&gt;
+<dl class="footer">
+<dt>Origin:</dt>
+<dd>dos2ansi v2.0</dd>
+<dt>Date:</dt>
+<dd>March 11, 2024</dd>
+<dt>Title:</dt>
+<dd>DOS2ANSI(1)</dd>
+</dl>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="style.css" />
+<title>SHOWANSI(1)</title>
+<meta name="viewport" content="width=device-width">
+</head>
+<body>
+<h1 data-man-title="SHOWANSI" data-man-section="1" data-man-sectionname="General Commands Manual">SHOWANSI(1)</h1>
+<h2>NAME</h2>
+<dl class="name">
+<dt><span class="name">showansi</span> &ndash;</dt>
+<dd>display ANSI art in a terminal window</dd>
+</dl>
+<h2>SYNOPSIS</h2>
+<dl class="synopsis">
+<dt>showansi</dt>
+<dd>
+<span class="flag">-V</span>
+</dd>
+<dt>showansi</dt>
+<dd>
+<span class="flag">-h</span>
+</dd>
+<dt>showansi</dt>
+<dd>
+[<span class="flag">-Sensw</span>]
+[<span class="flag">-c</span>&nbsp;<span class="arg">columns</span>]
+[<span class="flag">-d</span>&nbsp;<span class="arg">dos2ansi</span>]
+[<span class="flag">-r</span>&nbsp;<span class="arg">rows</span>]
+[<span class="flag">--</span>]
+[<span class="arg">args</span>]
+</dd>
+</dl>
+<h2>DESCRIPTION</h2>
+<p><span class="name">showansi</span> combines <a href="dos2ansi.1.html">dos2ansi</a>(1) with a terminal emulator (by default <span class="name">xterm</span>(1)) and a pager (by default <span class="name">less</span>(1)) to form an ANSI-art viewer. It uses SAUCE metadata obtained from <a href="dos2ansi.1.html">dos2ansi</a>(1) to select an appropriate font, set the terminal window size and the window title.</p>
+<p>Even if SAUCE metadata is absent, it tries to guess the appropriate font from rendering metadata. If the final display size is exactly 80x50 or 80x43, the file is assumed to target the respective VGA or EGA mode, so a wide font is selected. If the input uses ANSI.SYS sequences for setting a textmode, the font selection takes into account whether an 80- or 40-column mode is selected.</p>
+<p><span class="name">showansi</span> always prefers the number of columns and rows given on the commandline for the terminal window size. For everything else, to override it from the commandline, the <span class="flag">-S</span> flag must be given if contradicting SAUCE metadata is available.</p>
+<p>The options are as follows:</p>
+<dl class="description">
+<dt><span class="flag">-S</span></dt>
+<dd>
+<p>Ignore SAUCE and other metadata and use all defaults or values passed on the commandline.</p>
+<p>Also passes ignoring SAUCE to <a href="dos2ansi.1.html">dos2ansi</a>(1).</p>
+</dd>
+<dt><span class="flag">-V</span></dt>
+<dd>
+<p>Print version information and exit.</p>
+</dd>
+<dt><span class="flag">-c</span>&nbsp;<span class="arg">columns</span></dt>
+<dd>
+<p>The number of columns for display, IOW, the width of the terminal window.</p>
+<p>Also passed to <a href="dos2ansi.1.html">dos2ansi</a>(1) as the default canvas width (flag <span class="flag">-w</span>).</p>
+</dd>
+<dt><span class="flag">-d</span>&nbsp;<span class="arg">dos2ansi</span></dt>
+<dd>
+<p>Run <span class="arg">dos2ansi</span> to render the input file for the configured pager to display.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p><span class="file">/usr/local/bin/dos2ansi</span></p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-e</span></dt>
+<dd>
+<p>Use an EGA font. This is ignored if the font type can be deduced from SAUCE metadata unless <span class="flag">-S</span> is given.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>from metadata or VGA</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-h</span></dt>
+<dd>
+<p>Print a help text and exit.</p>
+</dd>
+<dt><span class="flag">-n</span></dt>
+<dd>
+<p>No letter spacing, which means to pick an 8px wide font. This is ignored if spacing information is available from SAUCE unless <span class="flag">-S</span> is given.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>from metadata or spaced (9px)</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-r</span>&nbsp;<span class="arg">rows</span></dt>
+<dd>
+<p>The number of rows for display, IOW, the height of the terminal window.</p>
+</dd>
+<dt><span class="flag">-s</span></dt>
+<dd>
+<p>Assume square pixels, so, pick a font without aspect correction. This is ignored if aspect information is available from SAUCE unless <span class="flag">-S</span> is given.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>from metadata or rectangular pixels</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="flag">-w</span></dt>
+<dd>
+<p>Use a wide font (for 40-columns or VGA50 or EGA43 modes), which means a 9x8/8x8 or 18x16/16x16 font. This is ignored if the font type can be deduced from SAUCE metadata unless <span class="flag">-S</span> is given.</p>
+<dl class="meta">
+<dt>default:</dt><dd><p>from metadata or regular width</p>
+</dd>
+</dl>
+</dd>
+<dt><span class="arg">args</span></dt>
+<dd>
+<p>Arguments for <a href="dos2ansi.1.html">dos2ansi</a>(1), including the file to display. Must be preceded by <span class="flag">--</span> if it contains flags (starting with <span class="name">-</span>). If it doesn't contain a file to display, the standard input will be read and fed to <a href="dos2ansi.1.html">dos2ansi</a>(1).</p>
+</dd>
+</dl>
+<h3>Additional information</h3>
+<dl class="meta">
+<dt>Version:</dt>
+<dd><span class="name">showansi</span> v2.0</dd>
+<dt>License:</dt><dd>BSD 2-clause (all rights reserved)</dd>
+<dt>WWW:</dt><dd><a href="https://github.com/Zirias/dos2ansi">https://github.com/Zirias/dos2ansi</a></dd>
+</dl>
+<h2>ENVIRONMENT</h2>
+<dl class="environment">
+<dt><span class="name">SHOWANSI_DEBUG</span></dt>
+<dd>
+<p>When this is set to <span class="name">1</span>, <span class="name">showansi</span> prints some debugging information to the standard output, including the full command line it will execute to display the input file.</p>
+</dd>
+<dt><span class="name">TMPDIR</span></dt>
+<dd>
+<p><span class="name">showansi</span> needs to process an input file multiple times with <a href="dos2ansi.1.html">dos2ansi</a>(1) to get metadata and then render it in a terminal configured appropriately, so when input comes from standard input, it must be stored in a temporary file. A private directory will be created for that purpose, using <span class="name">mktemp</span>(1) if available, otherwise using plain <span class="name">mkdir</span>(1) below <span class="name">TMPDIR</span>. Note that <span class="name">mktemp</span>(1) typically also uses <span class="name">TMPDIR</span>. If unset, it defaults to <span class="file">/tmp</span>.</p>
+</dd>
+</dl>
+<h2>FILES</h2>
+<dl class="description">
+<dt><span class="file">/usr/local/etc/dos2ansi/showansirc</span></dt>
+<dd>
+<p>The main configuration file. This is used to configure the terminal emulator, including necessary command line arguments, the pager, and the fontset.</p>
+<p>Paths to per-user configuration files can be set here as well.</p>
+</dd>
+<dt><span class="file">/usr/local/etc/dos2ansi/showansirc.sample</span></dt>
+<dd>
+<p>A commented example configuration file, demonstrating all the available options.</p>
+</dd>
+<dt><span class="file">/usr/local/share/dos2ansi/showansi/fonts.bitmap</span></dt>
+<dd>
+<p>A fontset for <span class="name">xterm</span>(1) using bitmap fonts from <a href="https://github.com/farsil/ibmfonts">https://github.com/farsil/ibmfonts</a></p>
+</dd>
+<dt><span class="file">/usr/local/share/dos2ansi/showansi/fonts.scalable</span></dt>
+<dd>
+<p>A fontset for <span class="name">xterm</span>(1) using scalable fonts from <a href="https://int10h.org/oldschool-pc-fonts">https://int10h.org/oldschool-pc-fonts</a></p>
+</dd>
+<dt><span class="file">/usr/local/share/dos2ansi/showansi/fonts.mixed</span></dt>
+<dd>
+<p>A fontset combining both sets above, using scalable fonts when aspect correction for non-square pixels is wanted, bitmap fonts otherwise. This is the default fontset in the example configuration.</p>
+</dd>
+</dl>
+<h2>SEE ALSO</h2>
+<p><a href="dos2ansi.1.html">dos2ansi</a>(1), <span class="name">less</span>(1), <span class="name">xterm</span>(1)</p>
+<h2>AUTHORS</h2>
+Felix Palmen  &lt;<a href="mailto:felix@palmen-it.de">felix@palmen-it.de</a>&gt;
+<dl class="footer">
+<dt>Origin:</dt>
+<dd>showansi v2.0</dd>
+<dt>Date:</dt>
+<dd>March 11, 2024</dd>
+<dt>Title:</dt>
+<dd>SHOWANSI(1)</dd>
+</dl>
+</body>
+</html>
