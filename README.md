@@ -75,11 +75,11 @@ will also be installed by default.
 
 ## Test mode
 
-![Test mode on Windows](.github/screenshots/dos2ansi_test_win32.png?raw=true)
+![Test mode on Windows](https://zirias.github.io/dos2ansi/screenshots/dos2ansi_test_win32.png)
 
 ## SAUCE display
 
-![SAUCE in KDE's konsole](.github/screenshots/dos2ansi_sauce.png?raw=true)
+![SAUCE in KDE's konsole](https://zirias.github.io/dos2ansi/screenshots/dos2ansi_sauce.png)
 
 ## The showansi script
 
@@ -110,7 +110,7 @@ showansi can output debugging information by setting the environment variable
 
 Here is what it looks like in default configuration:
 
-![showansi](.github/screenshots/showansi.png?raw=true)
+![showansi](https://zirias.github.io/dos2ansi/screenshots/showansi.png)
 
 ## Building
 
