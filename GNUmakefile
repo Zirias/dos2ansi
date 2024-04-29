@@ -24,6 +24,7 @@ MKCLIDOC_MAKEARGS=	DESTDIR=../bin prefix= bindir= zimkdir=../../zimk \
 MKCLIDOC_MAKEGOAL=	install
 MKCLIDOC_CLEANGOAL=	distclean
 
+USES=	gen man sub
 include zimk/zimk.mk
 
 $(call zinc, src/bin/bin.mk)
