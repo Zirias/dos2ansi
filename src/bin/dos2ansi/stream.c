@@ -47,35 +47,40 @@ static HANDLE openFile(const char *filename, FileOpenFlags flags)
 	access |= GENERIC_WRITE;
 	disposition = CREATE_ALWAYS;
     }
-    size_t namechars = strlen(filename) + 1;
-    LPWSTR wname = xmalloc((namechars + 4) * sizeof *wname);
-    memcpy(wname, L"\\\\?\\", 4 * sizeof *wname);
+
     HANDLE file = INVALID_HANDLE_VALUE;
+
+    /* convert file name to wide chars */
+    size_t namechars = strlen(filename) + 1;
+    LPWSTR wname = xmalloc(namechars * sizeof *wname);
+    LPWSTR absname = 0;
     namechars = MultiByteToWideChar(CP_UTF8, 0,
-	    filename, -1, wname+4, namechars);
+	    filename, -1, wname, namechars);
     if (!namechars) goto done;
-    if (namechars < MAX_PATH)
-    {
-	/* This is a best-effort hack. To be able to access paths longer
-	 * than MAX_PATH, we need to use the win32 namespace \\?\ passing
-	 * the path unprocessed to the filesystem. For this to work, it
-	 * must be an absolute path.
-	 * To also support relative paths, we must convert to an absolute
-	 * path which only works without this namespace.
-	 * Therefore, if the path is already longer than MAX_PATH, we just
-	 * assume it's already an absolute path and skip the conversion.
-	 */
-	DWORD abssz = namechars + 1024;
-	LPWSTR absname = xmalloc((abssz + 4) * sizeof *absname);
-	memcpy(absname, L"\\\\?\\", 4 * sizeof *wname);
-	DWORD abslen = GetFullPathNameW(wname+4, abssz, absname+4, 0);
-	free(wname);
-	wname = absname;
-	if (!abslen || abslen >= abssz) goto done;
-    }
-    file = CreateFileW(wname, access, share, 0, disposition, 0, 0);
+
+    /* According to Microsoft's docs, GetFullPathNameW() can operate on long
+     * file names only when \\?\ is prepended, which is a namespace telling
+     * win32 functions to pass names unprocessed to the filesystem. This
+     * implies absolute path names, which would render the function pointless.
+     *
+     * According to https://stackoverflow.com/a/38038887 this documentation is
+     * wrong, because the function is purely string-based, so the wide-character
+     * flavor always works on long file names.
+     *
+     * Therefore just use it here to ensure an absolute pathname and only prepend
+     * \\?\ to the result, so it can be used with CreateFileW() even when it
+     * exceeds MAX_PATH.
+     */
+    DWORD abslen = GetFullPathNameW(wname, 0, 0, 0);
+    if (!abslen) goto done;
+    absname = xmalloc((abslen + 4) * sizeof *absname);
+    memcpy(absname, L"\\\\?\\", 4 * sizeof *absname);
+    GetFullPathNameW(wname, abslen, absname+4, 0);
+
+    file = CreateFileW(absname, access, share, 0, disposition, 0, 0);
 
 done:
+    free(absname);
     free(wname);
     return file;
 }
