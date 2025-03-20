@@ -17,7 +17,7 @@ NODIST=			tools/mkclidoc/zimk
 DISTCLEANDIRS=		tools/bin
 
 SUBBUILD=		MKCLIDOC
-MKCLIDOC_TARGET=	tools/bin/mkclidoc
+MKCLIDOC_TARGET=	tools/bin/mkclidoc$(EXE)
 MKCLIDOC_SRCDIR=	tools/mkclidoc
 MKCLIDOC_MAKEARGS=	DESTDIR=../bin prefix= bindir= zimkdir=../../zimk \
 			HOSTBUILD=1 PORTABLE=1 STATIC=0
