@@ -10,6 +10,7 @@
 #include <string.h>
 
 #define MS_CHUNKSZ 1024
+#define MS_MINSZ 64
 
 #if defined(USE_WIN32)
 #  include <windows.h>
@@ -370,6 +371,7 @@ typedef struct WriterStream
 
 Stream *Stream_createMemory(size_t maxsize)
 {
+    if (maxsize < MS_MINSZ) maxsize = MS_MINSZ;
     MemoryStream *self = xmalloc(sizeof *self);
     self->base.size = MS_CHUNKSZ > maxsize ? maxsize : MS_CHUNKSZ;
     self->maxsize = maxsize;
